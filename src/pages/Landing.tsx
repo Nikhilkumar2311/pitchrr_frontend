@@ -1,0 +1,130 @@
+/**
+ * Landing Page
+ * 
+ * The main entry point for visitors.
+ * Features GSAP animations for engaging visuals.
+ * 
+ * SECTIONS:
+ * 1. Hero - Main headline with CTA
+ * 2. Features - The 7-step process
+ * 3. How It Works - Visual step-by-step guide
+ * 4. Benefits - Why choose Pitchrr + Testimonial
+ * 5. CTA - Final call to action
+ * 6. Footer - Links and info
+ * 
+ * GSAP ANIMATIONS:
+ * - Hero text reveals on load
+ * - Feature cards stagger in on scroll
+ * - Benefits animate on scroll
+ */
+
+import { useEffect, useRef } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { Header } from '@/layout/Header';
+import { HeroSection } from './Landing/HeroSection';
+import { FeaturesSection } from './Landing/FeaturesSection';
+import { HowItWorksSection } from './Landing/HowItWorksSection';
+import { BenefitsSection } from './Landing/BenefitsSection';
+import { CTASection } from './Landing/CTASection';
+import { Footer } from './Landing/Footer';
+
+// Register GSAP plugins
+gsap.registerPlugin(ScrollTrigger);
+
+export default function Landing() {
+    // Refs for GSAP animations
+    const heroRef = useRef<HTMLDivElement>(null);
+    const featuresRef = useRef<HTMLDivElement>(null);
+    const benefitsRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const ctx = gsap.context(() => {
+            /**
+             * HERO ANIMATION
+             */
+            const heroTimeline = gsap.timeline();
+
+            heroTimeline.from('.hero-heading', {
+                y: 60,
+                opacity: 0,
+                duration: 0.8,
+                ease: 'power3.out',
+            });
+
+            heroTimeline.from('.hero-description', {
+                y: 40,
+                opacity: 0,
+                duration: 0.6,
+                ease: 'power3.out',
+            }, '-=0.4');
+
+            heroTimeline.from('.hero-cta', {
+                y: 30,
+                opacity: 0,
+                duration: 0.5,
+                ease: 'power3.out',
+            }, '-=0.3');
+
+            /**
+             * FEATURE CARDS ANIMATION
+             */
+            gsap.from('.feature-card', {
+                scrollTrigger: {
+                    trigger: featuresRef.current,
+                    start: 'top 80%',
+                    toggleActions: 'play none none none',
+                },
+                y: 50,
+                opacity: 0,
+                duration: 0.6,
+                stagger: 0.1,
+                ease: 'power2.out',
+            });
+
+            /**
+             * BENEFITS SECTION ANIMATION
+             */
+            gsap.from('.benefit-item', {
+                scrollTrigger: {
+                    trigger: benefitsRef.current,
+                    start: 'top 80%',
+                },
+                x: -30,
+                opacity: 0,
+                duration: 0.5,
+                stagger: 0.15,
+                ease: 'power2.out',
+            });
+
+        }, heroRef);
+
+        // Cleanup function
+        return () => ctx.revert();
+    }, []);
+
+    return (
+        <div className="bg-white mx-auto">
+            {/* Navigation Header */}
+            <Header />
+
+            {/* Hero Section */}
+            <HeroSection ref={heroRef} />
+
+            {/* Features Section */}
+            <FeaturesSection ref={featuresRef} />
+
+            {/* How It Works Section */}
+            <HowItWorksSection />
+
+            {/* Benefits Section */}
+            <BenefitsSection ref={benefitsRef} />
+
+            {/* CTA Section */}
+            <CTASection />
+
+            {/* Footer */}
+            <Footer />
+        </div>
+    );
+}
