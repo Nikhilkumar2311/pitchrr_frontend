@@ -30,6 +30,7 @@ import {
     Textarea,
 } from '@/components/ui';
 import toast from 'react-hot-toast';
+import { useIdeaStore } from '@/store';
 
 export default function PitchDeck() {
     const STORAGE_KEY = 'pitchrr_pitch_deck';
@@ -81,6 +82,11 @@ export default function PitchDeck() {
     /**
      * Load saved data from localStorage
      */
+    const { currentIdea } = useIdeaStore();
+
+    /**
+     * Load saved data from localStorage OR autofill from store
+     */
     useEffect(() => {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
@@ -89,12 +95,31 @@ export default function PitchDeck() {
                 if (data.slides) {
                     setSlides(data.slides);
                     setHasGenerated(true);
+                } else if (currentIdea) {
+                    // Saved state exists but no slides yet? Try to hydrate from current idea
+                    hydrateSlidesFromIdea();
                 }
             } catch (e) {
                 console.error('Failed to load saved data:', e);
             }
+        } else if (currentIdea) {
+            hydrateSlidesFromIdea();
         }
-    }, []);
+    }, [currentIdea]);
+
+    const hydrateSlidesFromIdea = () => {
+        if (!currentIdea) return;
+
+        const newSlides = [...slides];
+        // Problem
+        if (currentIdea.problem) newSlides[0].content = currentIdea.problem;
+        // Solution
+        if (currentIdea.solution) newSlides[1].content = currentIdea.solution;
+        // Market
+        if (currentIdea.targetMarket) newSlides[2].content = `Target Market: ${currentIdea.targetMarket}`;
+
+        setSlides(newSlides);
+    };
 
     /**
      * Save to localStorage

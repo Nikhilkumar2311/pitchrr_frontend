@@ -18,7 +18,7 @@
  * - Benefits animate on scroll
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Header } from '@/layout/Header';
@@ -28,6 +28,7 @@ import { HowItWorksSection } from './Landing/HowItWorksSection';
 import { BenefitsSection } from './Landing/BenefitsSection';
 import { CTASection } from './Landing/CTASection';
 import { Footer } from './Landing/Footer';
+import { LandingSkeleton } from '@/components/skeletons/LandingSkeleton';
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);
@@ -38,7 +39,19 @@ export default function Landing() {
     const featuresRef = useRef<HTMLDivElement>(null);
     const benefitsRef = useRef<HTMLDivElement>(null);
 
+    const [isLoading, setIsLoading] = useState(true);
+
     useEffect(() => {
+        // Simulate initial loading
+        const timer = setTimeout(() => {
+            setIsLoading(false);
+        }, 1000);
+        return () => clearTimeout(timer);
+    }, []);
+
+    useEffect(() => {
+        if (isLoading) return;
+
         const ctx = gsap.context(() => {
             /**
              * HERO ANIMATION
@@ -99,9 +112,12 @@ export default function Landing() {
 
         }, heroRef);
 
-        // Cleanup function
         return () => ctx.revert();
-    }, []);
+    }, [isLoading]);
+
+    if (isLoading) {
+        return <LandingSkeleton />;
+    }
 
     return (
         <div className="bg-white max-w-[90rem] mx-auto">

@@ -34,6 +34,7 @@ import {
     Badge,
 } from '@/components/ui';
 import toast from 'react-hot-toast';
+import { useIdeaStore } from '@/store';
 
 export default function MarketingStrategy() {
     const STORAGE_KEY = 'pitchrr_marketing_strategy';
@@ -72,12 +73,25 @@ export default function MarketingStrategy() {
     /**
      * Load saved data from localStorage
      */
+    const { currentIdea } = useIdeaStore();
+
+    /**
+     * Load saved data from localStorage OR autofill from store
+     */
     useEffect(() => {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
             try {
                 const data = JSON.parse(saved);
-                setTargetAudience(data.targetAudience || '');
+
+                // If we have a saved audience, use it.
+                // Otherwise if we have a global idea target market, use that.
+                if (data.targetAudience) {
+                    setTargetAudience(data.targetAudience);
+                } else if (currentIdea?.targetMarket) {
+                    setTargetAudience(currentIdea.targetMarket);
+                }
+
                 if (data.strategy) {
                     setStrategy(data.strategy);
                     setHasGenerated(true);
@@ -85,8 +99,11 @@ export default function MarketingStrategy() {
             } catch (e) {
                 console.error('Failed to load saved data:', e);
             }
+        } else if (currentIdea?.targetMarket) {
+            // No local save, autofill from global idea
+            setTargetAudience(currentIdea.targetMarket);
         }
-    }, []);
+    }, [currentIdea]);
 
     /**
      * Save to localStorage

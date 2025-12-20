@@ -39,6 +39,7 @@ import {
     Badge,
 } from '@/components/ui';
 import toast from 'react-hot-toast';
+import { useIdeaStore } from '@/store';
 
 /**
  * Risk level type
@@ -90,12 +91,24 @@ export default function IdeaValidation() {
     /**
      * Load saved data from localStorage on mount
      */
+    const { currentIdea, updateIdea } = useIdeaStore();
+
+    /**
+     * Load saved data from localStorage on mount OR autofill from store
+     */
     useEffect(() => {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
             try {
                 const data = JSON.parse(saved);
-                setIdeaSummary(data.ideaSummary || '');
+
+                // Prioritize global store if available
+                if (currentIdea?.description) {
+                    setIdeaSummary(currentIdea.description);
+                } else {
+                    setIdeaSummary(data.ideaSummary || '');
+                }
+
                 if (data.analysis) {
                     setAnalysis(data.analysis);
                     setHasAnalyzed(true);
@@ -106,8 +119,11 @@ export default function IdeaValidation() {
             } catch (e) {
                 console.error('Failed to load saved data:', e);
             }
+        } else if (currentIdea?.description) {
+            // No saved data, but we have a global idea -> auto-fill it!
+            setIdeaSummary(currentIdea.description);
         }
-    }, []);
+    }, [currentIdea]);
 
     /**
      * AUTO-SAVE: Save to localStorage when ideaSummary changes
@@ -124,7 +140,7 @@ export default function IdeaValidation() {
     }, [ideaSummary]);
 
     /**
-     * Save current state to localStorage
+     * Save current state to localStorage AND update global store
      */
     const saveToLocalStorage = () => {
         setIsSaving(true);
@@ -138,6 +154,9 @@ export default function IdeaValidation() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         setLastSaved(new Date());
         setIsSaving(false);
+
+        // Also update the global store so other modules get the latest description
+        updateIdea({ description: ideaSummary });
 
         toast.success('Saved!', { duration: 1500 });
     };

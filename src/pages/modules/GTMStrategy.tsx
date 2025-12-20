@@ -34,6 +34,7 @@ import {
     Badge,
 } from '@/components/ui';
 import toast from 'react-hot-toast';
+import { useIdeaStore } from '@/store';
 
 export default function GTMStrategy() {
     const STORAGE_KEY = 'pitchrr_gtm_strategy';
@@ -65,12 +66,24 @@ export default function GTMStrategy() {
     /**
      * Load saved data from localStorage
      */
+    const { currentIdea } = useIdeaStore();
+
+    /**
+     * Load saved data from localStorage OR autofill from store
+     */
     useEffect(() => {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
             try {
                 const data = JSON.parse(saved);
-                setProductDescription(data.productDescription || '');
+
+                // Prioritize saved description, otherwise use global idea
+                if (data.productDescription) {
+                    setProductDescription(data.productDescription);
+                } else if (currentIdea?.description) {
+                    setProductDescription(currentIdea.description);
+                }
+
                 if (data.strategy) {
                     setStrategy(data.strategy);
                     setHasGenerated(true);
@@ -78,8 +91,11 @@ export default function GTMStrategy() {
             } catch (e) {
                 console.error('Failed to load saved data:', e);
             }
+        } else if (currentIdea?.description) {
+            // No local save, autofill from global idea
+            setProductDescription(currentIdea.description);
         }
-    }, []);
+    }, [currentIdea]);
 
     /**
      * Save to localStorage

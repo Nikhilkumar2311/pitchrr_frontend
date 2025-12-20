@@ -30,6 +30,7 @@ import {
     Input,
 } from '@/components/ui';
 import toast from 'react-hot-toast';
+import { useIdeaStore } from '@/store';
 
 /**
  * Brand tone options
@@ -73,12 +74,24 @@ export default function Branding() {
     /**
      * Load saved data from localStorage
      */
+    const { currentIdea } = useIdeaStore();
+
+    /**
+     * Load saved data from localStorage OR autofill from store
+     */
     useEffect(() => {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
             try {
                 const data = JSON.parse(saved);
-                setStartupName(data.startupName || '');
+
+                // Prioritize saved name, otherwise use global idea title
+                if (data.startupName) {
+                    setStartupName(data.startupName);
+                } else if (currentIdea?.title) {
+                    setStartupName(currentIdea.title);
+                }
+
                 setSelectedTone(data.selectedTone || 'Professional');
                 if (data.selectedColorPreset) {
                     setSelectedColorPreset(data.selectedColorPreset);
@@ -90,8 +103,11 @@ export default function Branding() {
             } catch (e) {
                 console.error('Failed to load saved data:', e);
             }
+        } else if (currentIdea?.title) {
+            // No local save, autofill from global idea
+            setStartupName(currentIdea.title);
         }
-    }, []);
+    }, [currentIdea]);
 
     /**
      * Save to localStorage

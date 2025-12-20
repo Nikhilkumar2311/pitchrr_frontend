@@ -33,7 +33,7 @@ export function AIFloatingButton() {
                 <motion.button
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
-                    className="w-14 h-14 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl flex items-center justify-center transition-shadow"
+                    className="w-14 h-14 bg-linear-to-r from-blue-500 to-blue-600 text-white rounded-full shadow-lg hover:shadow-xl flex items-center justify-center transition-shadow"
                     onMouseEnter={() => setIsTooltipVisible(true)}
                     onMouseLeave={() => setIsTooltipVisible(false)}
                     aria-label="Ask AI"
