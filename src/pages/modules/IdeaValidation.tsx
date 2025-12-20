@@ -40,6 +40,7 @@ import {
 } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { useIdeaStore } from '@/store';
+import { IdeaValidationSkeleton } from '@/components/skeletons/IdeaValidationSkeleton';
 
 /**
  * Risk level type
@@ -67,6 +68,7 @@ export default function IdeaValidation() {
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [hasAnalyzed, setHasAnalyzed] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Analysis results (mock data - would come from AI API)
     const [analysis, setAnalysis] = useState({
@@ -98,46 +100,59 @@ export default function IdeaValidation() {
      */
     useEffect(() => {
         const saved = localStorage.getItem(STORAGE_KEY);
+        let savedData: any = null;
+
         if (saved) {
             try {
-                const data = JSON.parse(saved);
+                savedData = JSON.parse(saved);
 
-                // Prioritize global store if available
-                if (currentIdea?.description) {
-                    setIdeaSummary(currentIdea.description);
-                } else {
-                    setIdeaSummary(data.ideaSummary || '');
-                }
-
-                if (data.analysis) {
-                    setAnalysis(data.analysis);
+                if (savedData.analysis) {
+                    setAnalysis(savedData.analysis);
                     setHasAnalyzed(true);
                 }
-                if (data.lastSaved) {
-                    setLastSaved(new Date(data.lastSaved));
+                if (savedData.lastSaved) {
+                    setLastSaved(new Date(savedData.lastSaved));
                 }
             } catch (e) {
                 console.error('Failed to load saved data:', e);
             }
-        } else if (currentIdea?.description) {
-            // No saved data, but we have a global idea -> auto-fill it!
-            setIdeaSummary(currentIdea.description);
         }
+
+        // Priority: Global Store > Saved Local > Empty
+        if (currentIdea?.description) {
+            setIdeaSummary(currentIdea.description);
+        } else if (savedData?.ideaSummary) {
+            setIdeaSummary(savedData.ideaSummary);
+        }
+
+        // Simulate loading
+        const timer = setTimeout(() => {
+            setIsLoading(false);
+        }, 1000);
+        return () => clearTimeout(timer);
     }, [currentIdea]);
 
     /**
      * AUTO-SAVE: Save to localStorage when ideaSummary changes
      * Uses debounce effect (2 second delay)
      */
+    /**
+     * AUTO-SAVE: Save to localStorage when ideaSummary changes
+     * Uses debounce effect (1 second delay)
+     */
     useEffect(() => {
         if (!ideaSummary) return;
 
+        // Update global store immediately for UI responsiveness in other tabs/modules
+        // This ensures if they navigate away quickly, the store is likely updated
+        updateIdea({ description: ideaSummary });
+
         const timeoutId = setTimeout(() => {
             saveToLocalStorage();
-        }, 2000);
+        }, 1000);
 
         return () => clearTimeout(timeoutId);
-    }, [ideaSummary]);
+    }, [ideaSummary, updateIdea]);
 
     /**
      * Save current state to localStorage AND update global store
@@ -225,6 +240,10 @@ export default function IdeaValidation() {
     const exportToPDF = () => {
         toast.success('PDF export will be available soon!');
     };
+
+    if (isLoading) {
+        return <IdeaValidationSkeleton />;
+    }
 
     return (
         <div className="space-y-6">

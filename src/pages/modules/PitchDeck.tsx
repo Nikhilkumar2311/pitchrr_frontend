@@ -31,6 +31,7 @@ import {
 } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { useIdeaStore } from '@/store';
+import { PitchDeckSkeleton } from '@/components/skeletons/PitchDeckSkeleton';
 
 export default function PitchDeck() {
     const STORAGE_KEY = 'pitchrr_pitch_deck';
@@ -39,6 +40,7 @@ export default function PitchDeck() {
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isGenerating, setIsGenerating] = useState(false);
     const [hasGenerated, setHasGenerated] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Slides data
     const [slides, setSlides] = useState([
@@ -105,6 +107,12 @@ export default function PitchDeck() {
         } else if (currentIdea) {
             hydrateSlidesFromIdea();
         }
+
+        // Simulate loading
+        const timer = setTimeout(() => {
+            setIsLoading(false);
+        }, 1000);
+        return () => clearTimeout(timer);
     }, [currentIdea]);
 
     const hydrateSlidesFromIdea = () => {
@@ -206,157 +214,158 @@ export default function PitchDeck() {
     };
 
     return (
-        <div className="space-y-6">
-            {/* Page Header */}
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <Presentation className="w-7 h-7 text-[#F59E0B]" />
-                        Pitch Deck
-                    </h1>
-                    <p className="mt-1 text-gray-600">
-                        Convert your idea into a clear story
-                    </p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="secondary"
-                        leftIcon={<Save className="w-4 h-4" />}
-                        onClick={saveToLocalStorage}
-                    >
-                        Save
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        leftIcon={<Download className="w-4 h-4" />}
-                    >
-                        Export PDF
-                    </Button>
-                </div>
-            </div>
-
-            {/* Generate Button */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Generate Your Pitch Deck</CardTitle>
-                    <CardDescription>
-                        Let AI create a professional pitch deck based on your startup information
-                    </CardDescription>
-                </CardHeader>
-                <Button
-                    onClick={generateWithAI}
-                    isLoading={isGenerating}
-                    leftIcon={<Sparkles className="w-4 h-4" />}
-                    className="mt-4"
-                >
-                    {hasGenerated ? 'Regenerate with AI' : 'Generate Pitch Deck'}
-                </Button>
-            </Card>
-
-            {/* Slide Preview & Editor */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Slide Thumbnails */}
-                <div className="lg:col-span-1 space-y-2">
-                    <h3 className="font-medium text-gray-900)] mb-3">Slides</h3>
-                    <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
-                        {slides.map((slide, index) => (
-                            <button
-                                key={index}
-                                onClick={() => setCurrentSlide(index)}
-                                className={`
-                  w-full p-3 rounded-lg text-left transition-all
-                  ${currentSlide === index
-                                        ? 'bg-blue-50 border-2 border-blue-600'
-                                        : 'bg-white border border-gray-200 hover:border-gray-300'
-                                    }
-                `}
-                            >
-                                <div className="flex items-center gap-2">
-                                    <span className={`
-                    w-6 h-6 rounded-full text-xs font-medium flex items-center justify-center
-                    ${currentSlide === index
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-gray-200 text-gray-600'
-                                        }
-                  `}>
-                                        {index + 1}
-                                    </span>
-                                    <span className="text-sm font-medium text-gray-900">
-                                        {slide.type}
-                                    </span>
-                                </div>
-                            </button>
-                        ))}
+        isLoading ? <PitchDeckSkeleton /> :
+            <div className="space-y-6">
+                {/* Page Header */}
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                            <Presentation className="w-7 h-7 text-[#F59E0B]" />
+                            Pitch Deck
+                        </h1>
+                        <p className="mt-1 text-gray-600">
+                            Convert your idea into a clear story
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <Button
+                            variant="secondary"
+                            leftIcon={<Save className="w-4 h-4" />}
+                            onClick={saveToLocalStorage}
+                        >
+                            Save
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            leftIcon={<Download className="w-4 h-4" />}
+                        >
+                            Export PDF
+                        </Button>
                     </div>
                 </div>
 
-                {/* Slide Preview */}
-                <div className="lg:col-span-2">
-                    <Card className="min-h-[400px] relative">
-                        {/* Slide Content */}
-                        <motion.div
-                            key={currentSlide}
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="h-full"
-                        >
-                            <div
-                                className="h-full p-8 rounded-lg"
-                                style={{ backgroundColor: '#1F2937' }}
-                            >
-                                <h2 className="text-2xl font-bold text-white mb-6">
-                                    {slides[currentSlide]?.title}
-                                </h2>
-                                <div className="text-gray-300 whitespace-pre-line">
-                                    {slides[currentSlide]?.content}
-                                </div>
-                            </div>
-                        </motion.div>
+                {/* Generate Button */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Generate Your Pitch Deck</CardTitle>
+                        <CardDescription>
+                            Let AI create a professional pitch deck based on your startup information
+                        </CardDescription>
+                    </CardHeader>
+                    <Button
+                        onClick={generateWithAI}
+                        isLoading={isGenerating}
+                        leftIcon={<Sparkles className="w-4 h-4" />}
+                        className="mt-4"
+                    >
+                        {hasGenerated ? 'Regenerate with AI' : 'Generate Pitch Deck'}
+                    </Button>
+                </Card>
 
-                        {/* Navigation */}
-                        <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => goToSlide('prev')}
-                                disabled={currentSlide === 0}
-                                leftIcon={<ChevronLeft className="w-4 h-4" />}
-                            >
-                                Previous
-                            </Button>
-                            <span className="text-sm text-gray-500">
-                                {currentSlide + 1} / {slides.length}
-                            </span>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => goToSlide('next')}
-                                disabled={currentSlide === slides.length - 1}
-                                rightIcon={<ChevronRight className="w-4 h-4" />}
-                            >
-                                Next
-                            </Button>
+                {/* Slide Preview & Editor */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Slide Thumbnails */}
+                    <div className="lg:col-span-1 space-y-2">
+                        <h3 className="font-medium text-gray-900)] mb-3">Slides</h3>
+                        <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
+                            {slides.map((slide, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => setCurrentSlide(index)}
+                                    className={`
+                  w-full p-3 rounded-lg text-left transition-all
+                  ${currentSlide === index
+                                            ? 'bg-blue-50 border-2 border-blue-600'
+                                            : 'bg-white border border-gray-200 hover:border-gray-300'
+                                        }
+                `}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <span className={`
+                    w-6 h-6 rounded-full text-xs font-medium flex items-center justify-center
+                    ${currentSlide === index
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-gray-200 text-gray-600'
+                                            }
+                  `}>
+                                            {index + 1}
+                                        </span>
+                                        <span className="text-sm font-medium text-gray-900">
+                                            {slide.type}
+                                        </span>
+                                    </div>
+                                </button>
+                            ))}
                         </div>
-                    </Card>
+                    </div>
 
-                    {/* Editor */}
-                    <Card className="mt-4">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Edit className="w-5 h-5" />
-                                Edit Slide Content
-                            </CardTitle>
-                        </CardHeader>
-                        <Textarea
-                            value={slides[currentSlide]?.content || ''}
-                            onChange={(e) => updateSlideContent(e.target.value)}
-                            rows={4}
-                            className="mt-4"
-                            placeholder="Enter slide content..."
-                        />
-                    </Card>
+                    {/* Slide Preview */}
+                    <div className="lg:col-span-2">
+                        <Card className="min-h-[400px] relative">
+                            {/* Slide Content */}
+                            <motion.div
+                                key={currentSlide}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="h-full"
+                            >
+                                <div
+                                    className="h-full p-8 rounded-lg"
+                                    style={{ backgroundColor: '#1F2937' }}
+                                >
+                                    <h2 className="text-2xl font-bold text-white mb-6">
+                                        {slides[currentSlide]?.title}
+                                    </h2>
+                                    <div className="text-gray-300 whitespace-pre-line">
+                                        {slides[currentSlide]?.content}
+                                    </div>
+                                </div>
+                            </motion.div>
+
+                            {/* Navigation */}
+                            <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => goToSlide('prev')}
+                                    disabled={currentSlide === 0}
+                                    leftIcon={<ChevronLeft className="w-4 h-4" />}
+                                >
+                                    Previous
+                                </Button>
+                                <span className="text-sm text-gray-500">
+                                    {currentSlide + 1} / {slides.length}
+                                </span>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => goToSlide('next')}
+                                    disabled={currentSlide === slides.length - 1}
+                                    rightIcon={<ChevronRight className="w-4 h-4" />}
+                                >
+                                    Next
+                                </Button>
+                            </div>
+                        </Card>
+
+                        {/* Editor */}
+                        <Card className="mt-4">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Edit className="w-5 h-5" />
+                                    Edit Slide Content
+                                </CardTitle>
+                            </CardHeader>
+                            <Textarea
+                                value={slides[currentSlide]?.content || ''}
+                                onChange={(e) => updateSlideContent(e.target.value)}
+                                rows={4}
+                                className="mt-4"
+                                placeholder="Enter slide content..."
+                            />
+                        </Card>
+                    </div>
                 </div>
             </div>
-        </div>
     );
 }

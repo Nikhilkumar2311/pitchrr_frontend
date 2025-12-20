@@ -27,7 +27,6 @@ import { lazy, Suspense } from 'react';
 
 // Components
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
-import { PageLoader } from '@/components/ui/PageLoader';
 
 /**
  * LAZY LOADING EXPLAINED
@@ -69,7 +68,7 @@ const DashboardLayout = lazy(() =>
  */
 function LazyPage({ children }: { children: React.ReactNode }) {
     return (
-        <Suspense fallback={<PageLoader />}>
+        <Suspense>
             {children}
         </Suspense>
     );

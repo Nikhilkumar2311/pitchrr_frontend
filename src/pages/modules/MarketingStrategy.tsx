@@ -35,6 +35,7 @@ import {
 } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { useIdeaStore } from '@/store';
+import { MarketingStrategySkeleton } from '@/components/skeletons/MarketingStrategySkeleton';
 
 export default function MarketingStrategy() {
     const STORAGE_KEY = 'pitchrr_marketing_strategy';
@@ -43,6 +44,7 @@ export default function MarketingStrategy() {
     const [targetAudience, setTargetAudience] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [hasGenerated, setHasGenerated] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Generated strategy state
     const [strategy, setStrategy] = useState({
@@ -103,6 +105,12 @@ export default function MarketingStrategy() {
             // No local save, autofill from global idea
             setTargetAudience(currentIdea.targetMarket);
         }
+
+        // Simulate loading
+        const timer = setTimeout(() => {
+            setIsLoading(false);
+        }, 1000);
+        return () => clearTimeout(timer);
     }, [currentIdea]);
 
     /**
@@ -129,6 +137,10 @@ export default function MarketingStrategy() {
         saveToLocalStorage();
         toast.success('Marketing strategy generated!');
     };
+
+    if (isLoading) {
+        return <MarketingStrategySkeleton />;
+    }
 
     return (
         <div className="space-y-6">

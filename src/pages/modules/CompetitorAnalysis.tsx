@@ -32,6 +32,7 @@ import {
     Badge,
 } from '@/components/ui';
 import toast from 'react-hot-toast';
+import { CompetitorAnalysisSkeleton } from '@/components/skeletons/CompetitorAnalysisSkeleton';
 
 interface Competitor {
     name: string;
@@ -47,6 +48,7 @@ export default function CompetitorAnalysis() {
     const [newCompetitor, setNewCompetitor] = useState('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [hasAnalyzed, setHasAnalyzed] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Competitors data
     const [competitors, setCompetitors] = useState<Competitor[]>([
@@ -99,7 +101,17 @@ export default function CompetitorAnalysis() {
                 console.error('Failed to load saved data:', e);
             }
         }
+
+        // Simulate loading
+        const timer = setTimeout(() => {
+            setIsLoading(false);
+        }, 1000);
+        return () => clearTimeout(timer);
     }, []);
+
+    if (isLoading) {
+        return <CompetitorAnalysisSkeleton />;
+    }
 
     /**
      * Save to localStorage

@@ -25,6 +25,7 @@ import {
     Input,
 } from '@/components/ui';
 import toast from 'react-hot-toast';
+import { StartupChatbotSkeleton } from '@/components/skeletons/StartupChatbotSkeleton';
 
 interface Message {
     id: string;
@@ -86,6 +87,7 @@ export default function StartupChatbot() {
     ]);
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -107,6 +109,12 @@ export default function StartupChatbot() {
                 console.error('Failed to load chat history:', e);
             }
         }
+
+        // Simulate loading
+        const timer = setTimeout(() => {
+            setIsLoading(false);
+        }, 1000);
+        return () => clearTimeout(timer);
     }, []);
 
     /**
@@ -182,6 +190,10 @@ export default function StartupChatbot() {
         toast.success('Chat cleared');
     };
 
+    if (isLoading) {
+        return <StartupChatbotSkeleton />;
+    }
+
     return (
         <div className="h-[calc(100vh-12rem)] flex flex-col">
             {/* Header */}
@@ -228,7 +240,7 @@ export default function StartupChatbot() {
                                 <div
                                     className={`max-w-[80%] rounded-2xl px-4 py-3 ${message.role === 'user'
                                         ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-100 text-gray-900)]'
+                                        : 'bg-gray-100 text-gray-900'
                                         }`}
                                 >
                                     <div className="whitespace-pre-line text-sm">
@@ -261,8 +273,8 @@ export default function StartupChatbot() {
                             <div className="bg-gray-100 rounded-2xl px-4 py-3">
                                 <div className="flex gap-1">
                                     <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                                    <span className="w-2 h-2 bg-[var(--color-gray-400)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                                    <span className="w-2 h-2 bg-[var(--color-gray-400)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                                 </div>
                             </div>
                         </motion.div>
@@ -276,7 +288,7 @@ export default function StartupChatbot() {
                             <button
                                 key={prompt}
                                 onClick={() => sendMessage(prompt)}
-                                className="px-3 py-1.5 text-xs font-medium rounded-full bg-[var(--color-gray-100)] text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                className="px-3 py-1.5 text-xs font-medium rounded-full bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                             >
                                 {prompt}
                             </button>

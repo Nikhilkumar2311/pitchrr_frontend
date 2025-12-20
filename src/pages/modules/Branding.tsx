@@ -31,6 +31,7 @@ import {
 } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { useIdeaStore } from '@/store';
+import { BrandingSkeleton } from '@/components/skeletons/BrandingSkeleton';
 
 /**
  * Brand tone options
@@ -57,6 +58,7 @@ export default function Branding() {
     const [selectedColorPreset, setSelectedColorPreset] = useState(colorPresets[0]);
     const [isGenerating, setIsGenerating] = useState(false);
     const [hasGenerated, setHasGenerated] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Generated branding state
     const [branding, setBranding] = useState({
@@ -107,6 +109,12 @@ export default function Branding() {
             // No local save, autofill from global idea
             setStartupName(currentIdea.title);
         }
+
+        // Simulate loading
+        const timer = setTimeout(() => {
+            setIsLoading(false);
+        }, 1000);
+        return () => clearTimeout(timer);
     }, [currentIdea]);
 
     /**
@@ -156,6 +164,10 @@ export default function Branding() {
         saveToLocalStorage();
         toast.success('Brand identity generated!');
     };
+
+    if (isLoading) {
+        return <BrandingSkeleton />;
+    }
 
     return (
         <div className="space-y-6">
