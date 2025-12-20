@@ -75,14 +75,8 @@ export const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
         <section
             id="features"
             ref={ref}
-            className="relative py-20 lg:py-32 bg-linear-to-b from-gray-50 to-white overflow-hidden"
+            className="relative py-20 lg:py-28 overflow-hidden"
         >
-            {/* Background decorations */}
-            <div className="absolute inset-0 overflow-hidden -z-10">
-                <div className="absolute top-1/4 -left-20 w-72 h-72 bg-blue-100/40 rounded-full blur-3xl" />
-                <div className="absolute bottom-1/4 -right-20 w-72 h-72 bg-purple-100/40 rounded-full blur-3xl" />
-            </div>
-
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Section Header */}
                 <div className="text-center mb-16 lg:mb-20">
@@ -90,14 +84,14 @@ export const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
                         <Rocket className="w-4 h-4" />
                         <span>Powerful Features</span>
                     </div>
-                    
+
                     <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
                         Everything You Need{' '}
                         <span className="bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                             to Launch
                         </span>
                     </h2>
-                    
+
                     <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
                         Seven powerful modules that guide you from raw idea to investor-ready startup.
                     </p>
@@ -115,7 +109,7 @@ export const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
                                     animationDelay: `${index * 100}ms`,
                                 }}
                             >
-                                
+
                                 {/* Icon Container */}
                                 <div className="relative mb-6">
                                     <div
@@ -123,7 +117,7 @@ export const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
                                     >
                                         <Icon className="w-7 h-7 text-white" />
                                     </div>
-                                    
+
                                     {/* Floating dots decoration */}
                                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                     <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-purple-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-75" />

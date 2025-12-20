@@ -49,7 +49,6 @@ const sizeStyles = {
   lg: "h-13 px-6 text-base rounded-xl",
 };
 
-
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
@@ -78,6 +77,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           transition-colors
           focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
           disabled:opacity-50 disabled:cursor-not-allowed
+          cursor-pointer
           ${variantStyles[variant]}
           ${sizeStyles[size]}
           ${className}

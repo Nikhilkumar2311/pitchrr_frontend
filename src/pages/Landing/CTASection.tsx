@@ -16,23 +16,12 @@ import { Button } from '@/components/ui';
 
 export function CTASection() {
     return (
-        <section className="relative py-20 lg:py-32 overflow-hidden">
-            {/* Background with linear */}
-            <div className="absolute inset-0 bg-linear-to-br from-blue-50 via-indigo-50 to-purple-50" />
-            
-            {/* Animated background elements */}
-            <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute top-1/4 -left-20 w-96 h-96 bg-blue-200/30 rounded-full blur-3xl animate-pulse" 
-                     style={{ animationDuration: '4s' }} />
-                <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-purple-200/30 rounded-full blur-3xl animate-pulse" 
-                     style={{ animationDuration: '6s', animationDelay: '1s' }} />
-            </div>
-
-            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="relative py-20 lg:py-28">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="relative bg-linear-to-br from-gray-900 via-blue-900 to-indigo-900 rounded-3xl overflow-hidden shadow-2xl">
                     {/* Grid pattern overlay */}
                     <div className="absolute inset-0 bg-[linear-linear(to_right,#ffffff08_1px,transparent_1px),linear-linear(to_bottom,#ffffff08_1px,transparent_1px)]" />
-                    
+
                     {/* Glow effects */}
                     <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl" />
                     <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
@@ -52,7 +41,7 @@ export function CTASection() {
                                     Startup?
                                 </span>
                                 <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 300 12" fill="none">
-                                    <path d="M2 10C43.5 3.5 256.5 2 298 10" stroke="url(#ctalinear)" strokeWidth="3" strokeLinecap="round"/>
+                                    <path d="M2 10C43.5 3.5 256.5 2 298 10" stroke="url(#ctalinear)" strokeWidth="3" strokeLinecap="round" />
                                     <defs>
                                         <linearGradient id="ctalinear" x1="0%" y1="0%" x2="100%" y2="0%">
                                             <stop offset="0%" stopColor="#60A5FA" />
@@ -73,8 +62,8 @@ export function CTASection() {
                         {/* CTA Button */}
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
                             <Link to="/register">
-                                <Button 
-                                    size="lg" 
+                                <Button
+                                    size="lg"
                                     className="bg-white text-gray-900 hover:bg-gray-100 shadow-xl hover:shadow-2xl px-10 py-5 text-lg group"
                                     rightIcon={<ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
                                 >

@@ -151,7 +151,7 @@ export default function Dashboard() {
             </div>
 
             {/* Quick Tips */}
-            <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+            <Card className="bg-linear-to-r from-blue-50 to-blue-100 border-blue-200">
                 <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
                     <div className="flex-1">
                         <h3 className="font-semibold text-blue-800">💡 Getting Started Tip</h3>

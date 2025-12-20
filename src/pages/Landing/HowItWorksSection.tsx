@@ -34,15 +34,7 @@ const steps = [
 
 export function HowItWorksSection() {
     return (
-        <section id="how-it-works" className="relative py-20 lg:py-32 bg-white overflow-hidden">
-            {/* Background decoration */}
-            <div className="absolute inset-0 overflow-hidden -z-10">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full">
-                    <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-100/30 rounded-full blur-3xl" />
-                    <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-100/30 rounded-full blur-3xl" />
-                </div>
-            </div>
-
+        <section id="how-it-works" className="relative py-20 lg:py-28">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Section Header */}
                 <div className="text-center mb-16 lg:mb-24">
@@ -50,7 +42,7 @@ export function HowItWorksSection() {
                         <Zap className="w-4 h-4" />
                         <span>Simple Process</span>
                     </div>
-                    
+
                     <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
                         How{' '}
                         <span className="bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
@@ -58,7 +50,7 @@ export function HowItWorksSection() {
                         </span>
                         {' '}Works
                     </h2>
-                    
+
                     <p className="text-xl text-gray-600 max-w-2xl mx-auto">
                         Three simple steps to go from idea to investor-ready
                     </p>
@@ -67,9 +59,9 @@ export function HowItWorksSection() {
                 {/* Steps */}
                 <div className="relative">
                     {/* Connection line - desktop only */}
-                    <div className="hidden lg:block absolute top-32 left-0 right-0 h-0.5 bg-linear-to-r from-blue-200 via-purple-200 to-green-200" 
-                         style={{ width: 'calc(100% - 200px)', left: '100px' }} />
-                    
+                    <div className="hidden lg:block absolute top-32 left-0 right-0 h-0.5 bg-linear-to-r from-blue-200 via-purple-200 to-green-200"
+                        style={{ width: 'calc(100% - 200px)', left: '100px' }} />
+
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-8">
                         {steps.map((item, index) => {
                             const Icon = item.icon;
@@ -88,10 +80,10 @@ export function HowItWorksSection() {
 
                                         {/* Icon */}
                                         <div className={`w-16 h-16 rounded-xl ${item.bgColor} flex items-center justify-center mb-6 mt-4 group-hover:scale-110 transition-transform duration-300`}>
-                                            <Icon className={`w-8 h-8 bg-linear-to-br ${item.color} bg-clip-text text-transparent`} 
-                                                  style={{ 
-                                                      filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))'
-                                                  }} 
+                                            <Icon className={`w-8 h-8 bg-linear-to-br ${item.color} bg-clip-text text-transparent`}
+                                                style={{
+                                                    filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))'
+                                                }}
                                             />
                                         </div>
 
@@ -99,7 +91,7 @@ export function HowItWorksSection() {
                                         <h3 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-transparent group-hover:bg-linear-to-r group-hover:from-gray-900 group-hover:to-gray-700 group-hover:bg-clip-text transition-all duration-300">
                                             {item.title}
                                         </h3>
-                                        
+
                                         <p className="text-gray-600 leading-relaxed">
                                             {item.description}
                                         </p>

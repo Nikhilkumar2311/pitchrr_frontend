@@ -32,11 +32,10 @@ export function Header() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
             <div className="relative">
-              <div className="absolute inset-0 bg-linear-to-r from-blue-600 to-indigo-600 rounded-lg blur opacity-25 group-hover:opacity-40 transition-opacity" />
-              <img 
-                src="/logo.svg" 
-                alt="Pitchrr" 
-                className="h-8 relative z-10 transition-transform group-hover:scale-105" 
+              <img
+                src="/logo.svg"
+                alt="Pitchrr"
+                className="h-8 relative z-10 transition-transform group-hover:scale-105"
               />
             </div>
           </Link>
@@ -59,16 +58,12 @@ export function Header() {
           <div className="hidden lg:flex items-center gap-3">
             {isAuthenticated ? (
               <Link to="/dashboard">
-                <Button>
-                  Dashboard
-                </Button>
+                <Button>Dashboard</Button>
               </Link>
             ) : (
               <>
                 <Link to="/login">
-                  <Button variant="ghost">
-                    Login
-                  </Button>
+                  <Button variant="ghost">Login</Button>
                 </Link>
                 <Link to="/register">
                   <Button className="group">
@@ -122,14 +117,15 @@ export function Header() {
               <div className="pt-4 mt-4 border-t border-gray-200 space-y-3">
                 {isAuthenticated ? (
                   <Link to="/dashboard" className="block">
-                    <Button className="w-full justify-center">
-                      Dashboard
-                    </Button>
+                    <Button className="w-full justify-center">Dashboard</Button>
                   </Link>
                 ) : (
                   <>
                     <Link to="/login" className="block">
-                      <Button variant="secondary" className="w-full justify-center">
+                      <Button
+                        variant="secondary"
+                        className="w-full justify-center"
+                      >
                         Login
                       </Button>
                     </Link>
