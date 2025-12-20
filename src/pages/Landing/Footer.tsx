@@ -36,7 +36,6 @@ const socialLinks = [
 export function Footer() {
     return (
         <footer className="relative bg-gray-50 border-t border-gray-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Main Footer Content */}
                 <div className="py-12 lg:py-16">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
@@ -140,7 +139,6 @@ export function Footer() {
                         </div>
                     </div>
                 </div>
-            </div>
 
             {/* Decorative linear line at top */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-blue-500 via-indigo-500 to-purple-500" />
