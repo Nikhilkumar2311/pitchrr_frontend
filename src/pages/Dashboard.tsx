@@ -19,6 +19,7 @@ import {
     Download,
     Play,
     Sparkles,
+    X,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, Button, ProgressBar, Badge } from '@/components/ui';
 import { useAuthStore, useIdeaStore } from '@/store';
@@ -60,6 +61,7 @@ export default function Dashboard() {
     const { setIdea, currentIdea } = useIdeaStore();
     const [isLoading, setIsLoading] = useState(true);
     const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+    const [isIdeaBannerVisible, setIsIdeaBannerVisible] = useState(true);
 
     const overallProgress = Math.round(modules.reduce((acc, m) => acc + m.progress, 0) / modules.length);
 
@@ -126,8 +128,15 @@ export default function Dashboard() {
                 </div>
 
                 {/* Current Idea Card - Show if idea exists */}
-                {currentIdea && (
-                    <Card className="bg-linear-to-r from-blue-50 to-indigo-50 border-blue-200">
+                {currentIdea && isIdeaBannerVisible && (
+                    <Card className="bg-linear-to-r from-blue-50 to-indigo-50 border-blue-200 relative">
+                        <button
+                            onClick={() => setIsIdeaBannerVisible(false)}
+                            className="absolute top-2 right-2 p-1 text-blue-300 hover:text-blue-600 hover:bg-white/50 rounded-full transition-colors"
+                            title="Dismiss"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
                         <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
                             <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shrink-0">
                                 <Lightbulb className="w-6 h-6 text-white" />
