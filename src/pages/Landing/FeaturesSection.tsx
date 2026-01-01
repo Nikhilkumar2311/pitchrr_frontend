@@ -15,7 +15,8 @@ import {
   MessageSquare,
   ArrowRight,
 } from "lucide-react";
-import { useAuthStore } from "@/store";
+import { useAuth } from "@clerk/clerk-react";
+import { useUIStore } from "@/store";
 
 /**
  * The 7 modules shown in the features section
@@ -88,7 +89,7 @@ const modules = [
 
 export const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
+  const { isSignedIn } = useAuth();
 
   /**
    * Handle "Learn more" click
@@ -96,7 +97,7 @@ export const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
    * - If not authenticated: navigate to register with redirect back to module
    */
   const handleLearnMore = (modulePath: string) => {
-    if (isAuthenticated) {
+    if (isSignedIn) {
       navigate(modulePath);
     } else {
       // Redirect to register with state to redirect back after login
@@ -187,13 +188,26 @@ export const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
           <p className="text-lg text-gray-600 mb-6">
             Ready to transform your startup idea?
           </p>
-          <Link
-            to={isAuthenticated ? "/dashboard" : "/register"}
-            className="inline-flex items-center gap-2 px-8 py-4 bg-linear-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
-          >
-            Get Started Free
-            <ArrowRight className="w-5 h-5" />
-          </Link>
+          {isSignedIn ? (
+            <Link
+              to="/dashboard"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-linear-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+            >
+              Get Started Free
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+          ) : (
+            <button
+              onClick={() => {
+                useUIStore.getState().setAuthModalView('signup');
+                useUIStore.getState().setAuthModalOpen(true);
+              }}
+              className="inline-flex items-center gap-2 px-8 py-4 bg-linear-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+            >
+              Get Started Free
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </div>
     </section>

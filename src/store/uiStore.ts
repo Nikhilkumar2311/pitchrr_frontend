@@ -21,6 +21,7 @@ interface UIStore {
 
     // Auth Modal state
     isAuthModalOpen: boolean;
+    authModalView: 'signin' | 'signup' | 'forgot-password' | 'verify-email' | 'reset-password-code';
 
     // Actions
     toggleSidebar: () => void;
@@ -28,6 +29,7 @@ interface UIStore {
     toggleSidebarCollapse: () => void;
     setSidebarCollapsed: (collapsed: boolean) => void;
     setAuthModalOpen: (open: boolean) => void;
+    setAuthModalView: (view: 'signin' | 'signup' | 'forgot-password' | 'verify-email' | 'reset-password-code') => void;
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -35,6 +37,7 @@ export const useUIStore = create<UIStore>((set) => ({
     isSidebarOpen: false,        // Mobile sidebar drawer
     isSidebarCollapsed: false,   // Desktop sidebar collapse
     isAuthModalOpen: false,
+    authModalView: 'signin',
 
     // Toggle sidebar open/closed (mobile)
     toggleSidebar: () => set((state) => ({
@@ -56,4 +59,5 @@ export const useUIStore = create<UIStore>((set) => ({
 
     // Auth Modal actions
     setAuthModalOpen: (open: boolean) => set({ isAuthModalOpen: open }),
+    setAuthModalView: (view: 'signin' | 'signup' | 'forgot-password' | 'verify-email' | 'reset-password-code') => set({ authModalView: view }),
 }));

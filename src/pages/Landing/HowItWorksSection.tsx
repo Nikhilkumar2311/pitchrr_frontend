@@ -4,6 +4,7 @@
  */
 
 import { ArrowRight, Sparkles, Zap, Download } from 'lucide-react';
+import { useUIStore } from '@/store';
 
 const steps = [
     {
@@ -135,7 +136,13 @@ export function HowItWorksSection() {
                             Join 1,247+ founders building with Pitchrr
                         </p>
                     </div>
-                    <button className="shrink-0 inline-flex items-center gap-2 px-8 py-4 bg-linear-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200">
+                    <button
+                        onClick={() => {
+                            useUIStore.getState().setAuthModalView('signup');
+                            useUIStore.getState().setAuthModalOpen(true);
+                        }}
+                        className="shrink-0 inline-flex items-center gap-2 px-8 py-4 bg-linear-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+                    >
                         Start Free Trial
                         <ArrowRight className="w-5 h-5" />
                     </button>

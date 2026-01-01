@@ -49,7 +49,6 @@ api.interceptors.request.use(
                 const token = await getToken();
                 if (token && config.headers) {
                     config.headers.Authorization = `Bearer ${token}`;
-                    console.log('[API] Request:', config.url, 'Token attached:', token.substring(0, 10) + '...');
                 } else {
                     console.warn('[API] Request:', config.url, 'No token available from Clerk');
                 }

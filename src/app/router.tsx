@@ -22,12 +22,13 @@
  * /dashboard/chat      - Module 7: AI Chatbot
  */
 
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { Rocket } from 'lucide-react';
 
 // Components
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
+import { AuthModal } from '@/components/common/AuthModal';
 
 /**
  * LAZY LOADING EXPLAINED
@@ -76,6 +77,19 @@ function LazyPage({ children }: { children: React.ReactNode }) {
 }
 
 /**
+ * Root Layout that wraps everything
+ * This ensures AuthModal is inside the Router Context
+ */
+function RootLayout() {
+    return (
+        <>
+            <Outlet />
+            <AuthModal />
+        </>
+    );
+}
+
+/**
  * Router Configuration
  * 
  * createBrowserRouter is the recommended way to create routes in React Router v6.
@@ -84,99 +98,104 @@ function LazyPage({ children }: { children: React.ReactNode }) {
 import { AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
 
 const router = createBrowserRouter([
-    // PUBLIC ROUTES (no authentication required)
     {
-        path: '/',
-        element: <LazyPage><Landing /></LazyPage>,
-    },
-    {
-        path: '/login',
-        element: <LazyPage><Login /></LazyPage>,
-    },
-    {
-        path: '/register',
-        element: <LazyPage><Register /></LazyPage>,
-    },
-    {
-        path: '/sso-callback',
-        element: (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-                <div className="flex flex-col items-center space-y-4 animate-pulse">
-                    <div className="p-3 bg-blue-100 rounded-full">
-                        <Rocket className="w-8 h-8 text-blue-600" />
-                    </div>
-                    <div className="text-center">
-                        <h2 className="text-xl font-semibold text-gray-900">Verifying Identity</h2>
-                        <p className="text-sm text-gray-500">Securely logging you in...</p>
-                    </div>
-                </div>
-                {/* 
+        element: <RootLayout />,
+        children: [
+            // PUBLIC ROUTES (no authentication required)
+            {
+                path: '/',
+                element: <LazyPage><Landing /></LazyPage>,
+            },
+            {
+                path: '/login',
+                element: <LazyPage><Login /></LazyPage>,
+            },
+            {
+                path: '/register',
+                element: <LazyPage><Register /></LazyPage>,
+            },
+            {
+                path: '/sso-callback',
+                element: (
+                    <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+                        <div className="flex flex-col items-center space-y-4 animate-pulse">
+                            <div className="p-3 bg-blue-100 rounded-full">
+                                <Rocket className="w-8 h-8 text-blue-600" />
+                            </div>
+                            <div className="text-center">
+                                <h2 className="text-xl font-semibold text-gray-900">Verifying Identity</h2>
+                                <p className="text-sm text-gray-500">Securely logging you in...</p>
+                            </div>
+                        </div>
+                        {/* 
                   The Callback component is technically invisible but handles the handshake. 
                   We keep it rendered but let our UI take the spotlight. 
                 */}
-                <div className="hidden">
-                    <AuthenticateWithRedirectCallback
-                        signInForceRedirectUrl="/dashboard"
-                        signUpForceRedirectUrl="/dashboard"
-                    />
-                </div>
-            </div>
-        ),
-    },
+                        <div className="hidden">
+                            <AuthenticateWithRedirectCallback
+                                signInForceRedirectUrl="/dashboard"
+                                signUpForceRedirectUrl="/dashboard"
+                            />
+                        </div>
+                    </div>
+                ),
+            },
 
-    // PROTECTED ROUTES (authentication required)
-    {
-        path: '/dashboard',
-        element: (
-            <ProtectedRoute>
-                <LazyPage>
-                    <DashboardLayout />
-                </LazyPage>
-            </ProtectedRoute>
-        ),
-        children: [
-            // Dashboard home
+            // PROTECTED ROUTES (authentication required)
             {
-                index: true, // This is shown at /dashboard
-                element: <LazyPage><Dashboard /></LazyPage>,
+                path: '/dashboard',
+                element: (
+                    <ProtectedRoute>
+                        <LazyPage>
+                            <DashboardLayout />
+                        </LazyPage>
+                    </ProtectedRoute>
+                ),
+                children: [
+                    // Dashboard home
+                    {
+                        index: true, // This is shown at /dashboard
+                        element: <LazyPage><Dashboard /></LazyPage>,
+                    },
+                    // Module 1: Idea Validation
+                    {
+                        path: 'idea',
+                        element: <LazyPage><IdeaValidation /></LazyPage>,
+                    },
+                    // Module 2: Marketing Strategy
+                    {
+                        path: 'marketing',
+                        element: <LazyPage><MarketingStrategy /></LazyPage>,
+                    },
+                    // Module 3: Branding
+                    {
+                        path: 'branding',
+                        element: <LazyPage><Branding /></LazyPage>,
+                    },
+                    // Module 4: Pitch Deck
+                    {
+                        path: 'pitch',
+                        element: <LazyPage><PitchDeck /></LazyPage>,
+                    },
+                    // Module 5: GTM Strategy
+                    {
+                        path: 'gtm',
+                        element: <LazyPage><GTMStrategy /></LazyPage>,
+                    },
+                    // Module 6: Competitor Analysis
+                    {
+                        path: 'competitors',
+                        element: <LazyPage><CompetitorAnalysis /></LazyPage>,
+                    },
+                    // Module 7: Startup AI Chatbot
+                    {
+                        path: 'chat',
+                        element: <LazyPage><StartupChatbot /></LazyPage>,
+                    },
+                ],
             },
-            // Module 1: Idea Validation
-            {
-                path: 'idea',
-                element: <LazyPage><IdeaValidation /></LazyPage>,
-            },
-            // Module 2: Marketing Strategy
-            {
-                path: 'marketing',
-                element: <LazyPage><MarketingStrategy /></LazyPage>,
-            },
-            // Module 3: Branding
-            {
-                path: 'branding',
-                element: <LazyPage><Branding /></LazyPage>,
-            },
-            // Module 4: Pitch Deck
-            {
-                path: 'pitch',
-                element: <LazyPage><PitchDeck /></LazyPage>,
-            },
-            // Module 5: GTM Strategy
-            {
-                path: 'gtm',
-                element: <LazyPage><GTMStrategy /></LazyPage>,
-            },
-            // Module 6: Competitor Analysis
-            {
-                path: 'competitors',
-                element: <LazyPage><CompetitorAnalysis /></LazyPage>,
-            },
-            // Module 7: Startup AI Chatbot
-            {
-                path: 'chat',
-                element: <LazyPage><StartupChatbot /></LazyPage>,
-            },
-        ],
-    },
+        ]
+    }
 ]);
 
 /**

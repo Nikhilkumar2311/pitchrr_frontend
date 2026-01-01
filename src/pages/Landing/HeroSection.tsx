@@ -4,12 +4,14 @@
  */
 
 import { forwardRef } from "react";
-import { Link } from "react-router-dom";
-import { ArrowRight /*Check*/ } from "lucide-react";
+import { ArrowRight } from 'lucide-react';
+import { useUIStore } from '@/store';
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui";
 
 export const HeroSection = forwardRef<HTMLElement>((_, ref) => {
+  const { setAuthModalOpen, setAuthModalView } = useUIStore();
+
   return (
     <section ref={ref} className="relative py-20 lg:py-28">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -80,16 +82,26 @@ export const HeroSection = forwardRef<HTMLElement>((_, ref) => {
 
           {/* CTA Buttons */}
           <div className="hero-cta flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-4 mt-8 opacity-0 translate-y-8">
-            <Link to="/register">
-              <Button size="lg" rightIcon={<ArrowRight className="w-5 h-5" />}>
-                Start Free Trial
-              </Button>
-            </Link>
-            <Link to="#features">
-              <Button variant="secondary" size="lg">
-                Watch Demo
-              </Button>
-            </Link>
+            <Button
+              size="lg"
+              rightIcon={<ArrowRight className="w-5 h-5" />}
+              onClick={() => {
+                setAuthModalView('signup');
+                setAuthModalOpen(true);
+              }}
+            >
+              Start Free Trial
+            </Button>
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={() => {
+                setAuthModalView('signin'); // Or 'signup' depending on desired demo flow
+                setAuthModalOpen(true);
+              }}
+            >
+              Watch Demo
+            </Button>
           </div>
 
           {/* Trust indicators */}

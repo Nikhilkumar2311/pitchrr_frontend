@@ -19,7 +19,8 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { useAuthStore, useUIStore } from "@/store";
+import { useUIStore } from "@/store";
+import { useClerk } from "@clerk/clerk-react";
 
 const navItems = [
   { icon: Home, label: "Dashboard", path: "/dashboard" },
@@ -38,7 +39,7 @@ const navItems = [
 
 export function Sidebar() {
   const location = useLocation();
-  const { logout } = useAuthStore();
+  const { signOut } = useClerk();
   const {
     isSidebarOpen,
     isSidebarCollapsed,
@@ -69,10 +70,9 @@ export function Sidebar() {
           fixed top-0 left-0 h-screen bg-white border-r border-gray-200 z-50
           transition-all duration-300 ease-in-out
           ${sidebarWidth}
-          ${
-            isSidebarOpen
-              ? "translate-x-0"
-              : "-translate-x-full lg:translate-x-0"
+          ${isSidebarOpen
+            ? "translate-x-0"
+            : "-translate-x-full lg:translate-x-0"
           }
         `}
       >
@@ -124,10 +124,9 @@ export function Sidebar() {
                     className={`
                       flex items-center gap-3 px-3 py-2.5 rounded-lg
                       transition-colors duration-200
-                      ${
-                        isActive
-                          ? "bg-blue-50 text-blue-600"
-                          : "text-gray-600 hover:bg-gray-100"
+                      ${isActive
+                        ? "bg-blue-50 text-blue-600"
+                        : "text-gray-600 hover:bg-gray-100"
                       }
                     `}
                     onClick={() => setSidebarOpen(false)}
@@ -146,8 +145,8 @@ export function Sidebar() {
         {/* Logout */}
         <div className="p-3 border-t border-gray-200">
           <button
-            onClick={logout}
-            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors"
+            onClick={() => signOut()}
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer"
           >
             <LogOut className="w-5 h-5 shrink-0" />
             {!isSidebarCollapsed && (

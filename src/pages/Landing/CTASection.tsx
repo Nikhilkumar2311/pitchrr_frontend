@@ -5,6 +5,7 @@
 
 import { Link } from "react-router-dom";
 import { ArrowRight, /*Sparkles, Check,*/ Zap /*Shield*/ } from "lucide-react";
+import { useUIStore } from '@/store';
 import { Button } from "@/components/ui";
 
 // const features = [
@@ -76,17 +77,17 @@ export function CTASection() {
 
           {/* CTA Button */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-            <Link to="/register">
-              <Button
-                size="lg"
-                className="bg-white text-gray-900 hover:bg-gray-100 shadow-xl hover:shadow-2xl px-10 py-5 text-lg group"
-                rightIcon={
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                }
-              >
-                Get Started for Free
-              </Button>
-            </Link>
+            <Button
+              onClick={() => {
+                const { setAuthModalOpen, setAuthModalView } = useUIStore.getState();
+                setAuthModalView('signup');
+                setAuthModalOpen(true);
+              }}
+              className="inline-flex items-center justify-center gap-2 px-8 py-6 bg-white text-blue-600 font-bold rounded-lg hover:bg-gray-50 hover:scale-105 transition-all duration-200 shadow-lg"
+              rightIcon={<ArrowRight className="w-4 h-4" />}
+            >
+              Start Building Now
+            </Button>
             <Link to="#how-it-works">
               <button className="inline-flex items-center gap-2 px-8 py-4 bg-white/10 backdrop-blur-sm text-white font-semibold rounded-lg border border-white/20 hover:bg-white/20 transition-all duration-200">
                 <Zap className="w-5 h-5" />
