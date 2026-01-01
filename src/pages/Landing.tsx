@@ -58,26 +58,22 @@ export default function Landing() {
              */
             const heroTimeline = gsap.timeline();
 
-            heroTimeline.from('.hero-heading', {
-                y: 60,
-                opacity: 0,
-                duration: 0.8,
-                ease: 'power3.out',
-            });
+            heroTimeline.fromTo('.hero-heading',
+                { y: 60, opacity: 0 },
+                { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out' }
+            );
 
-            heroTimeline.from('.hero-description', {
-                y: 40,
-                opacity: 0,
-                duration: 0.6,
-                ease: 'power3.out',
-            }, '-=0.4');
+            heroTimeline.fromTo('.hero-description',
+                { y: 40, opacity: 0 },
+                { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' },
+                '-=0.4'
+            );
 
-            heroTimeline.from('.hero-cta', {
-                y: 30,
-                opacity: 0,
-                duration: 0.5,
-                ease: 'power3.out',
-            }, '-=0.3');
+            heroTimeline.fromTo('.hero-cta',
+                { y: 30, opacity: 0 },
+                { y: 0, opacity: 1, duration: 0.5, ease: 'power3.out' },
+                '-=0.3'
+            );
 
             /**
              * FEATURE CARDS ANIMATION

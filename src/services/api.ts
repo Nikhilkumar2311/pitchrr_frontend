@@ -18,14 +18,13 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import toast from 'react-hot-toast';
 
 /**
- * Create the axios instance with default configuration
- * 
- * baseURL: Will be set from environment variable
- * timeout: 30 seconds (prevent hanging requests)
- * headers: JSON content type by default
+ * We cannot use Clerk hooks (useAuth) directly here because this is a plain TS file.
+ * Instead, we will export a function to initialize the interceptor with the Clerk session.
+ * OR, more simply, we can use window.Clerk if available, but the best practice
+ * is to pass the token getter to the instance.
  */
+
 const api = axios.create({
-    // Use environment variable for API URL, fallback to localhost for development
     baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
     timeout: 30000,
     headers: {
@@ -33,32 +32,41 @@ const api = axios.create({
     },
 });
 
+// For Clerk integration, we'll set this dynamically from a provider/hook later
+let getToken: (() => Promise<string | null>) | null = null;
+
+export const setTokenGetter = (fn: () => Promise<string | null>) => {
+    getToken = fn;
+};
+
 /**
  * REQUEST INTERCEPTOR
- * 
- * Runs BEFORE every request is sent.
- * Used to attach the auth token to requests.
- * 
- * localStorage.getItem('token') - gets saved token
- * Authorization header - standard way to send tokens
  */
 api.interceptors.request.use(
-    (config: InternalAxiosRequestConfig) => {
-        // Get token from localStorage (set during login)
-        const token = localStorage.getItem('token');
-
-        // If token exists, add it to the request header
-        if (token && config.headers) {
-            config.headers.Authorization = `Bearer ${token}`;
+    async (config: InternalAxiosRequestConfig) => {
+        if (getToken) {
+            try {
+                const token = await getToken();
+                if (token && config.headers) {
+                    config.headers.Authorization = `Bearer ${token}`;
+                    console.log('[API] Request:', config.url, 'Token attached:', token.substring(0, 10) + '...');
+                } else {
+                    console.warn('[API] Request:', config.url, 'No token available from Clerk');
+                }
+            } catch (err) {
+                console.error('[API] Error getting token:', err);
+            }
+        } else {
+            console.warn('[API] Request:', config.url, 'getToken function not set');
         }
-
         return config;
     },
     (error: AxiosError) => {
-        // Request failed before being sent
+        console.error('[API] Request Error:', error);
         return Promise.reject(error);
     }
 );
+
 
 /**
  * RESPONSE INTERCEPTOR
@@ -85,17 +93,12 @@ api.interceptors.response.use(
             switch (status) {
                 case 401:
                     // Unauthorized - token expired or invalid
-                    // Clear local storage and redirect to login
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
+                    // We let the app handle the auth state. Do NOT force redirect here
+                    // as it causes loops if a background check fails.
+                    console.warn("API 401 Unauthorized:", message);
 
-                    // Show toast notification
-                    toast.error('Session expired. Please login again.');
-
-                    // Redirect to login (only if we're not already there)
-                    if (window.location.pathname !== '/login') {
-                        window.location.href = '/login';
-                    }
+                    // Optional: You could broadcast an event here if needed
+                    // eventBus.emit('auth:unauthorized');
                     break;
 
                 case 403:

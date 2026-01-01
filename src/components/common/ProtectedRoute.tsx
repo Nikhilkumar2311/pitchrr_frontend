@@ -16,7 +16,7 @@
  */
 
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuthStore } from '@/store';
+import { useAuth } from '@clerk/clerk-react';
 import type { ReactNode } from 'react';
 
 interface ProtectedRouteProps {
@@ -24,20 +24,26 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-    // Get auth status from Zustand store
-    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-
-    // Get current location (URL) for redirect after login
+    // Get auth status from Clerk
+    const { isLoaded, isSignedIn } = useAuth();
     const location = useLocation();
 
+    // Show loading state while Clerk loads
+    if (!isLoaded) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        );
+    }
+
     // If not authenticated, redirect to login
-    // "state" saves where the user was trying to go, so we can redirect back after login
-    if (!isAuthenticated) {
+    if (!isSignedIn) {
         return (
             <Navigate
                 to="/login"
                 state={{ from: location }}
-                replace  // Replace current history entry (don't add to history)
+                replace
             />
         );
     }

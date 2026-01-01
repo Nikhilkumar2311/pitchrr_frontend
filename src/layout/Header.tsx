@@ -5,9 +5,11 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LayoutDashboard, LogOut } from "lucide-react";
 import { Button } from "@/components/ui";
-import { useAuthStore } from "@/store";
+import { useUIStore } from "@/store";
+import { useUser, useClerk } from "@clerk/clerk-react";
+import { UserAvatar } from "@/components/common/UserAvatar";
 
 const navLinks = [
     { label: "Features", href: "#features" },
@@ -17,7 +19,9 @@ const navLinks = [
 
 export function Header() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const { isAuthenticated } = useAuthStore();
+    const { setAuthModalOpen } = useUIStore();
+    const { user, isLoaded } = useUser();
+    const { signOut } = useClerk();
     const location = useLocation();
 
     // Don't render header on dashboard routes
@@ -55,19 +59,51 @@ export function Header() {
                     </div>
 
                     {/* Desktop Auth Buttons */}
-                    <div className="hidden lg:flex items-center gap-3">
-                        {isAuthenticated ? (
-                            <Link to="/dashboard">
-                                <Button>Dashboard</Button>
-                            </Link>
-                        ) : (
-                            <>
-                                <Link to="/register">
-                                    <Button className="group">
-                                        Get Started
+                    <div className="hidden lg:flex items-center gap-4">
+                        {!isLoaded ? (
+                            <div className="w-10 h-10 rounded-full bg-gray-100 animate-pulse" />
+                        ) : user ? (
+                            <div className="flex items-center gap-3">
+                                <Link to="/dashboard">
+                                    <Button
+                                        variant="secondary"
+                                        leftIcon={<LayoutDashboard className="w-4 h-4" />}
+                                    >
+                                        Dashboard
                                     </Button>
                                 </Link>
-                            </>
+                                <div className="relative group">
+                                    <UserAvatar
+                                        name={user.firstName || user.username || user.primaryEmailAddress?.emailAddress}
+                                        imageUrl={user.imageUrl}
+                                    />
+                                    {/* Quick Dropdown Mock (to be improved) */}
+                                    <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all py-2 z-50">
+                                        <div className="px-4 py-2 border-b border-gray-50 mb-1">
+                                            <p className="text-xs font-semibold text-gray-900 truncate">
+                                                {user.fullName || 'User'}
+                                            </p>
+                                            <p className="text-[10px] text-gray-500 truncate">
+                                                {user.primaryEmailAddress?.emailAddress}
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() => signOut()}
+                                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                                        >
+                                            <LogOut className="w-4 h-4" />
+                                            Logout
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <Button
+                                className="group"
+                                onClick={() => setAuthModalOpen(true)}
+                            >
+                                Get Started
+                            </Button>
                         )}
                     </div>
 
@@ -111,26 +147,20 @@ export function Header() {
                                 </motion.a>
                             ))}
                             <div className="pt-4 mt-4 border-t border-gray-200 space-y-3">
-                                {isAuthenticated ? (
-                                    <Link to="/dashboard" className="block">
+                                {user ? (
+                                    <Link to="/dashboard" className="block" onClick={() => setIsMobileMenuOpen(false)}>
                                         <Button className="w-full justify-center">Dashboard</Button>
                                     </Link>
                                 ) : (
-                                    <>
-                                        <Link to="/login" className="block">
-                                            <Button
-                                                variant="secondary"
-                                                className="w-full justify-center"
-                                            >
-                                                Login
-                                            </Button>
-                                        </Link>
-                                        <Link to="/register" className="block">
-                                            <Button className="w-full justify-center">
-                                                Get Started
-                                            </Button>
-                                        </Link>
-                                    </>
+                                    <Button
+                                        className="w-full justify-center"
+                                        onClick={() => {
+                                            setIsMobileMenuOpen(false);
+                                            setAuthModalOpen(true);
+                                        }}
+                                    >
+                                        Get Started
+                                    </Button>
                                 )}
                             </div>
                         </div>
@@ -140,3 +170,4 @@ export function Header() {
         </header>
     );
 }
+

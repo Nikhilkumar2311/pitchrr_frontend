@@ -11,7 +11,7 @@ import { Button } from "@/components/ui";
 
 export const HeroSection = forwardRef<HTMLElement>((_, ref) => {
   return (
-    <section ref={ref} className="relative py-20 lg:py-28 overflow-hidden">
+    <section ref={ref} className="relative py-20 lg:py-28">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
         {/* Left: Text Content */}
         <div className="text-center lg:text-left">
@@ -30,12 +30,7 @@ export const HeroSection = forwardRef<HTMLElement>((_, ref) => {
           </motion.div>
 
           {/* Main Headline with stagger animation */}
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight tracking-tight"
-          >
+          <h1 className="hero-heading text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight tracking-tight opacity-0 translate-y-8">
             Turn Your Startup Idea Into{" "}
             <span className="relative inline-block">
               <span className="bg-linear-to-r from-blue-600 via-indigo-600 to-blue-700 bg-clip-text text-transparent">
@@ -73,28 +68,18 @@ export const HeroSection = forwardRef<HTMLElement>((_, ref) => {
                 </defs>
               </motion.svg>
             </span>
-          </motion.h1>
+          </h1>
 
           {/* Description */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-6 text-lg lg:text-xl text-gray-600 leading-relaxed"
-          >
+          <p className="hero-description mt-6 text-lg lg:text-xl text-gray-600 leading-relaxed opacity-0 translate-y-8">
             Validate, brand, and pitch your startup with AI-powered tools.
             <span className="block mt-2 text-gray-700 font-medium">
               Go from idea to investor-ready in days, not months.
             </span>
-          </motion.p>
+          </p>
 
           {/* CTA Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-4 mt-8"
-          >
+          <div className="hero-cta flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-4 mt-8 opacity-0 translate-y-8">
             <Link to="/register">
               <Button size="lg" rightIcon={<ArrowRight className="w-5 h-5" />}>
                 Start Free Trial
@@ -105,7 +90,7 @@ export const HeroSection = forwardRef<HTMLElement>((_, ref) => {
                 Watch Demo
               </Button>
             </Link>
-          </motion.div>
+          </div>
 
           {/* Trust indicators */}
           <motion.div

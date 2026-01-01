@@ -19,17 +19,22 @@ interface UIStore {
     isSidebarOpen: boolean;
     isSidebarCollapsed: boolean; // For desktop: full vs mini sidebar
 
+    // Auth Modal state
+    isAuthModalOpen: boolean;
+
     // Actions
     toggleSidebar: () => void;
     setSidebarOpen: (open: boolean) => void;
     toggleSidebarCollapse: () => void;
     setSidebarCollapsed: (collapsed: boolean) => void;
+    setAuthModalOpen: (open: boolean) => void;
 }
 
 export const useUIStore = create<UIStore>((set) => ({
     // Initial state
     isSidebarOpen: false,        // Mobile sidebar drawer
     isSidebarCollapsed: false,   // Desktop sidebar collapse
+    isAuthModalOpen: false,
 
     // Toggle sidebar open/closed (mobile)
     toggleSidebar: () => set((state) => ({
@@ -48,4 +53,7 @@ export const useUIStore = create<UIStore>((set) => ({
     setSidebarCollapsed: (collapsed: boolean) => set({
         isSidebarCollapsed: collapsed
     }),
+
+    // Auth Modal actions
+    setAuthModalOpen: (open: boolean) => set({ isAuthModalOpen: open }),
 }));

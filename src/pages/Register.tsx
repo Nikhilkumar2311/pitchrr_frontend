@@ -58,19 +58,6 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="p-4 lg:p-6">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 group">
-          <div className="relative">
-            <img
-              src="/logo.svg"
-              alt="Pitchrr"
-              className="h-8 relative z-10 transition-transform group-hover:scale-105"
-            />
-          </div>
-        </Link>
-      </header>
-
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">

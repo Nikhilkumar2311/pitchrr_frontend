@@ -56,7 +56,7 @@ export const BenefitsSection = forwardRef<HTMLElement>((_, ref) => {
               return (
                 <div
                   key={benefit.title}
-                  className="group flex gap-4 p-5 rounded-xl bg-gray-50 border border-gray-200 hover:bg-white hover:border-gray-300 hover:shadow-lg transition-all duration-300"
+                  className="benefit-item group flex gap-4 p-5 rounded-xl bg-gray-50 border border-gray-200 hover:bg-white hover:border-gray-300 hover:shadow-lg transition-all duration-300"
                 >
                   <div
                     className={`shrink-0 w-14 h-14 rounded-xl bg-linear-to-br ${benefit.gradient} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}

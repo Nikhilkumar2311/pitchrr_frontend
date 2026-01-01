@@ -24,6 +24,7 @@
 
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
+import { Rocket } from 'lucide-react';
 
 // Components
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
@@ -80,6 +81,8 @@ function LazyPage({ children }: { children: React.ReactNode }) {
  * createBrowserRouter is the recommended way to create routes in React Router v6.
  * It enables data loading and other advanced features.
  */
+import { AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
+
 const router = createBrowserRouter([
     // PUBLIC ROUTES (no authentication required)
     {
@@ -93,6 +96,32 @@ const router = createBrowserRouter([
     {
         path: '/register',
         element: <LazyPage><Register /></LazyPage>,
+    },
+    {
+        path: '/sso-callback',
+        element: (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+                <div className="flex flex-col items-center space-y-4 animate-pulse">
+                    <div className="p-3 bg-blue-100 rounded-full">
+                        <Rocket className="w-8 h-8 text-blue-600" />
+                    </div>
+                    <div className="text-center">
+                        <h2 className="text-xl font-semibold text-gray-900">Verifying Identity</h2>
+                        <p className="text-sm text-gray-500">Securely logging you in...</p>
+                    </div>
+                </div>
+                {/* 
+                  The Callback component is technically invisible but handles the handshake. 
+                  We keep it rendered but let our UI take the spotlight. 
+                */}
+                <div className="hidden">
+                    <AuthenticateWithRedirectCallback
+                        signInForceRedirectUrl="/dashboard"
+                        signUpForceRedirectUrl="/dashboard"
+                    />
+                </div>
+            </div>
+        ),
     },
 
     // PROTECTED ROUTES (authentication required)

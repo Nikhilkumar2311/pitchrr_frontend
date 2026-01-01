@@ -138,7 +138,7 @@ export const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
             return (
               <div
                 key={module.title}
-                className="group relative bg-white rounded-2xl p-8 border border-gray-200 hover:border-gray-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
+                className="feature-card group relative bg-white rounded-2xl p-8 border border-gray-200 hover:border-gray-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
                 style={{
                   animationDelay: `${index * 100}ms`,
                 }}

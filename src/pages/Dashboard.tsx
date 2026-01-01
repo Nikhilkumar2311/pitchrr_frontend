@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useUser } from '@clerk/clerk-react';
 import {
     Lightbulb,
     Megaphone,
@@ -22,7 +23,7 @@ import {
     X,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, Button, ProgressBar, Badge } from '@/components/ui';
-import { useAuthStore, useIdeaStore } from '@/store';
+import { useIdeaStore } from '@/store';
 import { GenerateIdeaModal } from '@/components/common/GenerateIdeaModal';
 import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeleton';
 
@@ -57,7 +58,7 @@ const getStatusBadge = (status: ModuleStatus) => {
 
 export default function Dashboard() {
     const navigate = useNavigate();
-    const { user } = useAuthStore();
+    const { user } = useUser();
     const { setIdea, currentIdea } = useIdeaStore();
     const [isLoading, setIsLoading] = useState(true);
     const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
@@ -99,9 +100,9 @@ export default function Dashboard() {
                 {/* Welcome Section */}
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
-                            Welcome back, {user?.name?.split(' ')[0] || 'Founder'}! 👋
-                        </h1>
+                        <h2 className="text-2xl lg:text-3xl font-bold text-gray-900">
+                            Welcome back, {user?.firstName || 'Founder'}! 👋
+                        </h2>
                         <p className="mt-1 text-gray-600">
                             Continue building your startup with Pitchrr
                         </p>

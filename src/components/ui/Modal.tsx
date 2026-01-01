@@ -71,28 +71,42 @@ export function Modal({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="fixed inset-0 bg-black/50 z-50"
+                        transition={{ duration: 0.3 }}
+                        className="fixed inset-0 bg-black/40 backdrop-blur-md z-50"
                         onClick={handleBackdropClick}
                         aria-hidden="true"
                     />
 
-                    {/* Modal container */}
-                    <div
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-                        onClick={handleBackdropClick}
-                    >
-                        {/* Modal content */}
+                    {/* Main modal container using grid for perfect centering */}
+                    <div className="fixed inset-0 z-50 grid place-items-center p-4 overflow-y-auto w-full h-full">
+                        {/* Backdrop - full screen behind the grid content */}
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="fixed inset-0 bg-black/40 backdrop-blur-md"
+                            onClick={handleBackdropClick}
+                            aria-hidden="true"
+                        />
+
+                        {/* Modal Content - relative to allow centering over backdrop */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 30 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            transition={{ duration: 0.2 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                            transition={{
+                                type: "spring",
+                                damping: 25,
+                                stiffness: 300,
+                                duration: 0.4
+                            }}
                             className={`
-                w-full ${sizeStyles[size]}
-                bg-white rounded-xl shadow-xl
-                max-h-[90vh] overflow-hidden
-              `}
+                                relative w-full ${sizeStyles[size]}
+                                bg-white rounded-2xl shadow-2xl
+                                overflow-hidden z-10
+                                my-auto
+                            `}
                             role="dialog"
                             aria-modal="true"
                             aria-labelledby={title ? 'modal-title' : undefined}
@@ -122,7 +136,7 @@ export function Modal({
                             )}
 
                             {/* Body */}
-                            <div className="px-6 py-4 overflow-y-auto max-h-[calc(90vh-4rem)]">
+                            <div className="px-6 py-4 overflow-y-auto max-h-[85vh]">
                                 {children}
                             </div>
                         </motion.div>
