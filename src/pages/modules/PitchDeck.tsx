@@ -8,9 +8,15 @@
  * - AI slide generation
  * - Edit slides with AI
  * - Download as PDF/PPT
+ * 
+ * DATA FLOW:
+ * - Fetches idea from Core Service
+ * - Generates pitch deck slides via AI
+ * - React Query polls for results
  */
 
 import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     Presentation,
@@ -20,6 +26,7 @@ import {
     ChevronLeft,
     ChevronRight,
     Edit,
+    Loader2,
 } from 'lucide-react';
 import {
     Card,
@@ -30,176 +37,88 @@ import {
     Textarea,
 } from '@/components/ui';
 import toast from 'react-hot-toast';
-import { useIdeaStore } from '@/store';
 import { PitchDeckSkeleton } from '@/components/skeletons/PitchDeckSkeleton';
+import {
+    useIdea,
+    useIdeas,
+    useModuleData,
+    useGenerateModule,
+} from '@/hooks';
+
+interface Slide {
+    title: string;
+    content: string;
+    type?: string;
+    bullet_points?: string[];
+}
 
 export default function PitchDeck() {
-    const STORAGE_KEY = 'pitchrr_pitch_deck';
+    const { ideaId: urlIdeaId } = useParams<{ ideaId?: string }>();
 
     // Current slide index
     const [currentSlide, setCurrentSlide] = useState(0);
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [hasGenerated, setHasGenerated] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
+    const [editedSlides, setEditedSlides] = useState<Slide[]>([]);
 
-    // Slides data
-    const [slides, setSlides] = useState([
-        {
-            type: 'Problem',
-            title: 'The Problem',
-            content: 'Describe the problem your startup solves...',
-        },
-        {
-            type: 'Solution',
-            title: 'Our Solution',
-            content: 'Explain how your product solves this problem...',
-        },
-        {
-            type: 'Market',
-            title: 'Market Opportunity',
-            content: 'Describe the size and potential of your target market...',
-        },
-        {
-            type: 'Product',
-            title: 'Our Product',
-            content: 'Show what you\'ve built and how it works...',
-        },
-        {
-            type: 'Traction',
-            title: 'Traction & Milestones',
-            content: 'Share your progress, users, revenue, or key metrics...',
-        },
-        {
-            type: 'Team',
-            title: 'The Team',
-            content: 'Introduce your founding team and their expertise...',
-        },
-        {
-            type: 'Ask',
-            title: 'The Ask',
-            content: 'What are you raising? How will you use the funds?',
-        },
-    ]);
+    // ==========================================================================
+    // API HOOKS
+    // ==========================================================================
 
-    /**
-     * Load saved data from localStorage
-     */
-    const { currentIdea } = useIdeaStore();
+    const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
+    const activeIdeaId = urlIdeaId || ideas?.[0]?.id;
 
-    /**
-     * Load saved data from localStorage OR autofill from store
-     */
+    const { isLoading: isLoadingIdea } = useIdea(activeIdeaId);
+
+    const {
+        data: moduleData,
+        isFetching: isPolling,
+    } = useModuleData(activeIdeaId, 'pitch_deck');
+
+    const { mutate: generateModule, isPending: isTriggering } = useGenerateModule(activeIdeaId || '');
+
+    // ==========================================================================
+    // DERIVED STATE
+    // ==========================================================================
+
+    const hasGenerated = moduleData?.exists && moduleData.data;
+    const deckData = moduleData?.data || null;
+    const slides: Slide[] = editedSlides.length > 0 ? editedSlides : (deckData?.slides || []);
+    const isLoading = isLoadingIdeas || isLoadingIdea;
+    const isGenerating = isTriggering || (isPolling && !hasGenerated);
+
+    // ==========================================================================
+    // EFFECTS
+    // ==========================================================================
+
+    // Initialize edited slides when AI data arrives
     useEffect(() => {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-            try {
-                const data = JSON.parse(saved);
-                if (data.slides) {
-                    setSlides(data.slides);
-                    setHasGenerated(true);
-                } else if (currentIdea) {
-                    // Saved state exists but no slides yet? Try to hydrate from current idea
-                    hydrateSlidesFromIdea();
-                }
-            } catch (e) {
-                console.error('Failed to load saved data:', e);
-            }
-        } else if (currentIdea) {
-            hydrateSlidesFromIdea();
+        if (deckData?.slides && editedSlides.length === 0) {
+            setEditedSlides(deckData.slides);
         }
+    }, [deckData, editedSlides.length]);
 
-        // Simulate loading
-        const timer = setTimeout(() => {
-            setIsLoading(false);
-        }, 1000);
-        return () => clearTimeout(timer);
-    }, [currentIdea]);
+    // ==========================================================================
+    // HANDLERS
+    // ==========================================================================
 
-    const hydrateSlidesFromIdea = () => {
-        if (!currentIdea) return;
-
-        const newSlides = [...slides];
-        // Problem
-        if (currentIdea.problem) newSlides[0].content = currentIdea.problem;
-        // Solution
-        if (currentIdea.solution) newSlides[1].content = currentIdea.solution;
-        // Market
-        if (currentIdea.targetMarket) newSlides[2].content = `Target Market: ${currentIdea.targetMarket}`;
-
-        setSlides(newSlides);
+    const handleGenerate = () => {
+        if (!activeIdeaId) {
+            toast.error('Please create an idea first');
+            return;
+        }
+        generateModule('pitch_deck');
     };
 
-    /**
-     * Save to localStorage
-     */
-    const saveToLocalStorage = () => {
-        const data = {
-            slides,
-            lastSaved: new Date().toISOString(),
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        toast.success('Saved!', { duration: 1500 });
+    const handleSave = () => {
+        toast.success('Pitch deck saved!');
     };
 
     /**
      * Update slide content
      */
     const updateSlideContent = (content: string) => {
-        const newSlides = [...slides];
+        const newSlides = [...editedSlides];
         newSlides[currentSlide] = { ...newSlides[currentSlide], content };
-        setSlides(newSlides);
-    };
-
-    /**
-     * Generate slides with AI (mock)
-     */
-    const generateWithAI = async () => {
-        setIsGenerating(true);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        const generatedSlides = [
-            {
-                type: 'Problem',
-                title: 'The Problem',
-                content: 'First-time founders spend months figuring out if their idea is viable, often wasting time and resources on ideas that won\'t work.',
-            },
-            {
-                type: 'Solution',
-                title: 'Our Solution',
-                content: 'Pitchrr is an AI-powered platform that validates startup ideas and creates investor-ready materials in days, not months.',
-            },
-            {
-                type: 'Market',
-                title: 'Market Size',
-                content: 'TAM: $50B global startup ecosystem\nSAM: $5B early-stage founder tools\nSOM: $500M initial target market',
-            },
-            {
-                type: 'Product',
-                title: 'Product Overview',
-                content: '7 AI-powered modules: Idea Validation, Marketing Strategy, Branding, Pitch Deck, GTM Strategy, Competitor Analysis, AI Mentor',
-            },
-            {
-                type: 'Traction',
-                title: 'Early Traction',
-                content: '• 1,000+ founders signed up\n• 500+ pitch decks created\n• 85% idea validation accuracy\n• 4.8/5 user satisfaction',
-            },
-            {
-                type: 'Team',
-                title: 'Our Team',
-                content: 'Ex-YC founders, former Google engineers, and startup advisors with 50+ years combined experience.',
-            },
-            {
-                type: 'Ask',
-                title: 'The Ask',
-                content: 'Raising $2M Seed\n\n50% - Product Development\n30% - Marketing & Growth\n20% - Team Expansion',
-            },
-        ];
-
-        setSlides(generatedSlides);
-        setHasGenerated(true);
-        setIsGenerating(false);
-        saveToLocalStorage();
-        toast.success('Pitch deck generated!');
+        setEditedSlides(newSlides);
     };
 
     /**
@@ -213,85 +132,117 @@ export default function PitchDeck() {
         }
     };
 
+    // ==========================================================================
+    // RENDER
+    // ==========================================================================
+
+    if (isLoading) {
+        return <PitchDeckSkeleton />;
+    }
+
     return (
-        isLoading ? <PitchDeckSkeleton /> :
-            <div className="space-y-6">
-                {/* Page Header */}
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                            <Presentation className="w-7 h-7 text-[#F59E0B]" />
-                            Pitch Deck
-                        </h1>
-                        <p className="mt-1 text-gray-600">
-                            Convert your idea into a clear story
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <Button
-                            variant="secondary"
-                            leftIcon={<Save className="w-4 h-4" />}
-                            onClick={saveToLocalStorage}
-                        >
-                            Save
-                        </Button>
-                        <Button
-                            variant="secondary"
-                            leftIcon={<Download className="w-4 h-4" />}
-                        >
-                            Export PDF
-                        </Button>
-                    </div>
+        <div className="space-y-6">
+            {/* Page Header */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                        <Presentation className="w-7 h-7 text-[#F59E0B]" />
+                        Pitch Deck
+                    </h1>
+                    <p className="mt-1 text-gray-600">
+                        Convert your idea into a clear story
+                    </p>
                 </div>
-
-                {/* Generate Button */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Generate Your Pitch Deck</CardTitle>
-                        <CardDescription>
-                            Let AI create a professional pitch deck based on your startup information
-                        </CardDescription>
-                    </CardHeader>
+                <div className="flex items-center gap-3">
                     <Button
-                        onClick={generateWithAI}
-                        isLoading={isGenerating}
-                        leftIcon={<Sparkles className="w-4 h-4" />}
-                        className="mt-4"
+                        variant="secondary"
+                        leftIcon={<Save className="w-4 h-4" />}
+                        onClick={handleSave}
                     >
-                        {hasGenerated ? 'Regenerate with AI' : 'Generate Pitch Deck'}
+                        Save
                     </Button>
-                </Card>
+                    <Button
+                        variant="secondary"
+                        leftIcon={<Download className="w-4 h-4" />}
+                        disabled={!hasGenerated}
+                    >
+                        Export PDF
+                    </Button>
+                </div>
+            </div>
 
-                {/* Slide Preview & Editor */}
+            {/* Generate Button */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Generate Your Pitch Deck</CardTitle>
+                    <CardDescription>
+                        Let AI create a professional pitch deck based on your startup information
+                    </CardDescription>
+                </CardHeader>
+                <Button
+                    onClick={handleGenerate}
+                    isLoading={isGenerating}
+                    leftIcon={<Sparkles className="w-4 h-4" />}
+                    className="mt-4"
+                    disabled={!activeIdeaId}
+                >
+                    {hasGenerated ? 'Regenerate with AI' : 'Generate Pitch Deck'}
+                </Button>
+                {!activeIdeaId && (
+                    <p className="text-sm text-gray-500 mt-2">
+                        Please create an idea in Idea Validation first
+                    </p>
+                )}
+            </Card>
+
+            {/* Generating State */}
+            {isGenerating && (
+                <Card className="bg-amber-50 border-amber-200">
+                    <div className="flex items-center gap-4">
+                        <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+                        <div>
+                            <h3 className="font-medium text-amber-900">
+                                Generating Pitch Deck...
+                            </h3>
+                            <p className="text-sm text-amber-700">
+                                Creating {deckData?.total_slides || '7'} slides. This usually takes 30-60 seconds.
+                            </p>
+                        </div>
+                    </div>
+                </Card>
+            )}
+
+            {/* Slide Preview & Editor */}
+            {slides.length > 0 && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Slide Thumbnails */}
                     <div className="lg:col-span-1 space-y-2">
-                        <h3 className="font-medium text-gray-900)] mb-3">Slides</h3>
+                        <h3 className="font-medium text-gray-900 mb-3">Slides</h3>
                         <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
                             {slides.map((slide, index) => (
                                 <button
                                     key={index}
                                     onClick={() => setCurrentSlide(index)}
                                     className={`
-                  w-full p-3 rounded-lg text-left transition-all
-                  ${currentSlide === index
+                                        w-full p-3 rounded-lg text-left transition-all
+                                        ${currentSlide === index
                                             ? 'bg-blue-50 border-2 border-blue-600'
                                             : 'bg-white border border-gray-200 hover:border-gray-300'
                                         }
-                `}
+                                    `}
                                 >
                                     <div className="flex items-center gap-2">
                                         <span className={`
-                    w-6 h-6 rounded-full text-xs font-medium flex items-center justify-center
-                    ${currentSlide === index
+                                            w-6 h-6 rounded-full text-xs font-medium flex items-center justify-center
+                                            ${currentSlide === index
                                                 ? 'bg-blue-600 text-white'
                                                 : 'bg-gray-200 text-gray-600'
                                             }
-                  `}>
+                                        `}>
                                             {index + 1}
                                         </span>
-                                        <span className="text-sm font-medium text-gray-900">
-                                            {slide.type}
+                                        <span className="text-sm font-medium text-gray-900 truncate">
+                                            {slide.title || slide.type || `Slide ${index + 1}`}
                                         </span>
                                     </div>
                                 </button>
@@ -319,6 +270,16 @@ export default function PitchDeck() {
                                     <div className="text-gray-300 whitespace-pre-line">
                                         {slides[currentSlide]?.content}
                                     </div>
+                                    {slides[currentSlide]?.bullet_points && (
+                                        <ul className="mt-4 space-y-2">
+                                            {slides[currentSlide].bullet_points?.map((point, i) => (
+                                                <li key={i} className="text-gray-300 flex items-start gap-2">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2" />
+                                                    {point}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
                                 </div>
                             </motion.div>
 
@@ -366,6 +327,20 @@ export default function PitchDeck() {
                         </Card>
                     </div>
                 </div>
-            </div>
+            )}
+
+            {/* Placeholder when no slides */}
+            {!hasGenerated && !isGenerating && slides.length === 0 && (
+                <Card className="flex flex-col items-center justify-center py-12 text-center">
+                    <Presentation className="w-12 h-12 text-gray-300 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-700">
+                        No slides yet
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1 max-w-xs">
+                        Click "Generate Pitch Deck" to create your investor-ready presentation
+                    </p>
+                </Card>
+            )}
+        </div>
     );
 }

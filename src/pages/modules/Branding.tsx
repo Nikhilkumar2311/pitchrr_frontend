@@ -9,9 +9,15 @@
  * - Font suggestions
  * - Brand tone selection
  * - Brand kit preview
+ * 
+ * DATA FLOW:
+ * - Fetches idea from Core Service
+ * - Generates branding via AI
+ * - React Query polls for results
  */
 
 import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     Palette,
@@ -20,6 +26,7 @@ import {
     Sparkles,
     Type,
     Paintbrush,
+    Loader2,
 } from 'lucide-react';
 import {
     Card,
@@ -28,10 +35,17 @@ import {
     CardDescription,
     Button,
     Input,
+    Badge,
 } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { useIdeaStore } from '@/store';
 import { BrandingSkeleton } from '@/components/skeletons/BrandingSkeleton';
+import {
+    useIdea,
+    useIdeas,
+    useModuleData,
+    useGenerateModule,
+} from '@/hooks';
 
 /**
  * Brand tone options
@@ -50,120 +64,90 @@ const colorPresets = [
 ];
 
 export default function Branding() {
-    const STORAGE_KEY = 'pitchrr_branding';
+    const { ideaId: urlIdeaId } = useParams<{ ideaId?: string }>();
 
     // Form state
     const [startupName, setStartupName] = useState('');
     const [selectedTone, setSelectedTone] = useState('Professional');
     const [selectedColorPreset, setSelectedColorPreset] = useState(colorPresets[0]);
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [hasGenerated, setHasGenerated] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
 
-    // Generated branding state
-    const [branding, setBranding] = useState({
-        taglines: [
-            'Turn ideas into reality',
-            'From concept to launch',
-            'Your startup journey starts here',
-        ],
-        fonts: {
-            primary: 'Inter',
-            secondary: 'DM Sans',
-        },
-    });
-
-    /**
-     * Load saved data from localStorage
-     */
+    // Get current idea from store for backward compatibility
     const { currentIdea } = useIdeaStore();
 
-    /**
-     * Load saved data from localStorage OR autofill from store
-     */
+    // ==========================================================================
+    // API HOOKS
+    // ==========================================================================
+
+    const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
+    const activeIdeaId = urlIdeaId || ideas?.[0]?.id;
+
+    const { data: idea, isLoading: isLoadingIdea } = useIdea(activeIdeaId);
+
+    const {
+        data: moduleData,
+        isFetching: isPolling,
+    } = useModuleData(activeIdeaId, 'branding');
+
+    const { mutate: generateModule, isPending: isTriggering } = useGenerateModule(activeIdeaId || '');
+
+    // ==========================================================================
+    // DERIVED STATE
+    // ==========================================================================
+
+    const hasGenerated = moduleData?.exists && moduleData.data;
+    const branding = moduleData?.data || null;
+    const isLoading = isLoadingIdeas || isLoadingIdea;
+    const isGenerating = isTriggering || (isPolling && !hasGenerated);
+
+    // ==========================================================================
+    // EFFECTS
+    // ==========================================================================
+
+    // Populate startup name from idea
     useEffect(() => {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-            try {
-                const data = JSON.parse(saved);
-
-                // Prioritize saved name, otherwise use global idea title
-                if (data.startupName) {
-                    setStartupName(data.startupName);
-                } else if (currentIdea?.title) {
-                    setStartupName(currentIdea.title);
-                }
-
-                setSelectedTone(data.selectedTone || 'Professional');
-                if (data.selectedColorPreset) {
-                    setSelectedColorPreset(data.selectedColorPreset);
-                }
-                if (data.branding) {
-                    setBranding(data.branding);
-                    setHasGenerated(true);
-                }
-            } catch (e) {
-                console.error('Failed to load saved data:', e);
-            }
+        if (idea?.title) {
+            setStartupName(idea.title);
         } else if (currentIdea?.title) {
-            // No local save, autofill from global idea
             setStartupName(currentIdea.title);
         }
+    }, [idea, currentIdea]);
 
-        // Simulate loading
-        const timer = setTimeout(() => {
-            setIsLoading(false);
-        }, 1000);
-        return () => clearTimeout(timer);
-    }, [currentIdea]);
+    // Update color from AI response
+    useEffect(() => {
+        if (branding?.color_palette?.primary) {
+            // Try to find matching preset or use first one
+            const matchingPreset = colorPresets.find(
+                p => p.primary.toLowerCase() === branding.color_palette.primary.toLowerCase()
+            );
+            if (matchingPreset) {
+                setSelectedColorPreset(matchingPreset);
+            }
+        }
+    }, [branding]);
 
-    /**
-     * Save to localStorage
-     */
-    const saveToLocalStorage = () => {
-        const data = {
-            startupName,
-            selectedTone,
-            selectedColorPreset,
-            branding: hasGenerated ? branding : null,
-            lastSaved: new Date().toISOString(),
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        toast.success('Saved!', { duration: 1500 });
-    };
+    // ==========================================================================
+    // HANDLERS
+    // ==========================================================================
 
-    /**
-     * Generate branding with AI (mock)
-     */
-    const generateBranding = async () => {
+    const handleGenerate = () => {
+        if (!activeIdeaId) {
+            toast.error('Please create an idea first');
+            return;
+        }
         if (!startupName.trim()) {
             toast.error('Please enter your startup name');
             return;
         }
-
-        setIsGenerating(true);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // Generate mock taglines based on name
-        const mockTaglines = [
-            `${startupName} - Where ideas take flight`,
-            `Build smarter with ${startupName}`,
-            `${startupName}: Your path to success`,
-        ];
-
-        setBranding({
-            taglines: mockTaglines,
-            fonts: {
-                primary: selectedTone === 'Professional' ? 'Inter' : selectedTone === 'Playful' ? 'Poppins' : 'DM Sans',
-                secondary: 'Inter',
-            },
-        });
-
-        setHasGenerated(true);
-        setIsGenerating(false);
-        saveToLocalStorage();
-        toast.success('Brand identity generated!');
+        generateModule('branding');
     };
+
+    const handleSave = () => {
+        toast.success('Branding saved!');
+    };
+
+    // ==========================================================================
+    // RENDER
+    // ==========================================================================
 
     if (isLoading) {
         return <BrandingSkeleton />;
@@ -186,7 +170,7 @@ export default function Branding() {
                     <Button
                         variant="secondary"
                         leftIcon={<Save className="w-4 h-4" />}
-                        onClick={saveToLocalStorage}
+                        onClick={handleSave}
                     >
                         Save
                     </Button>
@@ -233,12 +217,12 @@ export default function Branding() {
                                     key={tone}
                                     onClick={() => setSelectedTone(tone)}
                                     className={`
-                    px-4 py-2 rounded-lg text-sm font-medium transition-all
-                    ${selectedTone === tone
+                                        px-4 py-2 rounded-lg text-sm font-medium transition-all
+                                        ${selectedTone === tone
                                             ? 'bg-blue-600 text-white'
                                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                         }
-                  `}
+                                    `}
                                 >
                                     {tone}
                                 </button>
@@ -263,19 +247,19 @@ export default function Branding() {
                                     key={preset.name}
                                     onClick={() => setSelectedColorPreset(preset)}
                                     className={`
-                    p-3 rounded-lg border-2 transition-all
-                    ${selectedColorPreset.name === preset.name
+                                        p-3 rounded-lg border-2 transition-all
+                                        ${selectedColorPreset.name === preset.name
                                             ? 'border-blue-600 ring-2 ring-blue-200'
                                             : 'border-gray-200 hover:border-gray-300'
                                         }
-                  `}
+                                    `}
                                 >
                                     <div className="flex gap-1 mb-2">
                                         <div className="w-6 h-6 rounded-full" style={{ backgroundColor: preset.primary }} />
                                         <div className="w-6 h-6 rounded-full" style={{ backgroundColor: preset.secondary }} />
                                         <div className="w-6 h-6 rounded-full" style={{ backgroundColor: preset.accent }} />
                                     </div>
-                                    <div className="text-xs font-medium text-gray-700)]">
+                                    <div className="text-xs font-medium text-gray-700">
                                         {preset.name}
                                     </div>
                                 </button>
@@ -285,17 +269,40 @@ export default function Branding() {
 
                     {/* Generate Button */}
                     <Button
-                        onClick={generateBranding}
+                        onClick={handleGenerate}
                         isLoading={isGenerating}
                         leftIcon={<Sparkles className="w-4 h-4" />}
                         className="w-full"
+                        disabled={!activeIdeaId}
                     >
                         Generate Brand Identity
                     </Button>
+                    {!activeIdeaId && (
+                        <p className="text-sm text-gray-500 text-center">
+                            Please create an idea in Idea Validation first
+                        </p>
+                    )}
                 </div>
 
                 {/* Right Column: Preview */}
                 <div className="space-y-6">
+                    {/* Generating State */}
+                    {isGenerating && (
+                        <Card className="bg-purple-50 border-purple-200">
+                            <div className="flex items-center gap-4">
+                                <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
+                                <div>
+                                    <h3 className="font-medium text-purple-900">
+                                        Generating Brand Identity...
+                                    </h3>
+                                    <p className="text-sm text-purple-700">
+                                        This usually takes 30-60 seconds
+                                    </p>
+                                </div>
+                            </div>
+                        </Card>
+                    )}
+
                     {/* Brand Preview Card */}
                     <Card>
                         <CardHeader>
@@ -303,22 +310,22 @@ export default function Branding() {
                         </CardHeader>
                         <div
                             className="mt-4 p-6 rounded-xl text-center"
-                            style={{ backgroundColor: selectedColorPreset.primary + '10' }}
+                            style={{ backgroundColor: (branding?.color_palette?.primary || selectedColorPreset.primary) + '10' }}
                         >
                             {/* Logo placeholder */}
                             <div
                                 className="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center text-white text-3xl font-bold mb-4"
-                                style={{ backgroundColor: selectedColorPreset.primary }}
+                                style={{ backgroundColor: branding?.color_palette?.primary || selectedColorPreset.primary }}
                             >
                                 {startupName ? startupName[0]?.toUpperCase() : 'P'}
                             </div>
                             <h2
                                 className="text-2xl font-bold mb-2"
-                                style={{ color: selectedColorPreset.primary }}
+                                style={{ color: branding?.color_palette?.primary || selectedColorPreset.primary }}
                             >
                                 {startupName || 'Your Startup'}
                             </h2>
-                            {hasGenerated && branding.taglines[0] && (
+                            {hasGenerated && branding?.taglines?.[0] && (
                                 <p className="text-gray-600">
                                     {branding.taglines[0]}
                                 </p>
@@ -327,7 +334,7 @@ export default function Branding() {
                     </Card>
 
                     {/* Taglines */}
-                    {hasGenerated && (
+                    {hasGenerated && branding?.taglines && (
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -340,10 +347,10 @@ export default function Branding() {
                                     </CardTitle>
                                 </CardHeader>
                                 <div className="mt-4 space-y-3">
-                                    {branding.taglines.map((tagline, i) => (
+                                    {branding.taglines.map((tagline: string, i: number) => (
                                         <div
                                             key={i}
-                                            className="p-3 rounded-lg bg-gray-50 text-[var(--color-gray-700)] italic"
+                                            className="p-3 rounded-lg bg-gray-50 text-gray-700 italic"
                                         >
                                             "{tagline}"
                                         </div>
@@ -353,8 +360,8 @@ export default function Branding() {
                         </motion.div>
                     )}
 
-                    {/* Font Recommendations */}
-                    {hasGenerated && (
+                    {/* Color Palette from AI */}
+                    {hasGenerated && branding?.color_palette && (
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -362,21 +369,73 @@ export default function Branding() {
                         >
                             <Card>
                                 <CardHeader>
+                                    <CardTitle>AI-Generated Color Palette</CardTitle>
+                                </CardHeader>
+                                <div className="mt-4 flex gap-2">
+                                    {Object.entries(branding.color_palette).map(([name, color]) => (
+                                        <div key={name} className="flex flex-col items-center gap-1">
+                                            <div
+                                                className="w-12 h-12 rounded-lg shadow-sm border"
+                                                style={{ backgroundColor: color as string }}
+                                            />
+                                            <span className="text-xs text-gray-500 capitalize">{name}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </Card>
+                        </motion.div>
+                    )}
+
+                    {/* Font Recommendations */}
+                    {hasGenerated && branding?.typography && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                        >
+                            <Card>
+                                <CardHeader>
                                     <CardTitle>Font Recommendations</CardTitle>
                                 </CardHeader>
                                 <div className="mt-4 space-y-3">
                                     <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
-                                        <span className="text-sm text-[var(--color-gray-600)]">Primary Font</span>
-                                        <span className="font-semibold" style={{ fontFamily: branding.fonts.primary }}>
-                                            {branding.fonts.primary}
+                                        <span className="text-sm text-gray-600">Heading Font</span>
+                                        <span className="font-semibold" style={{ fontFamily: branding.typography.heading_font }}>
+                                            {branding.typography.heading_font}
                                         </span>
                                     </div>
-                                    <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--color-gray-50)]">
-                                        <span className="text-sm text-[var(--color-gray-600)]">Secondary Font</span>
-                                        <span className="font-semibold" style={{ fontFamily: branding.fonts.secondary }}>
-                                            {branding.fonts.secondary}
+                                    <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                                        <span className="text-sm text-gray-600">Body Font</span>
+                                        <span className="font-semibold" style={{ fontFamily: branding.typography.body_font }}>
+                                            {branding.typography.body_font}
                                         </span>
                                     </div>
+                                </div>
+                            </Card>
+                        </motion.div>
+                    )}
+
+                    {/* Brand Voice */}
+                    {hasGenerated && branding?.brand_voice && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 }}
+                        >
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Brand Voice</CardTitle>
+                                </CardHeader>
+                                <div className="mt-4">
+                                    <div className="text-sm text-gray-600 mb-2">Tone: <span className="font-medium">{branding.brand_voice.tone}</span></div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {branding.brand_voice.keywords?.map((keyword: string, i: number) => (
+                                            <Badge key={i} variant="primary">{keyword}</Badge>
+                                        ))}
+                                    </div>
+                                    {branding.brand_voice.description && (
+                                        <p className="text-gray-600 mt-3 text-sm">{branding.brand_voice.description}</p>
+                                    )}
                                 </div>
                             </Card>
                         </motion.div>

@@ -4,7 +4,7 @@
  * get AI-suggested startup ideas based on their interests
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Button, Textarea } from '@/components/ui';
@@ -77,6 +77,20 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
     const isLastStep = currentStep === questions.length - 1;
     const progress = ((currentStep + 1) / questions.length) * 100;
 
+    // Lock body scroll when modal is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+
+        // Cleanup on unmount
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
+
     const handleOptionToggle = (option: string) => {
         const current = (answers[currentQuestion.id] as string[]) || [];
         if (current.includes(option)) {
@@ -107,23 +121,47 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
     const generateIdea = async () => {
         setIsGenerating(true);
 
-        // Simulate AI generation (in production, this would call your AI backend)
-        await new Promise(resolve => setTimeout(resolve, 2500));
+        try {
+            // Import API service
+            const { default: api } = await import('@/services/api');
 
-        // Mock generated idea based on interests
-        const interests = (answers.interests as string[]) || [];
-        const primaryInterest = interests[0] || 'Technology';
+            // Call Core Service to generate idea using AI
+            const { data } = await api.post('/ideas/generate', {
+                interests: answers.interests || [],
+                skills: answers.skills || [],
+                problemArea: answers.problemArea || '',
+                resources: answers.resources || [],
+            });
 
-        const mockIdea: GeneratedIdea = {
-            title: `AI-Powered ${primaryInterest} Platform`,
-            description: `A modern platform that leverages AI to solve key challenges in the ${primaryInterest.toLowerCase()} space, making it more accessible and efficient for users.`,
-            problem: `Current solutions in ${primaryInterest.toLowerCase()} are fragmented, expensive, or difficult to use for the average person.`,
-            solution: `An all-in-one platform that uses AI to automate complex tasks, provide personalized recommendations, and streamline the user experience.`,
-            targetMarket: `Young professionals and businesses in the ${primaryInterest.toLowerCase()} industry looking for modern, efficient solutions.`,
-        };
+            // Map API response to GeneratedIdea format
+            const generatedIdea: GeneratedIdea = {
+                title: data.title || 'AI-Generated Startup Idea',
+                description: data.description || '',
+                problem: data.problem || '',
+                solution: data.solution || '',
+                targetMarket: data.target_market || data.targetMarket || '',
+            };
 
-        setGeneratedIdea(mockIdea);
-        setIsGenerating(false);
+            setGeneratedIdea(generatedIdea);
+        } catch (error) {
+            console.error('Failed to generate idea:', error);
+
+            // Fallback to mock data if API fails
+            const interests = (answers.interests as string[]) || [];
+            const primaryInterest = interests[0] || 'Technology';
+
+            const mockIdea: GeneratedIdea = {
+                title: `AI-Powered ${primaryInterest} Platform`,
+                description: `A modern platform that leverages AI to solve key challenges in the ${primaryInterest.toLowerCase()} space, making it more accessible and efficient for users.`,
+                problem: `Current solutions in ${primaryInterest.toLowerCase()} are fragmented, expensive, or difficult to use for the average person.`,
+                solution: `An all-in-one platform that uses AI to automate complex tasks, provide personalized recommendations, and streamline the user experience.`,
+                targetMarket: `Young professionals and businesses in the ${primaryInterest.toLowerCase()} industry looking for modern, efficient solutions.`,
+            };
+
+            setGeneratedIdea(mockIdea);
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     const handleUseIdea = () => {
@@ -156,11 +194,11 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                     initial={{ opacity: 0, scale: 0.95, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                    className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
+                    className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
                     onClick={e => e.stopPropagation()}
                 >
-                    {/* Header */}
-                    <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                    {/* Header - fixed at top */}
+                    <div className="flex items-center justify-between p-6 border-b border-gray-200 shrink-0">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
                                 <Sparkles className="w-5 h-5 text-white" />
@@ -180,7 +218,7 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
 
                     {/* Progress bar */}
                     {!generatedIdea && !isGenerating && (
-                        <div className="px-6 pt-4">
+                        <div className="px-6 pt-4 shrink-0">
                             <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
                                 <span>Step {currentStep + 1} of {questions.length}</span>
                                 <span>{Math.round(progress)}% complete</span>
@@ -196,8 +234,8 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                         </div>
                     )}
 
-                    {/* Content */}
-                    <div className="p-6">
+                    {/* Content - scrollable */}
+                    <div className="p-6 overflow-y-auto flex-1">
                         {isGenerating ? (
                             // Generating state
                             <div className="text-center py-12">
@@ -290,8 +328,8 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                         )}
                     </div>
 
-                    {/* Footer */}
-                    <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
+                    {/* Footer - fixed at bottom */}
+                    <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50 shrink-0">
                         {generatedIdea ? (
                             <>
                                 <Button variant="secondary" onClick={() => {

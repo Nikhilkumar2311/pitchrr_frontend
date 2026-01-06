@@ -2,15 +2,22 @@
  * Module 7: Startup AI Chatbot Page
  * 
  * Context-aware AI assistant that knows the user's startup.
+ * Uses the idea and module data to provide relevant responses.
  * 
  * FEATURES:
  * - Chat interface
  * - Predefined prompts
- * - Context-aware responses
+ * - Context-aware responses using idea data
  * - Chat history
+ * 
+ * DATA FLOW:
+ * - Fetches current idea from Core Service
+ * - Sends messages to AI with idea context
+ * - Displays AI responses
  */
 
 import { useState, useEffect, useRef } from 'react';
+import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     MessageSquare,
@@ -18,14 +25,18 @@ import {
     User,
     Bot,
     RefreshCw,
+    Lightbulb,
 } from 'lucide-react';
 import {
     Card,
     Button,
     Input,
+    Badge,
 } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { StartupChatbotSkeleton } from '@/components/skeletons/StartupChatbotSkeleton';
+import { useIdea, useIdeas, useAllModules } from '@/hooks';
+import api from '@/services/api';
 
 interface Message {
     id: string;
@@ -45,57 +56,39 @@ const predefinedPrompts = [
     'Create a launch plan',
 ];
 
-/**
- * Mock AI responses based on user input
- */
-const getMockResponse = (message: string): string => {
-    const lowerMessage = message.toLowerCase();
-
-    if (lowerMessage.includes('idea') || lowerMessage.includes('improve')) {
-        return "Based on your startup profile, here are some suggestions to strengthen your idea:\n\n1. **Focus on a specific niche** - Instead of targeting all founders, consider focusing on first-time founders in a specific industry.\n\n2. **Add a unique differentiator** - What makes your solution 10x better than existing alternatives?\n\n3. **Validate with real users** - Have you talked to potential customers? Their feedback is invaluable.\n\nWould you like me to dive deeper into any of these areas?";
-    }
-
-    if (lowerMessage.includes('pitch') || lowerMessage.includes('deck')) {
-        return "I'd be happy to help with your pitch! Here are key areas to focus on:\n\n📌 **Problem Statement** - Make it specific and relatable\n📌 **Solution** - Show, don't just tell\n📌 **Market Size** - Use credible sources\n📌 **Traction** - Even early metrics matter\n📌 **The Ask** - Be clear about what you need\n\nWant me to review any specific slide?";
-    }
-
-    if (lowerMessage.includes('marketing') || lowerMessage.includes('growth')) {
-        return "For early-stage marketing, I recommend focusing on these channels:\n\n🎯 **Content Marketing** - Blog posts, LinkedIn articles\n🎯 **Community Building** - Reddit, indie hacker forums\n🎯 **Product Hunt Launch** - Great for initial traction\n🎯 **Partnerships** - Collaborate with complementary products\n\nWhat's your current marketing budget and timeline?";
-    }
-
-    if (lowerMessage.includes('competition') || lowerMessage.includes('competitor')) {
-        return "Understanding your competitive landscape is crucial. Here's my analysis:\n\n**Direct Competitors:**\n- Traditional pitch deck tools (Slidebean, Beautiful.ai)\n- All-in-one platforms (Notion, Coda)\n\n**Your Advantages:**\n- AI-powered validation\n- Startup-specific focus\n- All-in-one solution\n\nShall I do a deeper competitive analysis?";
-    }
-
-    if (lowerMessage.includes('launch') || lowerMessage.includes('plan')) {
-        return "Here's a suggested launch plan:\n\n**Week 1-2:** Build buzz\n- Create waitlist\n- Social media presence\n- Content creation\n\n**Week 3-4:** Soft launch\n- Beta users\n- Collect feedback\n- Iterate\n\n**Week 5+:** Public launch\n- Product Hunt\n- PR outreach\n- Scale\n\nReady to dive into any specific phase?";
-    }
-
-    return "I'm here to help you build your startup! I can assist with:\n\n• Validating and improving your idea\n• Crafting your pitch deck\n• Marketing strategies\n• Competitive analysis\n• Launch planning\n\nWhat would you like to work on?";
-};
-
 export default function StartupChatbot() {
     const STORAGE_KEY = 'pitchrr_chatbot_messages';
 
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            id: '1',
-            role: 'assistant',
-            content: "Hi! 👋 I'm your AI startup mentor. I know about your startup from the modules you've completed. How can I help you today?",
-            timestamp: new Date(),
-        },
-    ]);
+    const { ideaId: urlIdeaId } = useParams<{ ideaId?: string }>();
+
+    const [messages, setMessages] = useState<Message[]>([]);
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
 
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
+    // ==========================================================================
+    // API HOOKS
+    // ==========================================================================
+
+    const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
+    const activeIdeaId = urlIdeaId || ideas?.[0]?.id;
+
+    const { data: idea, isLoading: isLoadingIdea } = useIdea(activeIdeaId);
+    const { data: allModules } = useAllModules(activeIdeaId);
+
+    const isLoading = isLoadingIdeas || isLoadingIdea;
+
+    // ==========================================================================
+    // EFFECTS
+    // ==========================================================================
+
     /**
-     * Load chat history from localStorage
+     * Initialize with welcome message including idea context
      */
     useEffect(() => {
-        const saved = localStorage.getItem(STORAGE_KEY);
+        // Load chat history
+        const saved = localStorage.getItem(`${STORAGE_KEY}_${activeIdeaId || 'default'}`);
         if (saved) {
             try {
                 const data = JSON.parse(saved);
@@ -104,27 +97,34 @@ export default function StartupChatbot() {
                         ...m,
                         timestamp: new Date(m.timestamp),
                     })));
+                    return;
                 }
             } catch (e) {
                 console.error('Failed to load chat history:', e);
             }
         }
 
-        // Simulate loading
-        const timer = setTimeout(() => {
-            setIsLoading(false);
-        }, 1000);
-        return () => clearTimeout(timer);
-    }, []);
+        // Set initial welcome message with idea context
+        const welcomeMessage = idea
+            ? `Hi! 👋 I'm your AI startup mentor. I see you're working on "${idea.title}". I have access to all the analysis and data from your modules. How can I help you today?`
+            : "Hi! 👋 I'm your AI startup mentor. Start by validating your idea in the Idea Validation module, and I'll have full context to help you build!";
+
+        setMessages([{
+            id: '1',
+            role: 'assistant',
+            content: welcomeMessage,
+            timestamp: new Date(),
+        }]);
+    }, [idea, activeIdeaId]);
 
     /**
      * Save messages to localStorage
      */
     useEffect(() => {
-        if (messages.length > 1) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({ messages }));
+        if (messages.length > 1 && activeIdeaId) {
+            localStorage.setItem(`${STORAGE_KEY}_${activeIdeaId}`, JSON.stringify({ messages }));
         }
-    }, [messages]);
+    }, [messages, activeIdeaId]);
 
     /**
      * Scroll to bottom when new messages arrive
@@ -135,8 +135,39 @@ export default function StartupChatbot() {
         }
     }, [messages, isTyping]);
 
+    // ==========================================================================
+    // HANDLERS
+    // ==========================================================================
+
     /**
-     * Send a message
+     * Build context string from idea and modules
+     */
+    const buildContext = (): string => {
+        if (!idea) return '';
+
+        let context = `Startup Context:\n`;
+        context += `- Title: ${idea.title}\n`;
+        context += `- Description: ${idea.description}\n`;
+
+        if (idea.industry) context += `- Industry: ${idea.industry}\n`;
+        if (idea.targetAudience) context += `- Target Audience: ${idea.targetAudience}\n`;
+        if (idea.problemSolved) context += `- Problem Solved: ${idea.problemSolved}\n`;
+
+        // Add module summaries if available
+        if (allModules && Object.keys(allModules).length > 0) {
+            context += `\nCompleted Analyses:\n`;
+            for (const [moduleType, moduleData] of Object.entries(allModules)) {
+                if (moduleData && typeof moduleData === 'object') {
+                    context += `- ${moduleType}: Available\n`;
+                }
+            }
+        }
+
+        return context;
+    };
+
+    /**
+     * Send a message to the AI
      */
     const sendMessage = async (content: string) => {
         if (!content.trim()) return;
@@ -152,18 +183,72 @@ export default function StartupChatbot() {
         setInputValue('');
         setIsTyping(true);
 
-        // Simulate AI thinking
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        try {
+            // Call the chat API with context
+            const context = buildContext();
+            const { data } = await api.post('/chat', {
+                message: content,
+                context,
+                ideaId: activeIdeaId,
+                history: messages.slice(-10).map(m => ({
+                    role: m.role,
+                    content: m.content,
+                })),
+            });
 
-        // Add AI response
-        const aiResponse: Message = {
-            id: (Date.now() + 1).toString(),
-            role: 'assistant',
-            content: getMockResponse(content),
-            timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, aiResponse]);
-        setIsTyping(false);
+            // Add AI response
+            const aiResponse: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: data.response || data.message || "I'm having trouble responding right now. Please try again.",
+                timestamp: new Date(),
+            };
+            setMessages((prev) => [...prev, aiResponse]);
+        } catch (error: any) {
+            console.error('Chat error:', error);
+
+            // Fallback to local response if API fails
+            const fallbackResponse = getFallbackResponse(content);
+            const aiResponse: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: fallbackResponse,
+                timestamp: new Date(),
+            };
+            setMessages((prev) => [...prev, aiResponse]);
+        } finally {
+            setIsTyping(false);
+        }
+    };
+
+    /**
+     * Fallback response when API is unavailable
+     */
+    const getFallbackResponse = (message: string): string => {
+        const lowerMessage = message.toLowerCase();
+        const ideaContext = idea ? `Based on your startup "${idea.title}", ` : '';
+
+        if (lowerMessage.includes('idea') || lowerMessage.includes('improve')) {
+            return `${ideaContext}here are some suggestions to strengthen your idea:\n\n1. **Focus on a specific niche** - Instead of targeting all customers, consider focusing on a specific segment.\n\n2. **Add a unique differentiator** - What makes your solution 10x better than existing alternatives?\n\n3. **Validate with real users** - Have you talked to potential customers? Their feedback is invaluable.\n\nWould you like me to dive deeper into any of these areas?`;
+        }
+
+        if (lowerMessage.includes('pitch') || lowerMessage.includes('deck')) {
+            return `${ideaContext}here are key areas to focus on for your pitch:\n\n📌 **Problem Statement** - Make it specific and relatable\n📌 **Solution** - Show, don't just tell\n📌 **Market Size** - Use credible sources\n📌 **Traction** - Even early metrics matter\n📌 **The Ask** - Be clear about what you need\n\nWant me to review any specific aspect?`;
+        }
+
+        if (lowerMessage.includes('marketing') || lowerMessage.includes('growth')) {
+            return `${ideaContext}for early-stage marketing, I recommend focusing on these channels:\n\n🎯 **Content Marketing** - Blog posts, LinkedIn articles\n🎯 **Community Building** - Reddit, indie hacker forums\n🎯 **Product Hunt Launch** - Great for initial traction\n🎯 **Partnerships** - Collaborate with complementary products\n\nWhat's your current marketing budget and timeline?`;
+        }
+
+        if (lowerMessage.includes('competition') || lowerMessage.includes('competitor')) {
+            return `${ideaContext}understanding your competitive landscape is crucial. Here's my approach:\n\n**1. Identify Direct Competitors** - Who solves the same problem?\n**2. Analyze Indirect Competitors** - What alternatives do customers use?\n**3. Find Your Advantages** - What can you do that they can't?\n**4. Spot Market Gaps** - Where are competitors falling short?\n\nShall I do a deeper competitive analysis?`;
+        }
+
+        if (lowerMessage.includes('launch') || lowerMessage.includes('plan')) {
+            return `${ideaContext}here's a suggested launch plan:\n\n**Week 1-2:** Build buzz\n- Create waitlist\n- Social media presence\n- Content creation\n\n**Week 3-4:** Soft launch\n- Beta users\n- Collect feedback\n- Iterate\n\n**Week 5+:** Public launch\n- Product Hunt\n- PR outreach\n- Scale\n\nReady to dive into any specific phase?`;
+        }
+
+        return `${ideaContext ? ideaContext + "I'm here to help you build your startup! " : "I'm here to help you build your startup! "}I can assist with:\n\n• Validating and improving your idea\n• Crafting your pitch deck\n• Marketing strategies\n• Competitive analysis\n• Launch planning\n\nWhat would you like to work on?`;
     };
 
     /**
@@ -178,17 +263,25 @@ export default function StartupChatbot() {
      * Clear chat history
      */
     const clearChat = () => {
-        setMessages([
-            {
-                id: Date.now().toString(),
-                role: 'assistant',
-                content: "Chat cleared! How can I help you with your startup?",
-                timestamp: new Date(),
-            },
-        ]);
-        localStorage.removeItem(STORAGE_KEY);
+        const welcomeMessage = idea
+            ? `Chat cleared! I'm still here to help with "${idea.title}". What would you like to work on?`
+            : "Chat cleared! How can I help you with your startup?";
+
+        setMessages([{
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: welcomeMessage,
+            timestamp: new Date(),
+        }]);
+        if (activeIdeaId) {
+            localStorage.removeItem(`${STORAGE_KEY}_${activeIdeaId}`);
+        }
         toast.success('Chat cleared');
     };
+
+    // ==========================================================================
+    // RENDER
+    // ==========================================================================
 
     if (isLoading) {
         return <StartupChatbotSkeleton />;
@@ -203,8 +296,14 @@ export default function StartupChatbot() {
                         <MessageSquare className="w-7 h-7 text-[#EC4899]" />
                         AI Startup Mentor
                     </h1>
-                    <p className="mt-1 text-gray-600">
+                    <p className="mt-1 text-gray-600 flex items-center gap-2">
                         Your always-on startup advisor
+                        {idea && (
+                            <Badge variant="primary" size="sm">
+                                <Lightbulb className="w-3 h-3 mr-1" />
+                                {idea.title}
+                            </Badge>
+                        )}
                     </p>
                 </div>
                 <Button
@@ -288,7 +387,8 @@ export default function StartupChatbot() {
                             <button
                                 key={prompt}
                                 onClick={() => sendMessage(prompt)}
-                                className="px-3 py-1.5 text-xs font-medium rounded-full bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                disabled={isTyping}
+                                className="px-3 py-1.5 text-xs font-medium rounded-full bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors disabled:opacity-50"
                             >
                                 {prompt}
                             </button>
@@ -302,7 +402,10 @@ export default function StartupChatbot() {
                         <Input
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
-                            placeholder="Ask me anything about your startup..."
+                            placeholder={idea
+                                ? `Ask about ${idea.title}...`
+                                : "Ask me anything about your startup..."
+                            }
                             className="flex-1"
                             disabled={isTyping}
                         />

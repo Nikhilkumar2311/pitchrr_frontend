@@ -10,9 +10,15 @@
  * - Customer persona creation
  * - AI-recommended ads strategy
  * - Social media improvements
+ * 
+ * DATA FLOW:
+ * - Fetches idea from Core Service
+ * - Generates marketing strategy via AI
+ * - React Query polls for results
  */
 
 import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     Megaphone,
@@ -23,6 +29,7 @@ import {
     Users,
     Target,
     Zap,
+    Loader2,
 } from 'lucide-react';
 import {
     Card,
@@ -36,107 +43,79 @@ import {
 import toast from 'react-hot-toast';
 import { useIdeaStore } from '@/store';
 import { MarketingStrategySkeleton } from '@/components/skeletons/MarketingStrategySkeleton';
+import {
+    useIdea,
+    useIdeas,
+    useModuleData,
+    useGenerateModule,
+} from '@/hooks';
 
 export default function MarketingStrategy() {
-    const STORAGE_KEY = 'pitchrr_marketing_strategy';
+    const { ideaId: urlIdeaId } = useParams<{ ideaId?: string }>();
 
     // Form state
     const [targetAudience, setTargetAudience] = useState('');
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [hasGenerated, setHasGenerated] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
 
-    // Generated strategy state
-    const [strategy, setStrategy] = useState({
-        thirtyDayPlan: [
-            { week: 1, tasks: ['Market research', 'Competitor analysis', 'Define target audience'] },
-            { week: 2, tasks: ['Create content calendar', 'Set up social accounts', 'Design branding'] },
-            { week: 3, tasks: ['Launch social campaigns', 'Start content marketing', 'Outreach to influencers'] },
-            { week: 4, tasks: ['Analyze results', 'A/B test messaging', 'Scale what works'] },
-        ],
-        funnel: {
-            awareness: ['Social media content', 'SEO blog posts', 'Paid ads'],
-            interest: ['Lead magnets', 'Email nurture sequence', 'Webinars'],
-            conversion: ['Free trial', 'Product demos', 'Testimonials'],
-        },
-        channels: {
-            online: ['LinkedIn', 'Twitter', 'Google Ads'],
-            offline: ['Startup events', 'Speaking engagements', 'Partnerships'],
-        },
-        persona: {
-            name: 'Alex',
-            age: '28-35',
-            occupation: 'First-time founder / Product Manager',
-            painPoints: ['Uncertain if idea is viable', 'No investor connections', 'Limited time'],
-            goals: ['Validate idea quickly', 'Create professional pitch deck', 'Get investor-ready'],
-        },
-    });
-
-    /**
-     * Load saved data from localStorage
-     */
+    // Get current idea from store for backward compatibility
     const { currentIdea } = useIdeaStore();
 
-    /**
-     * Load saved data from localStorage OR autofill from store
-     */
+    // ==========================================================================
+    // API HOOKS
+    // ==========================================================================
+
+    const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
+    const activeIdeaId = urlIdeaId || ideas?.[0]?.id;
+
+    const { data: idea, isLoading: isLoadingIdea } = useIdea(activeIdeaId);
+
+    const {
+        data: moduleData,
+        isFetching: isPolling,
+    } = useModuleData(activeIdeaId, 'marketing_strategy');
+
+    const { mutate: generateModule, isPending: isTriggering } = useGenerateModule(activeIdeaId || '');
+
+    // ==========================================================================
+    // DERIVED STATE
+    // ==========================================================================
+
+    const hasGenerated = moduleData?.exists && moduleData.data;
+    const strategy = moduleData?.data || null;
+    const isLoading = isLoadingIdeas || isLoadingIdea;
+    const isGenerating = isTriggering || (isPolling && !hasGenerated);
+
+    // ==========================================================================
+    // EFFECTS
+    // ==========================================================================
+
+    // Populate target audience from idea
     useEffect(() => {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-            try {
-                const data = JSON.parse(saved);
-
-                // If we have a saved audience, use it.
-                // Otherwise if we have a global idea target market, use that.
-                if (data.targetAudience) {
-                    setTargetAudience(data.targetAudience);
-                } else if (currentIdea?.targetMarket) {
-                    setTargetAudience(currentIdea.targetMarket);
-                }
-
-                if (data.strategy) {
-                    setStrategy(data.strategy);
-                    setHasGenerated(true);
-                }
-            } catch (e) {
-                console.error('Failed to load saved data:', e);
-            }
+        if (idea?.targetAudience) {
+            setTargetAudience(idea.targetAudience);
         } else if (currentIdea?.targetMarket) {
-            // No local save, autofill from global idea
             setTargetAudience(currentIdea.targetMarket);
         }
+    }, [idea, currentIdea]);
 
-        // Simulate loading
-        const timer = setTimeout(() => {
-            setIsLoading(false);
-        }, 1000);
-        return () => clearTimeout(timer);
-    }, [currentIdea]);
+    // ==========================================================================
+    // HANDLERS
+    // ==========================================================================
 
-    /**
-     * Save to localStorage
-     */
-    const saveToLocalStorage = () => {
-        const data = {
-            targetAudience,
-            strategy: hasGenerated ? strategy : null,
-            lastSaved: new Date().toISOString(),
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        toast.success('Saved!', { duration: 1500 });
+    const handleGenerate = () => {
+        if (!activeIdeaId) {
+            toast.error('Please create an idea first');
+            return;
+        }
+        generateModule('marketing_strategy');
     };
 
-    /**
-     * Generate strategy with AI (mock)
-     */
-    const generateStrategy = async () => {
-        setIsGenerating(true);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        setHasGenerated(true);
-        setIsGenerating(false);
-        saveToLocalStorage();
-        toast.success('Marketing strategy generated!');
+    const handleSave = () => {
+        toast.success('Marketing strategy saved!');
     };
+
+    // ==========================================================================
+    // RENDER
+    // ==========================================================================
 
     if (isLoading) {
         return <MarketingStrategySkeleton />;
@@ -159,7 +138,7 @@ export default function MarketingStrategy() {
                     <Button
                         variant="secondary"
                         leftIcon={<Save className="w-4 h-4" />}
-                        onClick={saveToLocalStorage}
+                        onClick={handleSave}
                     >
                         Save
                     </Button>
@@ -190,16 +169,39 @@ export default function MarketingStrategy() {
                 />
                 <div className="mt-4">
                     <Button
-                        onClick={generateStrategy}
+                        onClick={handleGenerate}
                         isLoading={isGenerating}
                         leftIcon={<Sparkles className="w-4 h-4" />}
+                        disabled={!activeIdeaId}
                     >
                         Generate Marketing Strategy
                     </Button>
+                    {!activeIdeaId && (
+                        <p className="text-sm text-gray-500 mt-2">
+                            Please create an idea in Idea Validation first
+                        </p>
+                    )}
                 </div>
             </Card>
 
-            {hasGenerated && (
+            {/* Generating State */}
+            {isGenerating && (
+                <Card className="bg-green-50 border-green-200">
+                    <div className="flex items-center gap-4">
+                        <Loader2 className="w-6 h-6 animate-spin text-green-500" />
+                        <div>
+                            <h3 className="font-medium text-green-900">
+                                Generating Marketing Strategy...
+                            </h3>
+                            <p className="text-sm text-green-700">
+                                This usually takes 30-60 seconds
+                            </p>
+                        </div>
+                    </div>
+                </Card>
+            )}
+
+            {hasGenerated && strategy && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* 30-Day Plan */}
                     <motion.div
@@ -214,14 +216,14 @@ export default function MarketingStrategy() {
                                 </CardTitle>
                             </CardHeader>
                             <div className="mt-4 space-y-4">
-                                {strategy.thirtyDayPlan.map((week) => (
-                                    <div key={week.week} className="p-4 rounded-lg bg-gray-50">
-                                        <div className="font-medium text-gray-900)] mb-2">
-                                            Week {week.week}
+                                {strategy.timeline?.map((phase: { phase: string; activities: string[] }, i: number) => (
+                                    <div key={i} className="p-4 rounded-lg bg-gray-50">
+                                        <div className="font-medium text-gray-900 mb-2">
+                                            {phase.phase}
                                         </div>
                                         <ul className="space-y-1.5">
-                                            {week.tasks.map((task, i) => (
-                                                <li key={i} className="text-sm text-gray-600 flex items-center gap-2">
+                                            {phase.activities?.map((task: string, j: number) => (
+                                                <li key={j} className="text-sm text-gray-600 flex items-center gap-2">
                                                     <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
                                                     {task}
                                                 </li>
@@ -233,7 +235,7 @@ export default function MarketingStrategy() {
                         </Card>
                     </motion.div>
 
-                    {/* Marketing Funnel */}
+                    {/* Target Segments */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -243,31 +245,27 @@ export default function MarketingStrategy() {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <Target className="w-5 h-5 text-[#10B981]" />
-                                    Marketing Funnel
+                                    Target Segments
                                 </CardTitle>
                             </CardHeader>
                             <div className="mt-4 space-y-4">
-                                {Object.entries(strategy.funnel).map(([stage, items], index) => (
+                                {strategy.target_segments?.map((segment: { name: string; description: string; size: string }, i: number) => (
                                     <div
-                                        key={stage}
-                                        className="p-4 rounded-lg"
-                                        style={{
-                                            backgroundColor: index === 0 ? '#dcfce7' : index === 1 ? '#fef9c3' : '#dbeafe',
-                                        }}
+                                        key={i}
+                                        className="p-4 rounded-lg bg-gray-50"
                                     >
-                                        <div className="font-medium capitalize mb-2">{stage}</div>
-                                        <div className="flex flex-wrap gap-2">
-                                            {items.map((item, i) => (
-                                                <Badge key={i} variant="default">{item}</Badge>
-                                            ))}
-                                        </div>
+                                        <div className="font-medium text-gray-900">{segment.name}</div>
+                                        <p className="text-sm text-gray-600 mt-1">{segment.description}</p>
+                                        {segment.size && (
+                                            <Badge variant="primary" className="mt-2">{segment.size}</Badge>
+                                        )}
                                     </div>
                                 ))}
                             </div>
                         </Card>
                     </motion.div>
 
-                    {/* Customer Persona */}
+                    {/* Channels */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -276,47 +274,31 @@ export default function MarketingStrategy() {
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
-                                    <Users className="w-5 h-5 text-[#10B981]" />
-                                    Customer Persona
+                                    <Zap className="w-5 h-5 text-[#10B981]" />
+                                    Marketing Channels
                                 </CardTitle>
                             </CardHeader>
-                            <div className="mt-4 p-4 rounded-lg bg-gray-50">
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white text-2xl font-bold">
-                                        {strategy.persona.name[0]}
-                                    </div>
-                                    <div>
-                                        <div className="font-semibold text-gray-900">
-                                            {strategy.persona.name}
+                            <div className="mt-4 space-y-3">
+                                {strategy.channels?.map((channel: { name: string; priority: string; tactics: string[] }, i: number) => (
+                                    <div key={i} className="p-4 rounded-lg bg-gray-50">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="font-medium text-gray-900">{channel.name}</span>
+                                            <Badge variant={channel.priority === 'high' ? 'success' : 'default'}>
+                                                {channel.priority}
+                                            </Badge>
                                         </div>
-                                        <div className="text-sm text-gray-600">
-                                            {strategy.persona.age} · {strategy.persona.occupation}
+                                        <div className="flex flex-wrap gap-2">
+                                            {channel.tactics?.map((tactic: string, j: number) => (
+                                                <Badge key={j} variant="default">{tactic}</Badge>
+                                            ))}
                                         </div>
                                     </div>
-                                </div>
-                                <div className="space-y-3">
-                                    <div>
-                                        <div className="text-sm font-medium text-red-700 mb-1">Pain Points</div>
-                                        <ul className="space-y-1">
-                                            {strategy.persona.painPoints.map((point, i) => (
-                                                <li key={i} className="text-sm text-gray-600">• {point}</li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                    <div>
-                                        <div className="text-sm font-medium text-green-700 mb-1">Goals</div>
-                                        <ul className="space-y-1">
-                                            {strategy.persona.goals.map((goal, i) => (
-                                                <li key={i} className="text-sm text-gray-600">• {goal}</li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                </div>
+                                ))}
                             </div>
                         </Card>
                     </motion.div>
 
-                    {/* Channel Strategy */}
+                    {/* Messaging Framework */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -325,30 +307,51 @@ export default function MarketingStrategy() {
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
-                                    <Zap className="w-5 h-5 text-[#10B981]" />
-                                    Channel Strategy
+                                    <Users className="w-5 h-5 text-[#10B981]" />
+                                    Messaging Framework
                                 </CardTitle>
                             </CardHeader>
                             <div className="mt-4 space-y-4">
-                                <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
-                                    <div className="font-medium text-blue-800 mb-2">Online Channels</div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {strategy.channels.online.map((channel, i) => (
-                                            <Badge key={i} variant="primary">{channel}</Badge>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div className="p-4 rounded-lg bg-purple-50 border border-purple-200">
-                                    <div className="font-medium text-purple-800 mb-2">Offline Channels</div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {strategy.channels.offline.map((channel, i) => (
-                                            <Badge key={i} variant="default">{channel}</Badge>
-                                        ))}
-                                    </div>
-                                </div>
+                                {strategy.messaging_framework && (
+                                    <>
+                                        <div className="p-4 rounded-lg bg-green-50 border border-green-200">
+                                            <div className="text-sm font-medium text-green-800 mb-1">Value Proposition</div>
+                                            <p className="text-green-700">{strategy.messaging_framework.value_proposition}</p>
+                                        </div>
+                                        <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                                            <div className="text-sm font-medium text-blue-800 mb-1">Key Messages</div>
+                                            <ul className="space-y-1">
+                                                {strategy.messaging_framework.key_messages?.map((msg: string, i: number) => (
+                                                    <li key={i} className="text-sm text-blue-700">• {msg}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </Card>
                     </motion.div>
+
+                    {/* KPIs */}
+                    {strategy.kpis && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.4 }}
+                            className="lg:col-span-2"
+                        >
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Key Performance Indicators</CardTitle>
+                                </CardHeader>
+                                <div className="mt-4 flex flex-wrap gap-2">
+                                    {strategy.kpis.map((kpi: string, i: number) => (
+                                        <Badge key={i} variant="default" size="md">{kpi}</Badge>
+                                    ))}
+                                </div>
+                            </Card>
+                        </motion.div>
+                    )}
                 </div>
             )}
         </div>

@@ -11,12 +11,13 @@
  * - Market demand snapshot
  * 
  * DATA FLOW:
- * - User enters idea → stored in local state
- * - Auto-saves to localStorage (mock backend)
- * - Can generate PDF export
+ * - User enters idea → saved to Core Service
+ * - User triggers AI analysis → Core queues job → AI generates
+ * - React Query polls for results → displays when ready
  */
 
 import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     Lightbulb,
@@ -28,6 +29,7 @@ import {
     TrendingUp,
     TrendingDown,
     Minus,
+    Loader2,
 } from 'lucide-react';
 import {
     Card,
@@ -41,6 +43,14 @@ import {
 import toast from 'react-hot-toast';
 import { useIdeaStore } from '@/store';
 import { IdeaValidationSkeleton } from '@/components/skeletons/IdeaValidationSkeleton';
+import {
+    useIdea,
+    useIdeas,
+    useCreateIdea,
+    useUpdateIdea,
+    useModuleData,
+    useGenerateModule,
+} from '@/hooks';
 
 /**
  * Risk level type
@@ -59,187 +69,180 @@ const getRiskBadge = (level: RiskLevel) => {
 };
 
 export default function IdeaValidation() {
-    // LOCAL STORAGE KEY for auto-save
-    const STORAGE_KEY = 'pitchrr_idea_validation';
+    const navigate = useNavigate();
+
+    // Get ideaId from URL if present (e.g., /dashboard/idea/:ideaId)
+    // If no ideaId, we'll use the first idea from the list or create a new one
+    const { ideaId: urlIdeaId } = useParams<{ ideaId?: string }>();
 
     // Form state
     const [ideaSummary, setIdeaSummary] = useState('');
-    const [isSaving, setIsSaving] = useState(false);
-    const [lastSaved, setLastSaved] = useState<Date | null>(null);
-    const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [hasAnalyzed, setHasAnalyzed] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
+    const [ideaTitle, setIdeaTitle] = useState('');
 
-    // Analysis results (mock data - would come from AI API)
-    const [analysis, setAnalysis] = useState({
-        score: 0,
-        risks: {
-            market: 'medium' as RiskLevel,
-            execution: 'medium' as RiskLevel,
-            competition: 'medium' as RiskLevel,
-            tech: 'low' as RiskLevel,
-        },
-        feasibility: 'medium' as RiskLevel,
-        swot: {
-            strengths: [] as string[],
-            weaknesses: [] as string[],
-        },
-        marketDemand: {
-            level: 'medium' as RiskLevel,
-            trend: 'stable' as 'growing' | 'stable' | 'declining',
-        },
-    });
+    // Get global idea from store (for backward compatibility with Generate Idea flow)
+    const { currentIdea, setIdea, updateIdea: updateStoreIdea } = useIdeaStore();
 
-    /**
-     * Load saved data from localStorage on mount
-     */
-    const { currentIdea, updateIdea } = useIdeaStore();
+    // ==========================================================================
+    // API HOOKS
+    // ==========================================================================
 
-    /**
-     * Load saved data from localStorage on mount OR autofill from store
-     */
+    // Fetch all ideas to get the current one if no URL param
+    const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
+
+    // Determine which idea to use
+    const activeIdeaId = urlIdeaId || ideas?.[0]?.id;
+
+    // Fetch the active idea
+    const { data: idea, isLoading: isLoadingIdea } = useIdea(activeIdeaId);
+
+    // Create new idea
+    const { mutate: createIdea, isPending: isCreating } = useCreateIdea();
+
+    // Update existing idea
+    const { mutate: updateIdea, isPending: isUpdating } = useUpdateIdea(activeIdeaId || '');
+
+    // Fetch module data (with automatic polling while generating)
+    const {
+        data: moduleData,
+        isFetching: isPolling,
+    } = useModuleData(activeIdeaId, 'idea_validation');
+
+    // Generate module (trigger AI analysis)
+    const { mutate: generateModule, isPending: isTriggering } = useGenerateModule(activeIdeaId || '');
+
+    // ==========================================================================
+    // DERIVED STATE
+    // ==========================================================================
+
+    const hasAnalysis = moduleData?.exists && moduleData.data;
+    const analysis = moduleData?.data || null;
+    const isSaving = isCreating || isUpdating;
+    const isLoading = isLoadingIdeas || isLoadingIdea;
+    const isAnalyzing = isTriggering || (isPolling && !hasAnalysis);
+
+    // ==========================================================================
+    // EFFECTS
+    // ==========================================================================
+
+    // Populate form when idea is loaded from API
     useEffect(() => {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        let savedData: any = null;
-
-        if (saved) {
-            try {
-                savedData = JSON.parse(saved);
-
-                if (savedData.analysis) {
-                    setAnalysis(savedData.analysis);
-                    setHasAnalyzed(true);
-                }
-                if (savedData.lastSaved) {
-                    setLastSaved(new Date(savedData.lastSaved));
-                }
-            } catch (e) {
-                console.error('Failed to load saved data:', e);
-            }
+        if (idea) {
+            setIdeaTitle(idea.title);
+            setIdeaSummary(idea.description);
+            // Also update the store for cross-module compatibility
+            setIdea({
+                title: idea.title,
+                description: idea.description,
+                problem: idea.problemSolved || undefined,
+                targetMarket: idea.targetAudience || undefined,
+                industry: idea.industry || undefined,
+            });
         }
+    }, [idea, setIdea]);
 
-        // Priority: Global Store > Saved Local > Empty
-        if (currentIdea?.description) {
-            setIdeaSummary(currentIdea.description);
-        } else if (savedData?.ideaSummary) {
-            setIdeaSummary(savedData.ideaSummary);
-        }
-
-        // Simulate loading
-        const timer = setTimeout(() => {
-            setIsLoading(false);
-        }, 1000);
-        return () => clearTimeout(timer);
-    }, [currentIdea]);
-
-    /**
-     * AUTO-SAVE: Save to localStorage when ideaSummary changes
-     * Uses debounce effect (2 second delay)
-     */
-    /**
-     * AUTO-SAVE: Save to localStorage when ideaSummary changes
-     * Uses debounce effect (1 second delay)
-     */
+    // Populate from store if no idea in DB (new user flow)
     useEffect(() => {
-        if (!ideaSummary) return;
+        if (!idea && currentIdea && !ideaSummary) {
+            setIdeaTitle(currentIdea.title || '');
+            setIdeaSummary(currentIdea.description || '');
+        }
+    }, [idea, currentIdea, ideaSummary]);
 
-        // Update global store immediately for UI responsiveness in other tabs/modules
-        // This ensures if they navigate away quickly, the store is likely updated
-        updateIdea({ description: ideaSummary });
-
-        const timeoutId = setTimeout(() => {
-            saveToLocalStorage();
-        }, 1000);
-
-        return () => clearTimeout(timeoutId);
-    }, [ideaSummary, updateIdea]);
+    // ==========================================================================
+    // HANDLERS
+    // ==========================================================================
 
     /**
-     * Save current state to localStorage AND update global store
+     * Save idea to Core Service
      */
-    const saveToLocalStorage = () => {
-        setIsSaving(true);
-
-        const data = {
-            ideaSummary,
-            analysis: hasAnalyzed ? analysis : null,
-            lastSaved: new Date().toISOString(),
-        };
-
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        setLastSaved(new Date());
-        setIsSaving(false);
-
-        // Also update the global store so other modules get the latest description
-        updateIdea({ description: ideaSummary });
-
-        toast.success('Saved!', { duration: 1500 });
-    };
-
-    /**
-     * Analyze idea with AI (mock implementation)
-     * 
-     * In a real app, this would call an AI API.
-     * For now, it generates random but realistic-looking results.
-     */
-    const analyzeIdea = async () => {
+    const handleSave = () => {
         if (!ideaSummary.trim()) {
             toast.error('Please describe your idea first');
             return;
         }
 
-        setIsAnalyzing(true);
+        if (activeIdeaId) {
+            // Update existing idea
+            updateIdea({
+                title: ideaTitle || 'Untitled Idea',
+                description: ideaSummary,
+            });
+        } else {
+            // Create new idea
+            createIdea({
+                title: ideaTitle || 'Untitled Idea',
+                description: ideaSummary,
+            }, {
+                onSuccess: (newIdea) => {
+                    // Navigate to the new idea URL
+                    navigate(`/dashboard/idea/${newIdea.id}`, { replace: true });
+                }
+            });
+        }
 
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // Generate mock analysis results
-        const mockScore = Math.floor(Math.random() * 40) + 50; // 50-90
-        const levels: RiskLevel[] = ['low', 'medium', 'high'];
-
-        const mockAnalysis = {
-            score: mockScore,
-            risks: {
-                market: levels[Math.floor(Math.random() * 3)] as RiskLevel,
-                execution: levels[Math.floor(Math.random() * 3)] as RiskLevel,
-                competition: levels[Math.floor(Math.random() * 2) + 1] as RiskLevel, // medium or high
-                tech: levels[Math.floor(Math.random() * 2)] as RiskLevel, // low or medium
-            },
-            feasibility: mockScore > 70 ? 'high' : mockScore > 50 ? 'medium' : 'low' as RiskLevel,
-            swot: {
-                strengths: [
-                    'Addresses a clear market need',
-                    'Technology is readily available',
-                    'Low initial investment required',
-                ],
-                weaknesses: [
-                    'Competitive market space',
-                    'Needs strong marketing strategy',
-                    'Customer acquisition may be challenging',
-                ],
-            },
-            marketDemand: {
-                level: mockScore > 65 ? 'high' : 'medium' as RiskLevel,
-                trend: mockScore > 60 ? 'growing' : 'stable' as 'growing' | 'stable' | 'declining',
-            },
-        };
-
-        setAnalysis(mockAnalysis);
-        setHasAnalyzed(true);
-        setIsAnalyzing(false);
-
-        // Save after analysis
-        saveToLocalStorage();
-
-        toast.success('Analysis complete!');
+        // Also update local store for cross-module compatibility
+        updateStoreIdea({
+            title: ideaTitle || 'Untitled Idea',
+            description: ideaSummary
+        });
     };
 
     /**
-     * Export to PDF (mock implementation)
+     * Trigger AI analysis
+     */
+    const handleAnalyze = async () => {
+        if (!ideaSummary.trim()) {
+            toast.error('Please describe your idea first');
+            return;
+        }
+
+        // If no idea exists yet, create one first
+        if (!activeIdeaId) {
+            createIdea({
+                title: ideaTitle || 'Untitled Idea',
+                description: ideaSummary,
+            }, {
+                onSuccess: (newIdea) => {
+                    // Navigate to the new idea and trigger generation
+                    navigate(`/dashboard/idea/${newIdea.id}`, { replace: true });
+                    toast.success('Idea saved! Starting AI analysis...');
+                    // The generation will be triggered after navigation
+                }
+            });
+            return;
+        }
+
+        // Ensure idea is up-to-date before generating
+        if (idea && idea.description !== ideaSummary) {
+            updateIdea({
+                title: ideaTitle || idea.title,
+                description: ideaSummary,
+            }, {
+                onSuccess: () => {
+                    // Trigger AI generation after update
+                    generateModule('idea_validation');
+                }
+            });
+        } else {
+            // Idea is up-to-date, trigger generation
+            generateModule('idea_validation');
+        }
+    };
+
+    /**
+     * Export to PDF
      */
     const exportToPDF = () => {
-        toast.success('PDF export will be available soon!');
+        if (!hasAnalysis) {
+            toast.error('Please generate analysis first');
+            return;
+        }
+        toast.success('PDF export coming soon!');
     };
+
+    // ==========================================================================
+    // RENDER
+    // ==========================================================================
 
     if (isLoading) {
         return <IdeaValidationSkeleton />;
@@ -259,17 +262,11 @@ export default function IdeaValidation() {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    {/* Last saved indicator */}
-                    {lastSaved && (
-                        <span className="text-sm text-gray-500">
-                            {isSaving ? 'Saving...' : `Saved ${lastSaved.toLocaleTimeString()}`}
-                        </span>
-                    )}
                     <Button
                         variant="secondary"
                         leftIcon={<Save className="w-4 h-4" />}
-                        onClick={saveToLocalStorage}
-                        disabled={isSaving}
+                        onClick={handleSave}
+                        isLoading={isSaving}
                     >
                         Save
                     </Button>
@@ -277,7 +274,7 @@ export default function IdeaValidation() {
                         variant="secondary"
                         leftIcon={<Download className="w-4 h-4" />}
                         onClick={exportToPDF}
-                        disabled={!hasAnalyzed}
+                        disabled={!hasAnalysis}
                     >
                         Export PDF
                     </Button>
@@ -297,6 +294,13 @@ export default function IdeaValidation() {
                                 Who is it for?
                             </CardDescription>
                         </CardHeader>
+                        <input
+                            type="text"
+                            placeholder="Idea Title (optional)"
+                            value={ideaTitle}
+                            onChange={(e) => setIdeaTitle(e.target.value)}
+                            className="w-full px-4 py-2 mt-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
                         <Textarea
                             placeholder="Example: An AI-powered tool that helps first-time founders validate their startup ideas and create investor-ready pitch decks in days instead of months..."
                             rows={6}
@@ -306,18 +310,35 @@ export default function IdeaValidation() {
                         />
                         <div className="mt-4">
                             <Button
-                                onClick={analyzeIdea}
+                                onClick={handleAnalyze}
                                 isLoading={isAnalyzing}
                                 leftIcon={<Sparkles className="w-4 h-4" />}
                                 className="w-full sm:w-auto"
                             >
-                                {hasAnalyzed ? 'Re-Analyze with AI' : 'Analyze with AI'}
+                                {hasAnalysis ? 'Re-Analyze with AI' : 'Analyze with AI'}
                             </Button>
                         </div>
                     </Card>
 
+                    {/* Generating State */}
+                    {isAnalyzing && (
+                        <Card className="bg-blue-50 border-blue-200">
+                            <div className="flex items-center gap-4">
+                                <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                                <div>
+                                    <h3 className="font-medium text-blue-900">
+                                        Generating Analysis...
+                                    </h3>
+                                    <p className="text-sm text-blue-700">
+                                        This usually takes 30-60 seconds
+                                    </p>
+                                </div>
+                            </div>
+                        </Card>
+                    )}
+
                     {/* Idea Score Card */}
-                    {hasAnalyzed && (
+                    {hasAnalysis && (
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -350,31 +371,31 @@ export default function IdeaValidation() {
                                                 strokeWidth="8"
                                                 fill="none"
                                                 strokeLinecap="round"
-                                                strokeDasharray={`${(analysis.score / 100) * 251} 251`}
+                                                strokeDasharray={`${(analysis.idea_score / 100) * 251} 251`}
                                                 className={
-                                                    analysis.score >= 70
+                                                    analysis.idea_score >= 70
                                                         ? 'text-green-500'
-                                                        : analysis.score >= 50
+                                                        : analysis.idea_score >= 50
                                                             ? 'text-yellow-500'
                                                             : 'text-red-500'
                                                 }
                                             />
                                         </svg>
                                         <span className="absolute inset-0 flex items-center justify-center text-2xl font-bold">
-                                            {analysis.score}
+                                            {analysis.idea_score}
                                         </span>
                                     </div>
                                     <div>
-                                        <div className="text-lg font-semibold text-gray-900)]">
-                                            {analysis.score >= 70 ? 'Strong Potential' :
-                                                analysis.score >= 50 ? 'Promising' : 'Needs Work'}
+                                        <div className="text-lg font-semibold text-gray-900">
+                                            {analysis.idea_score >= 70 ? 'Strong Potential' :
+                                                analysis.idea_score >= 50 ? 'Promising' : 'Needs Work'}
                                         </div>
                                         <p className="text-sm text-gray-600 mt-1">
-                                            {analysis.score >= 70
+                                            {analysis.summary || (analysis.idea_score >= 70
                                                 ? 'Your idea shows strong market potential'
-                                                : analysis.score >= 50
+                                                : analysis.idea_score >= 50
                                                     ? 'Good foundation, but needs refinement'
-                                                    : 'Consider pivoting or refining your approach'}
+                                                    : 'Consider pivoting or refining your approach')}
                                         </p>
                                     </div>
                                 </div>
@@ -386,7 +407,7 @@ export default function IdeaValidation() {
                 {/* Right Column: Analysis Results */}
                 <div className="space-y-6">
                     {/* Risk Heat Map */}
-                    {hasAnalyzed && (
+                    {hasAnalysis && analysis.risk_heat_map && (
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -400,16 +421,16 @@ export default function IdeaValidation() {
                                     </CardDescription>
                                 </CardHeader>
                                 <div className="mt-4 grid grid-cols-2 gap-4">
-                                    {Object.entries(analysis.risks).map(([key, level]) => (
+                                    {analysis.risk_heat_map.map((risk: { category: string; level: RiskLevel; description: string }) => (
                                         <div
-                                            key={key}
+                                            key={risk.category}
                                             className="flex items-center justify-between p-3 rounded-lg bg-gray-50"
                                         >
                                             <span className="text-sm font-medium text-gray-700 capitalize">
-                                                {key} Risk
+                                                {risk.category} Risk
                                             </span>
-                                            <Badge variant={getRiskBadge(level)}>
-                                                {level}
+                                            <Badge variant={getRiskBadge(risk.level)}>
+                                                {risk.level}
                                             </Badge>
                                         </div>
                                     ))}
@@ -421,7 +442,7 @@ export default function IdeaValidation() {
                                             Overall Feasibility
                                         </span>
                                         <Badge variant={getRiskBadge(analysis.feasibility)} size="md">
-                                            {analysis.feasibility.toUpperCase()}
+                                            {analysis.feasibility?.toUpperCase() || 'MEDIUM'}
                                         </Badge>
                                     </div>
                                 </div>
@@ -430,7 +451,7 @@ export default function IdeaValidation() {
                     )}
 
                     {/* SWOT Analysis */}
-                    {hasAnalyzed && (
+                    {hasAnalysis && analysis.swot && (
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -451,7 +472,7 @@ export default function IdeaValidation() {
                                             Strengths
                                         </h4>
                                         <ul className="space-y-2">
-                                            {analysis.swot.strengths.map((item, i) => (
+                                            {analysis.swot.strengths?.map((item: string, i: number) => (
                                                 <li key={i} className="text-sm text-green-700 flex items-start gap-2">
                                                     <span className="mt-1.5 w-1 h-1 rounded-full bg-green-500 flex-shrink-0" />
                                                     {item}
@@ -466,7 +487,7 @@ export default function IdeaValidation() {
                                             Weaknesses
                                         </h4>
                                         <ul className="space-y-2">
-                                            {analysis.swot.weaknesses.map((item, i) => (
+                                            {analysis.swot.weaknesses?.map((item: string, i: number) => (
                                                 <li key={i} className="text-sm text-red-700 flex items-start gap-2">
                                                     <span className="mt-1.5 w-1 h-1 rounded-full bg-red-500 flex-shrink-0" />
                                                     {item}
@@ -480,7 +501,7 @@ export default function IdeaValidation() {
                     )}
 
                     {/* Market Demand */}
-                    {hasAnalyzed && (
+                    {hasAnalysis && analysis.market_demand_snapshot && (
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -493,40 +514,83 @@ export default function IdeaValidation() {
                                         Current market demand and trend analysis
                                     </CardDescription>
                                 </CardHeader>
-                                <div className="mt-4 flex items-center justify-between p-4 rounded-lg bg-gray-50">
-                                    <div>
-                                        <div className="text-sm text-gray-600">Demand Level</div>
-                                        <div className="text-lg font-semibold text-gray-900 capitalize">
-                                            {analysis.marketDemand.level}
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        {analysis.marketDemand.trend === 'growing' && (
-                                            <TrendingUp className="w-5 h-5 text-green-500" />
-                                        )}
-                                        {analysis.marketDemand.trend === 'stable' && (
-                                            <Minus className="w-5 h-5 text-yellow-500" />
-                                        )}
-                                        {analysis.marketDemand.trend === 'declining' && (
-                                            <TrendingDown className="w-5 h-5 text-red-500" />
-                                        )}
-                                        <span className="text-sm font-medium capitalize text-gray-700">
-                                            {analysis.marketDemand.trend}
-                                        </span>
-                                    </div>
+                                <div className="mt-4 space-y-3">
+                                    {analysis.market_demand_snapshot.map((signal: { source: string; signal_type: string; interpretation: string; trend?: string }, i: number) => {
+                                        const interpretation = signal.interpretation?.toLowerCase() || '';
+                                        const isPositive = signal.trend === 'up' ||
+                                            interpretation.includes('growing') ||
+                                            interpretation.includes('high') ||
+                                            interpretation.includes('strong') ||
+                                            interpretation.includes('increasing');
+                                        const isNegative = signal.trend === 'down' ||
+                                            interpretation.includes('declining') ||
+                                            interpretation.includes('low') ||
+                                            interpretation.includes('weak') ||
+                                            interpretation.includes('decreasing') ||
+                                            interpretation.includes('saturated');
+
+                                        return (
+                                            <div key={i} className="flex items-center justify-between p-4 rounded-lg bg-gray-50">
+                                                <div>
+                                                    <div className="text-sm text-gray-600">{signal.source}</div>
+                                                    <div className="font-medium text-gray-900">{signal.signal_type}</div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {isPositive ? (
+                                                        <TrendingUp className="w-5 h-5 text-green-500" />
+                                                    ) : isNegative ? (
+                                                        <TrendingDown className="w-5 h-5 text-red-500" />
+                                                    ) : (
+                                                        <Minus className="w-5 h-5 text-yellow-500" />
+                                                    )}
+                                                    <span className={`text-sm font-medium ${isPositive ? 'text-green-700' :
+                                                        isNegative ? 'text-red-700' :
+                                                            'text-yellow-700'
+                                                        }`}>
+                                                        {signal.interpretation}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </Card>
                         </motion.div>
                     )}
 
+                    {/* Recommendations */}
+                    {hasAnalysis && analysis.recommendations && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.4 }}
+                        >
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Recommendations</CardTitle>
+                                </CardHeader>
+                                <ul className="mt-4 space-y-2">
+                                    {analysis.recommendations.map((rec: string, i: number) => (
+                                        <li key={i} className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                                            <span className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                                                {i + 1}
+                                            </span>
+                                            <p className="text-sm text-blue-800">{rec}</p>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </Card>
+                        </motion.div>
+                    )}
+
                     {/* Placeholder when not analyzed */}
-                    {!hasAnalyzed && (
+                    {!hasAnalysis && !isAnalyzing && (
                         <Card className="flex flex-col items-center justify-center py-12 text-center">
                             <Sparkles className="w-12 h-12 text-gray-300 mb-4" />
                             <h3 className="text-lg font-medium text-gray-700">
                                 Results will appear here
                             </h3>
-                            <p className="text-sm text-[var(--color-gray-500)] mt-1 max-w-xs">
+                            <p className="text-sm text-gray-500 mt-1 max-w-xs">
                                 Describe your idea and click "Analyze with AI" to get started
                             </p>
                         </Card>

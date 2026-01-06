@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth, useUser as useClerkUser } from '@clerk/clerk-react';
-import api from '@/services/api';
+import { authApi } from '@/services/api';
 
 /**
  * Hook to fetch/sync the user from our backend database.
  * This ensures the user exists in our DB and returns their profile.
  * 
- * Uses the Clerk ID to sync.
+ * Uses the Clerk ID to sync. Calls AUTH SERVICE (port 3000).
  */
 export function useDBUser() {
     const { isSignedIn } = useAuth();
@@ -17,7 +17,8 @@ export function useDBUser() {
         queryFn: async () => {
             try {
                 // We use POST /auth/sync to "Get or Create" the user in our DB
-                const { data } = await api.post('/auth/sync');
+                // This goes to AUTH SERVICE (port 3000)
+                const { data } = await authApi.post('/auth/sync');
                 return data;
             } catch (error) {
                 console.error('[useDBUser] Sync failed:', error);

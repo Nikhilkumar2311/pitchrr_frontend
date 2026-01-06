@@ -8,19 +8,23 @@
  * - Feature comparison table
  * - Competitor SWOT (strengths & weaknesses)
  * - Pricing comparison
+ * 
+ * DATA FLOW:
+ * - Fetches idea from Core Service
+ * - Generates competitor analysis via AI
+ * - React Query polls for results
  */
 
-import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     Users,
     Save,
     Download,
     Sparkles,
-    Plus,
-    Trash2,
     Check,
     X,
+    Loader2,
 } from 'lucide-react';
 import {
     Card,
@@ -28,145 +32,74 @@ import {
     CardTitle,
     CardDescription,
     Button,
-    Input,
     Badge,
 } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { CompetitorAnalysisSkeleton } from '@/components/skeletons/CompetitorAnalysisSkeleton';
+import {
+    useIdeas,
+    useModuleData,
+    useGenerateModule,
+} from '@/hooks';
 
 interface Competitor {
     name: string;
-    website: string;
-    pricing: string;
+    website?: string;
+    pricing?: string;
+    description?: string;
     strengths: string[];
     weaknesses: string[];
 }
 
 export default function CompetitorAnalysis() {
-    const STORAGE_KEY = 'pitchrr_competitor_analysis';
+    const { ideaId: urlIdeaId } = useParams<{ ideaId?: string }>();
+    // ==========================================================================
+    // API HOOKS
+    // ==========================================================================
 
-    const [newCompetitor, setNewCompetitor] = useState('');
-    const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [hasAnalyzed, setHasAnalyzed] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
+    const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
+    const activeIdeaId = urlIdeaId || ideas?.[0]?.id;
 
-    // Competitors data
-    const [competitors, setCompetitors] = useState<Competitor[]>([
-        {
-            name: 'Notion',
-            website: 'notion.so',
-            pricing: 'Freemium, $8/user/mo',
-            strengths: ['Strong brand', 'Flexible', 'Large community'],
-            weaknesses: ['Not focused on startups', 'Complex for beginners'],
-        },
-        {
-            name: 'Slidebean',
-            website: 'slidebean.com',
-            pricing: '$29/mo',
-            strengths: ['Pitch deck focused', 'AI features'],
-            weaknesses: ['Limited to decks', 'Expensive'],
-        },
-        {
-            name: 'Canva',
-            website: 'canva.com',
-            pricing: 'Freemium, $13/mo',
-            strengths: ['Easy to use', 'Many templates'],
-            weaknesses: ['Generic, not startup-specific'],
-        },
-    ]);
+    const {
+        data: moduleData,
+        isFetching: isPolling,
+    } = useModuleData(activeIdeaId, 'competitor_analysis');
 
-    // Feature comparison data
-    const features = [
-        { name: 'Idea Validation', yourStartup: true, competitors: { 'Notion': false, 'Slidebean': false, 'Canva': false } },
-        { name: 'Marketing Strategy', yourStartup: true, competitors: { 'Notion': false, 'Slidebean': false, 'Canva': false } },
-        { name: 'AI Branding', yourStartup: true, competitors: { 'Notion': false, 'Slidebean': false, 'Canva': true } },
-        { name: 'Pitch Deck Generator', yourStartup: true, competitors: { 'Notion': false, 'Slidebean': true, 'Canva': true } },
-        { name: 'GTM Planning', yourStartup: true, competitors: { 'Notion': true, 'Slidebean': false, 'Canva': false } },
-        { name: 'AI Mentor', yourStartup: true, competitors: { 'Notion': false, 'Slidebean': false, 'Canva': false } },
-    ];
+    const { mutate: generateModule, isPending: isTriggering } = useGenerateModule(activeIdeaId || '');
 
-    /**
-     * Load saved data from localStorage
-     */
-    useEffect(() => {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-            try {
-                const data = JSON.parse(saved);
-                if (data.competitors) {
-                    setCompetitors(data.competitors);
-                    setHasAnalyzed(true);
-                }
-            } catch (e) {
-                console.error('Failed to load saved data:', e);
-            }
+    // ==========================================================================
+    // DERIVED STATE
+    // ==========================================================================
+
+    const hasAnalyzed = moduleData?.exists && moduleData.data;
+    const analysisData = moduleData?.data || null;
+    const competitors: Competitor[] = analysisData?.competitors || [];
+    const isLoading = isLoadingIdeas;
+    const isAnalyzing = isTriggering || (isPolling && !hasAnalyzed);
+
+    // ==========================================================================
+    // HANDLERS
+    // ==========================================================================
+
+    const handleAnalyze = () => {
+        if (!activeIdeaId) {
+            toast.error('Please create an idea first');
+            return;
         }
+        generateModule('competitor_analysis');
+    };
 
-        // Simulate loading
-        const timer = setTimeout(() => {
-            setIsLoading(false);
-        }, 1000);
-        return () => clearTimeout(timer);
-    }, []);
+    const handleSave = () => {
+        toast.success('Competitor analysis saved!');
+    };
+
+    // ==========================================================================
+    // RENDER
+    // ==========================================================================
 
     if (isLoading) {
         return <CompetitorAnalysisSkeleton />;
     }
-
-    /**
-     * Save to localStorage
-     */
-    const saveToLocalStorage = () => {
-        const data = {
-            competitors,
-            lastSaved: new Date().toISOString(),
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        toast.success('Saved!', { duration: 1500 });
-    };
-
-    /**
-     * Add a competitor (mock - would use AI in real app)
-     */
-    const addCompetitor = () => {
-        if (!newCompetitor.trim()) {
-            toast.error('Please enter a competitor name');
-            return;
-        }
-
-        const competitor: Competitor = {
-            name: newCompetitor,
-            website: `${newCompetitor.toLowerCase().replace(/\s/g, '')}.com`,
-            pricing: 'TBD',
-            strengths: ['To be analyzed'],
-            weaknesses: ['To be analyzed'],
-        };
-
-        setCompetitors([...competitors, competitor]);
-        setNewCompetitor('');
-        setHasAnalyzed(true);
-        toast.success(`Added ${newCompetitor}`);
-    };
-
-    /**
-     * Remove a competitor
-     */
-    const removeCompetitor = (index: number) => {
-        const newCompetitors = competitors.filter((_, i) => i !== index);
-        setCompetitors(newCompetitors);
-    };
-
-    /**
-     * Analyze competitors with AI (mock)
-     */
-    const analyzeWithAI = async () => {
-        setIsAnalyzing(true);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        setHasAnalyzed(true);
-        setIsAnalyzing(false);
-        saveToLocalStorage();
-        toast.success('Competitor analysis complete!');
-    };
 
     return (
         <div className="space-y-6">
@@ -185,7 +118,7 @@ export default function CompetitorAnalysis() {
                     <Button
                         variant="secondary"
                         leftIcon={<Save className="w-4 h-4" />}
-                        onClick={saveToLocalStorage}
+                        onClick={handleSave}
                     >
                         Save
                     </Button>
@@ -199,37 +132,46 @@ export default function CompetitorAnalysis() {
                 </div>
             </div>
 
-            {/* Add Competitor */}
+            {/* Generate Analysis */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Add Competitors</CardTitle>
+                    <CardTitle>Analyze Competitors</CardTitle>
                     <CardDescription>
-                        Enter competitors to analyze them against your startup
+                        Let AI research and analyze your competitive landscape
                     </CardDescription>
                 </CardHeader>
-                <div className="mt-4 flex gap-3">
-                    <Input
-                        placeholder="Company name (e.g., Notion, Slidebean)"
-                        value={newCompetitor}
-                        onChange={(e) => setNewCompetitor(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && addCompetitor()}
-                        className="flex-1"
-                    />
-                    <Button onClick={addCompetitor} leftIcon={<Plus className="w-4 h-4" />}>
-                        Add
-                    </Button>
-                </div>
-                {competitors.length > 0 && (
-                    <Button
-                        onClick={analyzeWithAI}
-                        isLoading={isAnalyzing}
-                        leftIcon={<Sparkles className="w-4 h-4" />}
-                        className="mt-4"
-                    >
-                        Analyze with AI
-                    </Button>
+                <Button
+                    onClick={handleAnalyze}
+                    isLoading={isAnalyzing}
+                    leftIcon={<Sparkles className="w-4 h-4" />}
+                    className="mt-4"
+                    disabled={!activeIdeaId}
+                >
+                    {hasAnalyzed ? 'Re-analyze with AI' : 'Analyze with AI'}
+                </Button>
+                {!activeIdeaId && (
+                    <p className="text-sm text-gray-500 mt-2">
+                        Please create an idea in Idea Validation first
+                    </p>
                 )}
             </Card>
+
+            {/* Generating State */}
+            {isAnalyzing && (
+                <Card className="bg-cyan-50 border-cyan-200">
+                    <div className="flex items-center gap-4">
+                        <Loader2 className="w-6 h-6 animate-spin text-cyan-500" />
+                        <div>
+                            <h3 className="font-medium text-cyan-900">
+                                Analyzing Competitors...
+                            </h3>
+                            <p className="text-sm text-cyan-700">
+                                Researching your market. This usually takes 30-60 seconds.
+                            </p>
+                        </div>
+                    </div>
+                </Card>
+            )}
 
             {/* Competitor Cards */}
             {competitors.length > 0 && (
@@ -241,30 +183,24 @@ export default function CompetitorAnalysis() {
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: index * 0.1 }}
                         >
-                            <Card className="relative">
-                                {/* Remove button */}
-                                <button
-                                    onClick={() => removeCompetitor(index)}
-                                    className="absolute top-3 right-3 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-
+                            <Card className="relative h-full">
                                 <CardHeader>
                                     <CardTitle>{competitor.name}</CardTitle>
-                                    <CardDescription>{competitor.website}</CardDescription>
+                                    <CardDescription>{competitor.website || competitor.description}</CardDescription>
                                 </CardHeader>
 
                                 <div className="mt-4 space-y-3">
-                                    <div className="text-sm">
-                                        <span className="text-gray-500">Pricing: </span>
-                                        <span className="font-medium">{competitor.pricing}</span>
-                                    </div>
+                                    {competitor.pricing && (
+                                        <div className="text-sm">
+                                            <span className="text-gray-500">Pricing: </span>
+                                            <span className="font-medium">{competitor.pricing}</span>
+                                        </div>
+                                    )}
 
                                     <div>
                                         <div className="text-sm font-medium text-green-700 mb-1">Strengths</div>
                                         <div className="flex flex-wrap gap-1">
-                                            {competitor.strengths.map((s, i) => (
+                                            {competitor.strengths?.map((s, i) => (
                                                 <Badge key={i} variant="success" size="sm">{s}</Badge>
                                             ))}
                                         </div>
@@ -273,7 +209,7 @@ export default function CompetitorAnalysis() {
                                     <div>
                                         <div className="text-sm font-medium text-red-700 mb-1">Weaknesses</div>
                                         <div className="flex flex-wrap gap-1">
-                                            {competitor.weaknesses.map((w, i) => (
+                                            {competitor.weaknesses?.map((w, i) => (
                                                 <Badge key={i} variant="danger" size="sm">{w}</Badge>
                                             ))}
                                         </div>
@@ -285,8 +221,43 @@ export default function CompetitorAnalysis() {
                 </div>
             )}
 
+            {/* Competitive Positioning */}
+            {hasAnalyzed && analysisData?.positioning && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                >
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Competitive Positioning</CardTitle>
+                            <CardDescription>
+                                How your startup differentiates from competitors
+                            </CardDescription>
+                        </CardHeader>
+                        <div className="mt-4 space-y-4">
+                            {analysisData.positioning.unique_value && (
+                                <div className="p-4 rounded-lg bg-green-50 border border-green-200">
+                                    <div className="font-medium text-green-800 mb-2">Your Unique Value</div>
+                                    <p className="text-green-700">{analysisData.positioning.unique_value}</p>
+                                </div>
+                            )}
+                            {analysisData.positioning.gaps && (
+                                <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                                    <div className="font-medium text-blue-800 mb-2">Market Gaps</div>
+                                    <ul className="space-y-1">
+                                        {analysisData.positioning.gaps.map((gap: string, i: number) => (
+                                            <li key={i} className="text-sm text-blue-700">• {gap}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    </Card>
+                </motion.div>
+            )}
+
             {/* Feature Comparison Table */}
-            {hasAnalyzed && (
+            {hasAnalyzed && analysisData?.feature_comparison && (
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -305,27 +276,27 @@ export default function CompetitorAnalysis() {
                                         <th className="text-left py-3 px-4 font-medium text-gray-700">
                                             Feature
                                         </th>
-                                        <th className="text-center py-3 px-4 font-medium text-[var(--color-primary-600)]">
+                                        <th className="text-center py-3 px-4 font-medium text-blue-600">
                                             Your Startup
                                         </th>
                                         {competitors.slice(0, 3).map((c) => (
-                                            <th key={c.name} className="text-center py-3 px-4 font-medium text-gray-700)]">
+                                            <th key={c.name} className="text-center py-3 px-4 font-medium text-gray-700">
                                                 {c.name}
                                             </th>
                                         ))}
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {features.map((feature, i) => (
+                                    {analysisData.feature_comparison.map((feature: { feature: string; your_startup: boolean; competitors: Record<string, boolean> }, i: number) => (
                                         <tr
-                                            key={feature.name}
+                                            key={feature.feature}
                                             className={i % 2 === 0 ? 'bg-gray-50' : ''}
                                         >
                                             <td className="py-3 px-4 text-gray-900">
-                                                {feature.name}
+                                                {feature.feature}
                                             </td>
                                             <td className="text-center py-3 px-4">
-                                                {feature.yourStartup ? (
+                                                {feature.your_startup ? (
                                                     <Check className="w-5 h-5 text-green-500 mx-auto" />
                                                 ) : (
                                                     <X className="w-5 h-5 text-red-400 mx-auto" />
@@ -333,7 +304,7 @@ export default function CompetitorAnalysis() {
                                             </td>
                                             {competitors.slice(0, 3).map((c) => (
                                                 <td key={c.name} className="text-center py-3 px-4">
-                                                    {feature.competitors[c.name as keyof typeof feature.competitors] ? (
+                                                    {feature.competitors[c.name] ? (
                                                         <Check className="w-5 h-5 text-green-500 mx-auto" />
                                                     ) : (
                                                         <X className="w-5 h-5 text-red-400 mx-auto" />
@@ -345,6 +316,30 @@ export default function CompetitorAnalysis() {
                                 </tbody>
                             </table>
                         </div>
+                    </Card>
+                </motion.div>
+            )}
+
+            {/* Recommendations */}
+            {hasAnalyzed && analysisData?.recommendations && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                >
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Strategic Recommendations</CardTitle>
+                        </CardHeader>
+                        <ul className="mt-4 space-y-2">
+                            {analysisData.recommendations.map((rec: string, i: number) => (
+                                <li key={i} className="flex items-start gap-3 p-3 bg-cyan-50 rounded-lg">
+                                    <span className="flex-shrink-0 w-6 h-6 bg-cyan-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                                        {i + 1}
+                                    </span>
+                                    <p className="text-sm text-cyan-800">{rec}</p>
+                                </li>
+                            ))}
+                        </ul>
                     </Card>
                 </motion.div>
             )}

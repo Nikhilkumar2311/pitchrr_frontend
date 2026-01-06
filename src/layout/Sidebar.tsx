@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useUIStore } from "@/store";
 import { useClerk } from "@clerk/clerk-react";
+import { useParams } from "react-router-dom";
 
 const navItems = [
   { icon: Home, label: "Dashboard", path: "/dashboard" },
@@ -46,6 +47,12 @@ export function Sidebar() {
     setSidebarOpen,
     toggleSidebarCollapse,
   } = useUIStore();
+  const { ideaId } = useParams<{ ideaId?: string }>();
+
+  // Determine the active idea ID to use for links
+  // Priority: URL param > Store idea ID (if we added it to store) > undefined
+  const activeIdeaId = ideaId; // useParams is usually the most reliable for current context
+
 
   const sidebarWidth = isSidebarCollapsed ? "w-[72px]" : "w-[280px]";
 
@@ -115,12 +122,15 @@ export function Sidebar() {
           <ul className="space-y-1 px-3">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.path;
+              const linkPath = activeIdeaId && item.path.includes('/dashboard/') && item.path !== '/dashboard'
+                ? `${item.path}/${activeIdeaId}`
+                : item.path;
+              const isActive = location.pathname === item.path || location.pathname === linkPath;
 
               return (
                 <li key={item.path}>
                   <Link
-                    to={item.path}
+                    to={linkPath}
                     className={`
                       flex items-center gap-3 px-3 py-2.5 rounded-lg
                       transition-colors duration-200

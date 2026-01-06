@@ -162,9 +162,18 @@ const router = createBrowserRouter([
                         path: 'idea',
                         element: <LazyPage><IdeaValidation /></LazyPage>,
                     },
+                    // Module 1: Idea Validation with specific idea ID
+                    {
+                        path: 'idea/:ideaId',
+                        element: <LazyPage><IdeaValidation /></LazyPage>,
+                    },
                     // Module 2: Marketing Strategy
                     {
                         path: 'marketing',
+                        element: <LazyPage><MarketingStrategy /></LazyPage>,
+                    },
+                    {
+                        path: 'marketing/:ideaId',
                         element: <LazyPage><MarketingStrategy /></LazyPage>,
                     },
                     // Module 3: Branding
@@ -172,9 +181,17 @@ const router = createBrowserRouter([
                         path: 'branding',
                         element: <LazyPage><Branding /></LazyPage>,
                     },
+                    {
+                        path: 'branding/:ideaId',
+                        element: <LazyPage><Branding /></LazyPage>,
+                    },
                     // Module 4: Pitch Deck
                     {
                         path: 'pitch',
+                        element: <LazyPage><PitchDeck /></LazyPage>,
+                    },
+                    {
+                        path: 'pitch/:ideaId',
                         element: <LazyPage><PitchDeck /></LazyPage>,
                     },
                     // Module 5: GTM Strategy
@@ -182,14 +199,26 @@ const router = createBrowserRouter([
                         path: 'gtm',
                         element: <LazyPage><GTMStrategy /></LazyPage>,
                     },
+                    {
+                        path: 'gtm/:ideaId',
+                        element: <LazyPage><GTMStrategy /></LazyPage>,
+                    },
                     // Module 6: Competitor Analysis
                     {
                         path: 'competitors',
                         element: <LazyPage><CompetitorAnalysis /></LazyPage>,
                     },
+                    {
+                        path: 'competitors/:ideaId',
+                        element: <LazyPage><CompetitorAnalysis /></LazyPage>,
+                    },
                     // Module 7: Startup AI Chatbot
                     {
                         path: 'chat',
+                        element: <LazyPage><StartupChatbot /></LazyPage>,
+                    },
+                    {
+                        path: 'chat/:ideaId',
                         element: <LazyPage><StartupChatbot /></LazyPage>,
                     },
                 ],
