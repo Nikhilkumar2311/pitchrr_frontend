@@ -379,15 +379,26 @@ export default function Branding() {
                             <Card>
                                 <CardHeader>
                                     <CardTitle>AI-Generated Color Palette</CardTitle>
+                                    <CardDescription>Click any color to copy its hex code</CardDescription>
                                 </CardHeader>
-                                <div className="mt-4 flex gap-2">
+                                <div className="mt-4 flex flex-wrap gap-4">
                                     {Object.entries(branding.color_palette).map(([name, color]) => (
-                                        <div key={name} className="flex flex-col items-center gap-1">
+                                        <div
+                                            key={name}
+                                            className="flex flex-col items-center gap-2 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(color as string);
+                                                toast.success(`Copied ${color}`);
+                                            }}
+                                        >
                                             <div
-                                                className="w-12 h-12 rounded-lg shadow-sm border"
+                                                className="w-16 h-16 rounded-lg shadow-md border-2 border-white"
                                                 style={{ backgroundColor: color as string }}
                                             />
-                                            <span className="text-xs text-gray-500 capitalize">{name}</span>
+                                            <span className="text-sm font-medium text-gray-700 capitalize">{name}</span>
+                                            <span className="text-xs font-mono text-gray-500 bg-white px-2 py-1 rounded">
+                                                {(color as string).toUpperCase()}
+                                            </span>
                                         </div>
                                     ))}
                                 </div>

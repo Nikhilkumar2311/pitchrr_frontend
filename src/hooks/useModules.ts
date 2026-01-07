@@ -140,8 +140,14 @@ export function useModuleData(
         staleTime: 60 * 1000, // 1 minute fresh
         refetchInterval: pollWhileGenerating
             ? (query) => {
-                // If data exists, stop polling
-                if (query.state.data?.exists) {
+                const data = query.state.data;
+                // Stop polling if:
+                // 1. Data exists and status is not IN_PROGRESS, OR
+                // 2. Status is COMPLETED or FAILED
+                if (data?.exists && data?.status !== 'IN_PROGRESS') {
+                    return false;
+                }
+                if (data?.status === 'COMPLETED' || data?.status === 'FAILED') {
                     return false;
                 }
                 // Otherwise poll every 5 seconds
