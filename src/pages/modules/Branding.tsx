@@ -47,6 +47,8 @@ import {
     useGenerateModule,
 } from '@/hooks';
 import { LogoEditor } from '@/components/branding';
+import { CanvasLogoEditor } from '@/components/branding/CanvasLogoEditor';
+import { Layers, Edit3 } from 'lucide-react';
 
 /**
  * Brand tone options
@@ -71,6 +73,7 @@ export default function Branding() {
     const [startupName, setStartupName] = useState('');
     const [selectedTone, setSelectedTone] = useState('Professional');
     const [selectedColorPreset, setSelectedColorPreset] = useState(colorPresets[0]);
+    const [editorMode, setEditorMode] = useState<'simple' | 'advanced'>('simple');
 
     // Get current idea from store for backward compatibility
     const { currentIdea } = useIdeaStore();
@@ -307,18 +310,52 @@ export default function Branding() {
                     {/* Logo Editor Card */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Logo Editor</CardTitle>
-                            <CardDescription>
-                                Customize your logo with text, icons, or upload an image
-                            </CardDescription>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle>Logo Editor</CardTitle>
+                                    <CardDescription>
+                                        Create your perfect logo
+                                    </CardDescription>
+                                </div>
+                                <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+                                    <button
+                                        onClick={() => setEditorMode('simple')}
+                                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${editorMode === 'simple'
+                                            ? 'bg-white shadow text-gray-900'
+                                            : 'text-gray-600 hover:text-gray-900'
+                                            }`}
+                                    >
+                                        <Edit3 className="w-4 h-4 inline mr-1" />
+                                        Simple
+                                    </button>
+                                    <button
+                                        onClick={() => setEditorMode('advanced')}
+                                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${editorMode === 'advanced'
+                                            ? 'bg-white shadow text-gray-900'
+                                            : 'text-gray-600 hover:text-gray-900'
+                                            }`}
+                                    >
+                                        <Layers className="w-4 h-4 inline mr-1" />
+                                        Advanced
+                                    </button>
+                                </div>
+                            </div>
                         </CardHeader>
                         <div className="mt-4">
-                            <LogoEditor
-                                startupName={startupName}
-                                primaryColor={branding?.color_palette?.primary || selectedColorPreset.primary}
-                                secondaryColor={branding?.color_palette?.secondary || selectedColorPreset.secondary}
-                                onDownload={() => toast.success('Logo download started!')}
-                            />
+                            {editorMode === 'simple' ? (
+                                <LogoEditor
+                                    startupName={startupName}
+                                    primaryColor={branding?.color_palette?.primary || selectedColorPreset.primary}
+                                    secondaryColor={branding?.color_palette?.secondary || selectedColorPreset.secondary}
+                                    onDownload={() => toast.success('Logo download started!')}
+                                />
+                            ) : (
+                                <CanvasLogoEditor
+                                    startupName={startupName}
+                                    primaryColor={branding?.color_palette?.primary || selectedColorPreset.primary}
+                                    secondaryColor={branding?.color_palette?.secondary || selectedColorPreset.secondary}
+                                />
+                            )}
                         </div>
                     </Card>
 
