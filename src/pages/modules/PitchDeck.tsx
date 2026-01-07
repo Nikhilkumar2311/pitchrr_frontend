@@ -50,7 +50,15 @@ interface Slide {
     content: string;
     type?: string;
     bullet_points?: string[];
+    headline?: string;
+    chart?: {
+        type: 'pie' | 'bar' | 'line' | 'radar' | 'none';
+        title?: string;
+        data: Array<{ name: string; value: number }>;
+    };
 }
+
+import { SlideChart } from '@/components/pitch-deck/SlideChart';
 
 // Pitch Deck Theme Definitions
 interface Theme {
@@ -60,6 +68,8 @@ interface Theme {
     headingColor: string;
     accentColor: string;
     borderColor: string;
+    tooltipBg?: string;
+    tooltipText?: string;
 }
 
 const themes: Theme[] = [
@@ -70,6 +80,8 @@ const themes: Theme[] = [
         headingColor: '#FFFFFF',
         accentColor: '#F59E0B',
         borderColor: '#374151',
+        tooltipBg: '#111827',
+        tooltipText: '#F9FAFB',
     },
     {
         name: 'Light',
@@ -78,6 +90,8 @@ const themes: Theme[] = [
         headingColor: '#111827',
         accentColor: '#3B82F6',
         borderColor: '#E5E7EB',
+        tooltipBg: '#FFFFFF',
+        tooltipText: '#111827',
     },
     {
         name: 'Gradient Blue',
@@ -86,6 +100,8 @@ const themes: Theme[] = [
         headingColor: '#FFFFFF',
         accentColor: '#FCD34D',
         borderColor: '#818CF8',
+        tooltipBg: '#4C1D95',
+        tooltipText: '#EDE9FE',
     },
     {
         name: 'Corporate Green',
@@ -94,6 +110,8 @@ const themes: Theme[] = [
         headingColor: '#ECFDF5',
         accentColor: '#34D399',
         borderColor: '#047857',
+        tooltipBg: '#022C22',
+        tooltipText: '#D1FAE5',
     },
     {
         name: 'Startup Orange',
@@ -102,6 +120,58 @@ const themes: Theme[] = [
         headingColor: '#FFF7ED',
         accentColor: '#FB923C',
         borderColor: '#9A3412',
+        tooltipBg: '#431407',
+        tooltipText: '#FFEDD5',
+    },
+    {
+        name: 'Warm Sunset',
+        bgColor: 'linear-gradient(135deg, #F97316 0%, #EC4899 100%)',
+        textColor: '#FFF1F2',
+        headingColor: '#FFFFFF',
+        accentColor: '#FEF08A',
+        borderColor: '#FB7185',
+        tooltipBg: '#881337',
+        tooltipText: '#FFE4E6',
+    },
+    {
+        name: 'Ocean',
+        bgColor: 'linear-gradient(135deg, #0EA5E9 0%, #2DD4BF 100%)',
+        textColor: '#F0FDFA',
+        headingColor: '#FFFFFF',
+        accentColor: '#FCD34D',
+        borderColor: '#22D3EE',
+        tooltipBg: '#164E63',
+        tooltipText: '#CFFAFE',
+    },
+    {
+        name: 'Midnight',
+        bgColor: '#0F172A',
+        textColor: '#94A3B8',
+        headingColor: '#F8FAFC',
+        accentColor: '#38BDF8',
+        borderColor: '#1E293B',
+        tooltipBg: '#020617',
+        tooltipText: '#E2E8F0',
+    },
+    {
+        name: 'Rose',
+        bgColor: '#831843',
+        textColor: '#FECDD3',
+        headingColor: '#FFF1F2',
+        accentColor: '#FB7185',
+        borderColor: '#9F1239',
+        tooltipBg: '#500724',
+        tooltipText: '#FFE4E6',
+    },
+    {
+        name: 'Minimal',
+        bgColor: '#FAFAFA',
+        textColor: '#525252',
+        headingColor: '#171717',
+        accentColor: '#171717',
+        borderColor: '#E5E5E5',
+        tooltipBg: '#FFFFFF',
+        tooltipText: '#171717',
     },
 ];
 
@@ -111,7 +181,24 @@ export default function PitchDeck() {
     // Current slide index and theme
     const [currentSlide, setCurrentSlide] = useState(0);
     const [editedSlides, setEditedSlides] = useState<Slide[]>([]);
-    const [selectedTheme, setSelectedTheme] = useState<Theme>(themes[0]);
+    const [selectedTheme, setSelectedTheme] = useState<Theme>(themes[1]); // Light theme as default
+
+    // Custom theme state
+    const [showCustomTheme, setShowCustomTheme] = useState(false);
+    const [customTheme, setCustomTheme] = useState<Theme>({
+        name: 'Custom',
+        bgColor: '#1F2937',
+        textColor: '#D1D5DB',
+        headingColor: '#FFFFFF',
+        accentColor: '#3B82F6',
+        borderColor: '#374151',
+        tooltipBg: '#111827',
+        tooltipText: '#F9FAFB',
+    });
+
+    // Chart editing state - store chart data locally during editing
+    const [editingChartSlide, setEditingChartSlide] = useState<number | null>(null);
+    const [editingChartData, setEditingChartData] = useState<Array<{ name: string; value: number }>>([]);
 
     // ==========================================================================
     // API HOOKS
@@ -143,12 +230,21 @@ export default function PitchDeck() {
     // EFFECTS
     // ==========================================================================
 
-    // Initialize edited slides when AI data arrives
+    // Track the last known data to detect when NEW data arrives
+    const [lastDataTimestamp, setLastDataTimestamp] = useState<string | null>(null);
+
+    // Initialize edited slides when AI data arrives or changes
     useEffect(() => {
-        if (deckData?.slides && editedSlides.length === 0) {
+        // Use a simple hash of slide count + first slide title to detect changes
+        const currentDataKey = deckData?.slides ?
+            `${deckData.slides.length}-${deckData.slides[0]?.title}` : null;
+
+        if (deckData?.slides && currentDataKey !== lastDataTimestamp) {
             setEditedSlides(deckData.slides);
+            setLastDataTimestamp(currentDataKey);
+            setCurrentSlide(0); // Reset to first slide on new data
         }
-    }, [deckData, editedSlides.length]);
+    }, [deckData, lastDataTimestamp]);
 
     // ==========================================================================
     // HANDLERS
@@ -159,6 +255,9 @@ export default function PitchDeck() {
             toast.error('Please create an idea first');
             return;
         }
+        // Clear old slides when regenerating
+        setEditedSlides([]);
+        setLastDataTimestamp(null);
         generateModule('pitch_deck');
     };
 
@@ -173,6 +272,22 @@ export default function PitchDeck() {
         const newSlides = [...editedSlides];
         newSlides[currentSlide] = { ...newSlides[currentSlide], content };
         setEditedSlides(newSlides);
+    };
+
+    /**
+     * Update custom theme color
+     */
+    const updateCustomTheme = (key: keyof Theme, value: string) => {
+        setCustomTheme(prev => ({ ...prev, [key]: value }));
+    };
+
+    /**
+     * Apply custom theme
+     */
+    const applyCustomTheme = () => {
+        setSelectedTheme(customTheme);
+        setShowCustomTheme(false);
+        toast.success('Custom theme applied!');
     };
 
     /**
@@ -259,7 +374,7 @@ export default function PitchDeck() {
                                 Generating Pitch Deck...
                             </h3>
                             <p className="text-sm text-amber-700">
-                                Creating {deckData?.total_slides || '7'} slides. This usually takes 30-60 seconds.
+                                Creating 12 investor-ready slides. This usually takes 30-60 seconds.
                             </p>
                         </div>
                     </div>
@@ -307,9 +422,9 @@ export default function PitchDeck() {
                     {/* Slide Preview */}
                     <div className="lg:col-span-2 space-y-4">
                         {/* Theme Selector */}
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                             <span className="text-sm font-medium text-gray-700">Theme:</span>
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
                                 {themes.map((theme) => (
                                     <button
                                         key={theme.name}
@@ -329,9 +444,65 @@ export default function PitchDeck() {
                                         title={theme.name}
                                     />
                                 ))}
+                                {/* Custom Theme Button */}
+                                <button
+                                    onClick={() => setShowCustomTheme(!showCustomTheme)}
+                                    className={`
+                                        w-8 h-8 rounded-full border-2 border-dashed transition-all flex items-center justify-center
+                                        ${showCustomTheme ? 'border-blue-500 bg-blue-50' : 'border-gray-400 hover:border-blue-400 hover:bg-gray-50'}
+                                    `}
+                                    title="Create Custom Theme"
+                                >
+                                    <span className="text-gray-500 text-lg leading-none">+</span>
+                                </button>
                             </div>
                             <span className="text-xs text-gray-500 ml-2">{selectedTheme.name}</span>
                         </div>
+
+                        {/* Custom Theme Panel */}
+                        {showCustomTheme && (
+                            <Card className="p-4 bg-gray-50 border-blue-200">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h4 className="font-medium text-gray-800">Create Custom Theme</h4>
+                                    <Button size="sm" onClick={applyCustomTheme}>Apply Theme</Button>
+                                </div>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    {[
+                                        { key: 'bgColor', label: 'Background' },
+                                        { key: 'textColor', label: 'Text' },
+                                        { key: 'headingColor', label: 'Heading' },
+                                        { key: 'accentColor', label: 'Accent' },
+                                    ].map(({ key, label }) => (
+                                        <div key={key} className="flex flex-col gap-1">
+                                            <label className="text-xs text-gray-600">{label}</label>
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="color"
+                                                    value={customTheme[key as keyof Theme] as string}
+                                                    onChange={(e) => updateCustomTheme(key as keyof Theme, e.target.value)}
+                                                    className="w-8 h-8 rounded cursor-pointer border"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={customTheme[key as keyof Theme] as string}
+                                                    onChange={(e) => updateCustomTheme(key as keyof Theme, e.target.value)}
+                                                    className="flex-1 px-2 py-1 text-xs font-mono border rounded w-20"
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                {/* Live Preview */}
+                                <div
+                                    className="mt-3 p-3 rounded-lg text-center"
+                                    style={{ background: customTheme.bgColor, border: `1px solid ${customTheme.borderColor}` }}
+                                >
+                                    <span style={{ color: customTheme.headingColor }} className="font-bold text-sm">Preview Heading</span>
+                                    <p style={{ color: customTheme.textColor }} className="text-xs mt-1">Sample text content</p>
+                                    <span style={{ color: customTheme.accentColor }} className="text-xs">● Accent</span>
+                                </div>
+                            </Card>
+                        )}
 
                         <Card className="min-h-[400px] relative">
                             {/* Slide Content */}
@@ -377,6 +548,142 @@ export default function PitchDeck() {
                                             ))}
                                         </ul>
                                     )}
+                                    {/* Chart Visualization */}
+                                    {(() => {
+                                        const chart = slides[currentSlide]?.chart;
+                                        if (chart && chart.type && chart.type !== 'none' && chart.data && chart.data.length > 0) {
+                                            return (
+                                                <div className="mt-6 p-4 rounded-lg relative" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
+                                                    {/* Edit Button */}
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingChartSlide(currentSlide);
+                                                            // Deep copy the chart data for local editing
+                                                            setEditingChartData(chart.data.map(d => ({ ...d })));
+                                                        }}
+                                                        className="absolute top-2 right-2 p-1.5 bg-white/90 hover:bg-white rounded-md shadow-sm transition-all"
+                                                        title="Edit Chart Data"
+                                                    >
+                                                        <Edit className="w-4 h-4 text-gray-600" />
+                                                    </button>
+                                                    <SlideChart
+                                                        type={chart.type}
+                                                        title={chart.title}
+                                                        data={chart.data}
+                                                        theme={{
+                                                            textColor: selectedTheme.textColor,
+                                                            accentColor: selectedTheme.accentColor,
+                                                            tooltipBg: selectedTheme.tooltipBg,
+                                                            tooltipText: selectedTheme.tooltipText,
+                                                        }}
+                                                    />
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    })()}
+
+                                    {/* Chart Editor Modal */}
+                                    {editingChartSlide !== null && slides[editingChartSlide]?.chart && editingChartData.length > 0 && (() => {
+                                        const chart = slides[editingChartSlide].chart!;
+                                        const isPieChart = chart.type === 'pie';
+                                        const total = editingChartData.reduce((sum, item) => sum + item.value, 0);
+
+                                        return (
+                                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                                                <Card className="w-full max-w-md p-6 bg-white m-4">
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <h3 className="text-lg font-bold">Edit Chart Data</h3>
+                                                        {isPieChart && (
+                                                            <span className={`text-sm px-2 py-1 rounded ${Math.abs(total - 100) < 0.1 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                                Total: {total.toFixed(1)}%
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                                                        {editingChartData.map((item, idx) => (
+                                                            <div key={idx} className="flex items-center gap-2">
+                                                                <input
+                                                                    type="text"
+                                                                    value={item.name}
+                                                                    onChange={(e) => {
+                                                                        const newData = [...editingChartData];
+                                                                        newData[idx] = { ...newData[idx], name: e.target.value };
+                                                                        setEditingChartData(newData);
+                                                                    }}
+                                                                    className="flex-1 px-2 py-1 border rounded text-sm"
+                                                                    placeholder="Label"
+                                                                />
+                                                                <div className="flex items-center gap-1">
+                                                                    <input
+                                                                        type="number"
+                                                                        value={item.value}
+                                                                        onChange={(e) => {
+                                                                            const newValue = parseFloat(e.target.value) || 0;
+                                                                            const newData = [...editingChartData];
+                                                                            newData[idx] = { ...newData[idx], value: newValue };
+                                                                            setEditingChartData(newData);
+                                                                        }}
+                                                                        className="w-20 px-2 py-1 border rounded text-sm"
+                                                                        placeholder="Value"
+                                                                    />
+                                                                    {isPieChart && <span className="text-xs text-gray-500">%</span>}
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        const newData = editingChartData.filter((_, i) => i !== idx);
+                                                                        setEditingChartData(newData);
+                                                                    }}
+                                                                    className="p-1 text-red-500 hover:bg-red-50 rounded"
+                                                                    title="Remove"
+                                                                >
+                                                                    ✕
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    {isPieChart && (
+                                                        <p className="text-xs text-gray-500 mt-2">
+                                                            💡 Tip: Manually adjust values to keep total at 100%
+                                                        </p>
+                                                    )}
+                                                    <div className="flex justify-between mt-4">
+                                                        <Button
+                                                            variant="secondary"
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                setEditingChartData([...editingChartData, { name: 'New', value: isPieChart ? 10 : 100 }]);
+                                                            }}
+                                                        >
+                                                            + Add Item
+                                                        </Button>
+                                                        <div className="flex gap-2">
+                                                            <Button variant="secondary" size="sm" onClick={() => {
+                                                                setEditingChartSlide(null);
+                                                                setEditingChartData([]);
+                                                            }}>
+                                                                Cancel
+                                                            </Button>
+                                                            <Button size="sm" onClick={() => {
+                                                                // Save changes to slides
+                                                                const baseSlides = editedSlides.length > 0 ? [...editedSlides] : slides.map(s => ({ ...s }));
+                                                                baseSlides[editingChartSlide] = {
+                                                                    ...baseSlides[editingChartSlide],
+                                                                    chart: { ...chart, data: editingChartData }
+                                                                };
+                                                                setEditedSlides(baseSlides);
+                                                                setEditingChartSlide(null);
+                                                                setEditingChartData([]);
+                                                                toast.success('Chart updated!');
+                                                            }}>
+                                                                Done
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </Card>
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                             </motion.div>
 
@@ -424,20 +731,23 @@ export default function PitchDeck() {
                         </Card>
                     </div>
                 </div>
-            )}
+            )
+            }
 
             {/* Placeholder when no slides */}
-            {!hasGenerated && !isGenerating && slides.length === 0 && (
-                <Card className="flex flex-col items-center justify-center py-12 text-center">
-                    <Presentation className="w-12 h-12 text-gray-300 mb-4" />
-                    <h3 className="text-lg font-medium text-gray-700">
-                        No slides yet
-                    </h3>
-                    <p className="text-sm text-gray-500 mt-1 max-w-xs">
-                        Click "Generate Pitch Deck" to create your investor-ready presentation
-                    </p>
-                </Card>
-            )}
+            {
+                !hasGenerated && !isGenerating && slides.length === 0 && (
+                    <Card className="flex flex-col items-center justify-center py-12 text-center">
+                        <Presentation className="w-12 h-12 text-gray-300 mb-4" />
+                        <h3 className="text-lg font-medium text-gray-700">
+                            No slides yet
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-1 max-w-xs">
+                            Click "Generate Pitch Deck" to create your investor-ready presentation
+                        </p>
+                    </Card>
+                )
+            }
         </div>
     );
 }

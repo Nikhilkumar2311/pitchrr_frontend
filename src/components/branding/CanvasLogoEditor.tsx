@@ -519,6 +519,36 @@ export function CanvasLogoEditor({
                                 className="w-6 h-6 rounded cursor-pointer"
                             />
                         </div>
+                        <div className="mt-2 flex items-center gap-2 bg-white rounded-lg p-1.5 border w-fit">
+                            <div
+                                className="w-6 h-6 rounded border border-gray-300 flex-shrink-0"
+                                style={{ backgroundColor: selectedElement.fill }}
+                            />
+                            <input
+                                type="text"
+                                value={selectedElement.fill.toUpperCase()}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val.match(/^#[0-9A-Fa-f]{0,6}$/)) {
+                                        updateElement(selectedId!, { fill: val });
+                                    }
+                                }}
+                                placeholder="#FFFFFF"
+                                className="w-20 px-2 py-1 text-xs font-mono bg-gray-50 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <button
+                                onClick={() => {
+                                    navigator.clipboard.writeText(selectedElement.fill);
+                                    toast.success('Copied!');
+                                }}
+                                className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
+                                title="Copy"
+                            >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -542,6 +572,36 @@ export function CanvasLogoEditor({
                         onChange={(e) => setBackgroundColor(e.target.value)}
                         className="w-7 h-7 rounded cursor-pointer"
                     />
+                </div>
+                <div className="mt-2 flex items-center gap-2 bg-gray-50 rounded-lg p-1.5 border w-fit">
+                    <div
+                        className="w-6 h-6 rounded border border-gray-300 flex-shrink-0"
+                        style={{ backgroundColor }}
+                    />
+                    <input
+                        type="text"
+                        value={backgroundColor.toUpperCase()}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            if (val.match(/^#[0-9A-Fa-f]{0,6}$/)) {
+                                setBackgroundColor(val);
+                            }
+                        }}
+                        placeholder="#3B82F6"
+                        className="w-20 px-2 py-1 text-xs font-mono bg-white border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                        onClick={() => {
+                            navigator.clipboard.writeText(backgroundColor);
+                            toast.success('Copied!');
+                        }}
+                        className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors"
+                        title="Copy hex code"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                    </button>
                 </div>
             </div>
 
