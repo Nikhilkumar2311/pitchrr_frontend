@@ -104,7 +104,6 @@ export default function IdeaValidation() {
     // Fetch module data (with automatic polling while generating)
     const {
         data: moduleData,
-        isFetching: isPolling,
     } = useModuleData(activeIdeaId, 'idea_validation');
 
     // Generate module (trigger AI analysis)
@@ -118,7 +117,8 @@ export default function IdeaValidation() {
     const analysis = moduleData?.data || null;
     const isSaving = isCreating || isUpdating;
     const isLoading = isLoadingIdeas || isLoadingIdea;
-    const isAnalyzing = isTriggering || (isPolling && !hasAnalysis);
+    // Use status from backend to detect pending state (survives page refresh)
+    const isAnalyzing = isTriggering || moduleData?.status === 'IN_PROGRESS';
 
     // ==========================================================================
     // EFFECTS

@@ -18,7 +18,6 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
     Rocket,
     Save,
@@ -69,7 +68,6 @@ export default function GTMStrategy() {
 
     const {
         data: moduleData,
-        isFetching: isPolling,
     } = useModuleData(activeIdeaId, 'gtm_strategy');
 
     const { mutate: generateModule, isPending: isTriggering } = useGenerateModule(activeIdeaId || '');
@@ -81,7 +79,8 @@ export default function GTMStrategy() {
     const hasGenerated = moduleData?.exists && moduleData.data;
     const strategy = moduleData?.data || null;
     const isLoading = isLoadingIdeas || isLoadingIdea;
-    const isGenerating = isTriggering || (isPolling && !hasGenerated);
+    // Use status from backend to detect pending state (survives page refresh)
+    const isGenerating = isTriggering || moduleData?.status === 'IN_PROGRESS';
 
     // ==========================================================================
     // EFFECTS
@@ -199,167 +198,168 @@ export default function GTMStrategy() {
                 </Card>
             )}
 
-            {hasGenerated && strategy && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Target Users */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                    >
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Target className="w-5 h-5 text-[#EF4444]" />
-                                    Target Users
-                                </CardTitle>
-                            </CardHeader>
-                            <div className="mt-4 space-y-4">
-                                {strategy.target_segments?.map((segment: { name: string; description: string; priority: string }, i: number) => (
-                                    <div key={i} className="p-4 rounded-lg bg-gray-50">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="font-medium text-gray-900">{segment.name}</span>
-                                            <Badge variant={segment.priority === 'high' ? 'success' : 'default'}>
-                                                {segment.priority}
-                                            </Badge>
-                                        </div>
-                                        <p className="text-sm text-gray-600">{segment.description}</p>
+            {/* Results Grid - Always show with conditional content */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Target Users */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Target className="w-5 h-5 text-[#EF4444]" />
+                            Target Users
+                        </CardTitle>
+                    </CardHeader>
+                    <div className="mt-4 space-y-4">
+                        {hasGenerated && strategy?.target_segments ? (
+                            strategy.target_segments.map((segment: { name: string; description: string; priority: string }, i: number) => (
+                                <div key={i} className="p-4 rounded-lg bg-gray-50">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="font-medium text-gray-900">{segment.name}</span>
+                                        <Badge variant={segment.priority === 'high' ? 'success' : 'default'}>
+                                            {segment.priority}
+                                        </Badge>
                                     </div>
-                                ))}
+                                    <p className="text-sm text-gray-600">{segment.description}</p>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center py-8 text-gray-400">
+                                <Target className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                <p className="text-sm">Generate to see target users</p>
                             </div>
-                        </Card>
-                    </motion.div>
+                        )}
+                    </div>
+                </Card>
 
-                    {/* Pricing Strategy */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                    >
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <DollarSign className="w-5 h-5 text-[#EF4444]" />
-                                    Pricing Strategy
-                                </CardTitle>
-                            </CardHeader>
-                            <div className="mt-4 p-4 rounded-lg bg-gradient-to-r from-green-50 to-blue-50 border border-green-200">
-                                {strategy.pricing_strategy && (
-                                    <>
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="text-sm text-gray-600">Pricing Model</span>
-                                            <Badge variant="success" size="md">
-                                                {strategy.pricing_strategy.model?.toUpperCase() || 'FREEMIUM'}
-                                            </Badge>
-                                        </div>
-                                        <p className="text-gray-700">{strategy.pricing_strategy.description}</p>
-                                        {strategy.pricing_strategy.tiers && (
-                                            <div className="mt-3 space-y-2">
-                                                {strategy.pricing_strategy.tiers.map((tier: { name: string; price: string }, i: number) => (
-                                                    <div key={i} className="flex justify-between text-sm">
-                                                        <span className="text-gray-600">{tier.name}</span>
-                                                        <span className="font-medium">{tier.price}</span>
-                                                    </div>
-                                                ))}
+                {/* Pricing Strategy */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <DollarSign className="w-5 h-5 text-[#EF4444]" />
+                            Pricing Strategy
+                        </CardTitle>
+                    </CardHeader>
+                    <div className="mt-4 p-4 rounded-lg bg-gradient-to-r from-green-50 to-blue-50 border border-green-200">
+                        {hasGenerated && strategy?.pricing_strategy ? (
+                            <>
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-sm text-gray-600">Pricing Model</span>
+                                    <Badge variant="success" size="md">
+                                        {strategy.pricing_strategy.model?.toUpperCase() || 'FREEMIUM'}
+                                    </Badge>
+                                </div>
+                                <p className="text-gray-700">{strategy.pricing_strategy.description}</p>
+                                {strategy.pricing_strategy.tiers && (
+                                    <div className="mt-3 space-y-2">
+                                        {strategy.pricing_strategy.tiers.map((tier: { name: string; price: string }, i: number) => (
+                                            <div key={i} className="flex justify-between text-sm">
+                                                <span className="text-gray-600">{tier.name}</span>
+                                                <span className="font-medium">{tier.price}</span>
                                             </div>
-                                        )}
-                                    </>
+                                        ))}
+                                    </div>
                                 )}
+                            </>
+                        ) : (
+                            <div className="text-center py-4 text-gray-400">
+                                <DollarSign className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                <p className="text-sm">Generate to see pricing strategy</p>
                             </div>
-                        </Card>
-                    </motion.div>
+                        )}
+                    </div>
+                </Card>
 
-                    {/* Launch Plan */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="lg:col-span-2"
-                    >
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Calendar className="w-5 h-5 text-[#EF4444]" />
-                                    Launch Plan Timeline
-                                </CardTitle>
-                            </CardHeader>
-                            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                {strategy.launch_plan?.map((phase: { phase: string; timeline: string; activities: string[] }, i: number) => (
-                                    <div
-                                        key={i}
-                                        className="p-4 rounded-lg bg-gray-50 border-l-4"
-                                        style={{ borderLeftColor: '#EF4444' }}
-                                    >
-                                        <div className="font-medium text-gray-900">{phase.phase}</div>
-                                        <div className="text-sm text-gray-500 mb-2">{phase.timeline}</div>
-                                        <ul className="space-y-1">
-                                            {phase.activities?.map((task: string, j: number) => (
-                                                <li key={j} className="text-sm text-gray-600 flex items-center gap-2">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-[#EF4444]" />
-                                                    {task}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                ))}
+                {/* Launch Plan */}
+                <Card className="lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Calendar className="w-5 h-5 text-[#EF4444]" />
+                            Launch Plan Timeline
+                        </CardTitle>
+                    </CardHeader>
+                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {hasGenerated && strategy?.launch_plan ? (
+                            strategy.launch_plan.map((phase: { phase: string; timeline: string; activities: string[] }, i: number) => (
+                                <div
+                                    key={i}
+                                    className="p-4 rounded-lg bg-gray-50 border-l-4"
+                                    style={{ borderLeftColor: '#EF4444' }}
+                                >
+                                    <div className="font-medium text-gray-900">{phase.phase}</div>
+                                    <div className="text-sm text-gray-500 mb-2">{phase.timeline}</div>
+                                    <ul className="space-y-1">
+                                        {phase.activities?.map((task: string, j: number) => (
+                                            <li key={j} className="text-sm text-gray-600 flex items-center gap-2">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-[#EF4444]" />
+                                                {task}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="col-span-full text-center py-8 text-gray-400">
+                                <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                <p className="text-sm">Generate to see launch timeline</p>
                             </div>
-                        </Card>
-                    </motion.div>
+                        )}
+                    </div>
+                </Card>
 
-                    {/* Growth Loops */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                    >
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <TrendingUp className="w-5 h-5 text-[#EF4444]" />
-                                    Growth Strategies
-                                </CardTitle>
-                            </CardHeader>
-                            <div className="mt-4 space-y-2">
-                                {strategy.growth_strategies?.map((item: { strategy: string; description: string }, i: number) => (
-                                    <div
-                                        key={i}
-                                        className="p-3 rounded-lg bg-gray-50"
-                                    >
-                                        <div className="font-medium text-gray-900">{item.strategy}</div>
-                                        <p className="text-sm text-gray-600 mt-1">{item.description}</p>
-                                    </div>
-                                ))}
+                {/* Growth Strategies */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <TrendingUp className="w-5 h-5 text-[#EF4444]" />
+                            Growth Strategies
+                        </CardTitle>
+                    </CardHeader>
+                    <div className="mt-4 space-y-2">
+                        {hasGenerated && strategy?.growth_strategies ? (
+                            strategy.growth_strategies.map((item: { strategy: string; description: string }, i: number) => (
+                                <div key={i} className="p-3 rounded-lg bg-gray-50">
+                                    <div className="font-medium text-gray-900">{item.strategy}</div>
+                                    <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center py-8 text-gray-400">
+                                <TrendingUp className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                <p className="text-sm">Generate to see growth strategies</p>
                             </div>
-                        </Card>
-                    </motion.div>
+                        )}
+                    </div>
+                </Card>
 
-                    {/* Key Metrics */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                    >
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <BarChart3 className="w-5 h-5 text-[#EF4444]" />
-                                    Key Metrics (KPIs)
-                                </CardTitle>
-                            </CardHeader>
-                            <div className="mt-4 space-y-3">
-                                {strategy.kpis?.map((kpi: { metric: string; target: string; timeframe: string }, i: number) => (
+                {/* Key Metrics */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <BarChart3 className="w-5 h-5 text-[#EF4444]" />
+                            Key Metrics (KPIs)
+                        </CardTitle>
+                    </CardHeader>
+                    <div className="mt-4 space-y-3">
+                        {hasGenerated && strategy?.kpis ? (
+                            <>
+                                {strategy.kpis.map((kpi: { metric: string; target: string; timeframe: string }, i: number) => (
                                     <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                                         <span className="text-gray-700">{kpi.metric}</span>
                                         <Badge variant="default">{kpi.target}</Badge>
                                     </div>
                                 ))}
+                                <p className="mt-4 text-sm text-gray-500">
+                                    Track these metrics from day one to measure growth and make data-driven decisions.
+                                </p>
+                            </>
+                        ) : (
+                            <div className="text-center py-8 text-gray-400">
+                                <BarChart3 className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                <p className="text-sm">Generate to see key metrics</p>
                             </div>
-                            <p className="mt-4 text-sm text-gray-500">
-                                Track these metrics from day one to measure growth and make data-driven decisions.
-                            </p>
-                        </Card>
-                    </motion.div>
-                </div>
-            )}
+                        )}
+                    </div>
+                </Card>
+            </div>
         </div>
     );
 }

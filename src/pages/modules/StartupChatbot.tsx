@@ -27,6 +27,63 @@ import {
     RefreshCw,
     Lightbulb,
 } from 'lucide-react';
+import React from 'react';
+
+/**
+ * Format message content with markdown-like styling
+ */
+const formatMessage = (content: string): React.ReactNode => {
+    // Split by newlines first
+    const lines = content.split('\n');
+
+    return lines.map((line, lineIndex) => {
+        // Check for numbered lists (1. 2. 3. etc.)
+        const numberedMatch = line.match(/^(\d+)[.)]\s*(.*)/);
+        if (numberedMatch) {
+            return (
+                <div key={lineIndex} className="flex gap-2 my-1.5">
+                    <span className="w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                        {numberedMatch[1]}
+                    </span>
+                    <span>{formatInlineText(numberedMatch[2])}</span>
+                </div>
+            );
+        }
+
+        // Check for bullet points
+        if (line.match(/^[-•*]\s/)) {
+            return (
+                <div key={lineIndex} className="flex gap-2 my-1">
+                    <span className="w-1.5 h-1.5 bg-pink-500 rounded-full mt-2 flex-shrink-0" />
+                    <span>{formatInlineText(line.slice(2))}</span>
+                </div>
+            );
+        }
+
+        // Regular line
+        if (line.trim()) {
+            return <p key={lineIndex} className="my-1">{formatInlineText(line)}</p>;
+        }
+
+        // Empty line - add spacing
+        return <div key={lineIndex} className="h-2" />;
+    });
+};
+
+/**
+ * Format inline text (bold, italic, etc.)
+ */
+const formatInlineText = (text: string): React.ReactNode => {
+    // Handle **bold** text
+    const parts = text.split(/(\*\*[^*]+\*\*)/);
+
+    return parts.map((part, i) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>;
+        }
+        return part;
+    });
+};
 import {
     Card,
     Button,
@@ -197,10 +254,24 @@ export default function StartupChatbot() {
             });
 
             // Add AI response
+            // Response structure: { success: true, response: { message, context_used, follow_up_questions } }
+            let responseText = "I'm having trouble responding right now. Please try again.";
+
+            if (data.response) {
+                // Handle nested object response
+                if (typeof data.response === 'object' && data.response.message) {
+                    responseText = data.response.message;
+                } else if (typeof data.response === 'string') {
+                    responseText = data.response;
+                }
+            } else if (data.message) {
+                responseText = typeof data.message === 'string' ? data.message : JSON.stringify(data.message);
+            }
+
             const aiResponse: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: data.response || data.message || "I'm having trouble responding right now. Please try again.",
+                content: responseText,
                 timestamp: new Date(),
             };
             setMessages((prev) => [...prev, aiResponse]);
@@ -342,8 +413,11 @@ export default function StartupChatbot() {
                                         : 'bg-gray-100 text-gray-900'
                                         }`}
                                 >
-                                    <div className="whitespace-pre-line text-sm">
-                                        {message.content}
+                                    <div className="text-sm leading-relaxed">
+                                        {message.role === 'assistant'
+                                            ? formatMessage(message.content)
+                                            : message.content
+                                        }
                                     </div>
                                     <div className={`text-xs mt-1 ${message.role === 'user' ? 'text-white/70' : 'text-gray-400'
                                         }`}>

@@ -46,6 +46,7 @@ import {
     useModuleData,
     useGenerateModule,
 } from '@/hooks';
+import { LogoEditor } from '@/components/branding';
 
 /**
  * Brand tone options
@@ -85,7 +86,6 @@ export default function Branding() {
 
     const {
         data: moduleData,
-        isFetching: isPolling,
     } = useModuleData(activeIdeaId, 'branding');
 
     const { mutate: generateModule, isPending: isTriggering } = useGenerateModule(activeIdeaId || '');
@@ -97,7 +97,8 @@ export default function Branding() {
     const hasGenerated = moduleData?.exists && moduleData.data;
     const branding = moduleData?.data || null;
     const isLoading = isLoadingIdeas || isLoadingIdea;
-    const isGenerating = isTriggering || (isPolling && !hasGenerated);
+    // Use status from backend to detect pending state (survives page refresh)
+    const isGenerating = isTriggering || moduleData?.status === 'IN_PROGRESS';
 
     // ==========================================================================
     // EFFECTS
@@ -303,31 +304,39 @@ export default function Branding() {
                         </Card>
                     )}
 
-                    {/* Brand Preview Card */}
+                    {/* Logo Editor Card */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Brand Preview</CardTitle>
+                            <CardTitle>Logo Editor</CardTitle>
+                            <CardDescription>
+                                Customize your logo with text, icons, or upload an image
+                            </CardDescription>
                         </CardHeader>
-                        <div
-                            className="mt-4 p-6 rounded-xl text-center"
-                            style={{ backgroundColor: (branding?.color_palette?.primary || selectedColorPreset.primary) + '10' }}
-                        >
-                            {/* Logo placeholder */}
-                            <div
-                                className="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center text-white text-3xl font-bold mb-4"
-                                style={{ backgroundColor: branding?.color_palette?.primary || selectedColorPreset.primary }}
-                            >
-                                {startupName ? startupName[0]?.toUpperCase() : 'P'}
-                            </div>
+                        <div className="mt-4">
+                            <LogoEditor
+                                startupName={startupName}
+                                primaryColor={branding?.color_palette?.primary || selectedColorPreset.primary}
+                                secondaryColor={branding?.color_palette?.secondary || selectedColorPreset.secondary}
+                                onDownload={() => toast.success('Logo download started!')}
+                            />
+                        </div>
+                    </Card>
+
+                    {/* Brand Name Display */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Brand Name</CardTitle>
+                        </CardHeader>
+                        <div className="mt-4 text-center">
                             <h2
-                                className="text-2xl font-bold mb-2"
+                                className="text-3xl font-bold"
                                 style={{ color: branding?.color_palette?.primary || selectedColorPreset.primary }}
                             >
                                 {startupName || 'Your Startup'}
                             </h2>
                             {hasGenerated && branding?.taglines?.[0] && (
-                                <p className="text-gray-600">
-                                    {branding.taglines[0]}
+                                <p className="text-gray-600 mt-2 italic">
+                                    "{branding.taglines[0]}"
                                 </p>
                             )}
                         </div>
@@ -415,19 +424,17 @@ export default function Branding() {
                         </motion.div>
                     )}
 
-                    {/* Brand Voice */}
-                    {hasGenerated && branding?.brand_voice && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 }}
-                        >
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Brand Voice</CardTitle>
-                                </CardHeader>
-                                <div className="mt-4">
-                                    <div className="text-sm text-gray-600 mb-2">Tone: <span className="font-medium">{branding.brand_voice.tone}</span></div>
+                    {/* Brand Voice - Always show, with empty state */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Brand Voice</CardTitle>
+                        </CardHeader>
+                        <div className="mt-4">
+                            {hasGenerated && branding?.brand_voice ? (
+                                <>
+                                    <div className="text-sm text-gray-600 mb-2">
+                                        Tone: <span className="font-medium">{branding.brand_voice.tone}</span>
+                                    </div>
                                     <div className="flex flex-wrap gap-2">
                                         {branding.brand_voice.keywords?.map((keyword: string, i: number) => (
                                             <Badge key={i} variant="primary">{keyword}</Badge>
@@ -436,10 +443,15 @@ export default function Branding() {
                                     {branding.brand_voice.description && (
                                         <p className="text-gray-600 mt-3 text-sm">{branding.brand_voice.description}</p>
                                     )}
+                                </>
+                            ) : (
+                                <div className="text-center py-6 text-gray-400">
+                                    <div className="text-sm">Tone:</div>
+                                    <p className="text-xs mt-2">Generate branding to see voice recommendations</p>
                                 </div>
-                            </Card>
-                        </motion.div>
-                    )}
+                            )}
+                        </div>
+                    </Card>
                 </div>
             </div>
         </div>

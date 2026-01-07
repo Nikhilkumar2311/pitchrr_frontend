@@ -4,10 +4,10 @@
  * Helps founders understand their competitive landscape.
  * 
  * FEATURES:
- * - Competitor list
+ * - Competitor list (initially 3, load more with credits)
  * - Feature comparison table
  * - Competitor SWOT (strengths & weaknesses)
- * - Pricing comparison
+ * - "What You Offer" editable table
  * 
  * DATA FLOW:
  * - Fetches idea from Core Service
@@ -15,6 +15,7 @@
  * - React Query polls for results
  */
 
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -25,6 +26,9 @@ import {
     Check,
     X,
     Loader2,
+    Plus,
+    Coins,
+    Trash2,
 } from 'lucide-react';
 import {
     Card,
@@ -33,6 +37,7 @@ import {
     CardDescription,
     Button,
     Badge,
+    Input,
 } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { CompetitorAnalysisSkeleton } from '@/components/skeletons/CompetitorAnalysisSkeleton';
@@ -51,8 +56,30 @@ interface Competitor {
     weaknesses: string[];
 }
 
+interface UniqueAdvantage {
+    id: string;
+    feature: string;
+    description: string;
+}
+
+const INITIAL_COMPETITOR_COUNT = 3;
+const CREDITS_PER_LOAD = 5;
+
 export default function CompetitorAnalysis() {
     const { ideaId: urlIdeaId } = useParams<{ ideaId?: string }>();
+
+    // State for visible competitors
+    const [visibleCount, setVisibleCount] = useState(INITIAL_COMPETITOR_COUNT);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+    // State for unique advantages
+    const [uniqueAdvantages, setUniqueAdvantages] = useState<UniqueAdvantage[]>([
+        { id: '1', feature: 'AI-Powered Analysis', description: 'Competitors use manual processes' },
+        { id: '2', feature: 'Real-time Updates', description: 'Others only update monthly' },
+    ]);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [newAdvantage, setNewAdvantage] = useState({ feature: '', description: '' });
+
     // ==========================================================================
     // API HOOKS
     // ==========================================================================
@@ -73,7 +100,10 @@ export default function CompetitorAnalysis() {
 
     const hasAnalyzed = moduleData?.exists && moduleData.data;
     const analysisData = moduleData?.data || null;
-    const competitors: Competitor[] = analysisData?.competitors || [];
+    const allCompetitors: Competitor[] = analysisData?.competitors || [];
+    const competitors = allCompetitors.slice(0, visibleCount);
+    const hasMoreCompetitors = allCompetitors.length > visibleCount;
+    const remainingCount = allCompetitors.length - visibleCount;
     const isLoading = isLoadingIdeas;
     const isAnalyzing = isTriggering || (isPolling && !hasAnalyzed);
 
@@ -91,6 +121,34 @@ export default function CompetitorAnalysis() {
 
     const handleSave = () => {
         toast.success('Competitor analysis saved!');
+    };
+
+    const handleLoadMore = async () => {
+        setIsLoadingMore(true);
+        // Simulate credit deduction - this would call the API in production
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setVisibleCount(prev => prev + 3);
+        toast.success(`Loaded more competitors! (${CREDITS_PER_LOAD} credits used)`);
+        setIsLoadingMore(false);
+    };
+
+    const handleAddAdvantage = () => {
+        if (!newAdvantage.feature.trim()) return;
+        const id = Date.now().toString();
+        setUniqueAdvantages(prev => [...prev, { ...newAdvantage, id }]);
+        setNewAdvantage({ feature: '', description: '' });
+        toast.success('Advantage added!');
+    };
+
+    const handleDeleteAdvantage = (id: string) => {
+        setUniqueAdvantages(prev => prev.filter(a => a.id !== id));
+        toast.success('Advantage removed');
+    };
+
+    const handleEditAdvantage = (id: string, field: 'feature' | 'description', value: string) => {
+        setUniqueAdvantages(prev =>
+            prev.map(a => a.id === id ? { ...a, [field]: value } : a)
+        );
     };
 
     // ==========================================================================
@@ -175,51 +233,164 @@ export default function CompetitorAnalysis() {
 
             {/* Competitor Cards */}
             {competitors.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {competitors.map((competitor, index) => (
-                        <motion.div
-                            key={competitor.name}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: index * 0.1 }}
-                        >
-                            <Card className="relative h-full">
-                                <CardHeader>
-                                    <CardTitle>{competitor.name}</CardTitle>
-                                    <CardDescription>{competitor.website || competitor.description}</CardDescription>
-                                </CardHeader>
+                <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {competitors.map((competitor, index) => (
+                            <motion.div
+                                key={competitor.name}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: index * 0.1 }}
+                            >
+                                <Card className="relative h-full">
+                                    <CardHeader>
+                                        <CardTitle>{competitor.name}</CardTitle>
+                                        <CardDescription>{competitor.website || competitor.description}</CardDescription>
+                                    </CardHeader>
 
-                                <div className="mt-4 space-y-3">
-                                    {competitor.pricing && (
-                                        <div className="text-sm">
-                                            <span className="text-gray-500">Pricing: </span>
-                                            <span className="font-medium">{competitor.pricing}</span>
+                                    <div className="mt-4 space-y-3">
+                                        {competitor.pricing && (
+                                            <div className="text-sm">
+                                                <span className="text-gray-500">Pricing: </span>
+                                                <span className="font-medium">{competitor.pricing}</span>
+                                            </div>
+                                        )}
+
+                                        <div>
+                                            <div className="text-sm font-medium text-green-700 mb-1">Strengths</div>
+                                            <div className="flex flex-wrap gap-1">
+                                                {competitor.strengths?.map((s, i) => (
+                                                    <Badge key={i} variant="success" size="sm">{s}</Badge>
+                                                ))}
+                                            </div>
                                         </div>
-                                    )}
 
-                                    <div>
-                                        <div className="text-sm font-medium text-green-700 mb-1">Strengths</div>
-                                        <div className="flex flex-wrap gap-1">
-                                            {competitor.strengths?.map((s, i) => (
-                                                <Badge key={i} variant="success" size="sm">{s}</Badge>
-                                            ))}
+                                        <div>
+                                            <div className="text-sm font-medium text-red-700 mb-1">Weaknesses</div>
+                                            <div className="flex flex-wrap gap-1">
+                                                {competitor.weaknesses?.map((w, i) => (
+                                                    <Badge key={i} variant="danger" size="sm">{w}</Badge>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
+                                </Card>
+                            </motion.div>
+                        ))}
+                    </div>
 
-                                    <div>
-                                        <div className="text-sm font-medium text-red-700 mb-1">Weaknesses</div>
-                                        <div className="flex flex-wrap gap-1">
-                                            {competitor.weaknesses?.map((w, i) => (
-                                                <Badge key={i} variant="danger" size="sm">{w}</Badge>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </Card>
-                        </motion.div>
-                    ))}
+                    {/* Load More Button */}
+                    {hasMoreCompetitors && (
+                        <div className="flex justify-center">
+                            <Button
+                                variant="secondary"
+                                onClick={handleLoadMore}
+                                isLoading={isLoadingMore}
+                                leftIcon={<Coins className="w-4 h-4" />}
+                            >
+                                Load {Math.min(remainingCount, 3)} More ({CREDITS_PER_LOAD} credits)
+                            </Button>
+                        </div>
+                    )}
                 </div>
             )}
+
+            {/* Your Unique Advantages */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Check className="w-5 h-5 text-green-500" />
+                        What You Offer That Competitors Don't
+                    </CardTitle>
+                    <CardDescription>
+                        Add your unique selling points that set you apart
+                    </CardDescription>
+                </CardHeader>
+                <div className="mt-4 space-y-4">
+                    {/* Existing Advantages */}
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="border-b border-gray-200">
+                                    <th className="text-left py-2 px-3 font-medium text-gray-700">Feature</th>
+                                    <th className="text-left py-2 px-3 font-medium text-gray-700">Why Competitors Can't Match</th>
+                                    <th className="w-10"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {uniqueAdvantages.map((advantage) => (
+                                    <tr key={advantage.id} className="border-b border-gray-100 group">
+                                        <td className="py-2 px-3">
+                                            {editingId === advantage.id ? (
+                                                <Input
+                                                    value={advantage.feature}
+                                                    onChange={(e) => handleEditAdvantage(advantage.id, 'feature', e.target.value)}
+                                                    className="h-8"
+                                                />
+                                            ) : (
+                                                <span
+                                                    className="cursor-pointer hover:text-blue-600"
+                                                    onClick={() => setEditingId(advantage.id)}
+                                                >
+                                                    {advantage.feature}
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="py-2 px-3">
+                                            {editingId === advantage.id ? (
+                                                <Input
+                                                    value={advantage.description}
+                                                    onChange={(e) => handleEditAdvantage(advantage.id, 'description', e.target.value)}
+                                                    className="h-8"
+                                                    onBlur={() => setEditingId(null)}
+                                                />
+                                            ) : (
+                                                <span className="text-gray-600">{advantage.description}</span>
+                                            )}
+                                        </td>
+                                        <td className="py-2 px-3">
+                                            <button
+                                                onClick={() => handleDeleteAdvantage(advantage.id)}
+                                                className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 rounded transition-all"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Add New Advantage */}
+                    <div className="flex gap-2 items-end">
+                        <div className="flex-1">
+                            <label className="text-xs text-gray-500 mb-1 block">Feature</label>
+                            <Input
+                                placeholder="e.g., AI-powered insights"
+                                value={newAdvantage.feature}
+                                onChange={(e) => setNewAdvantage(prev => ({ ...prev, feature: e.target.value }))}
+                            />
+                        </div>
+                        <div className="flex-1">
+                            <label className="text-xs text-gray-500 mb-1 block">Description</label>
+                            <Input
+                                placeholder="Why competitors can't match this"
+                                value={newAdvantage.description}
+                                onChange={(e) => setNewAdvantage(prev => ({ ...prev, description: e.target.value }))}
+                            />
+                        </div>
+                        <Button
+                            variant="secondary"
+                            leftIcon={<Plus className="w-4 h-4" />}
+                            onClick={handleAddAdvantage}
+                            disabled={!newAdvantage.feature.trim()}
+                        >
+                            Add
+                        </Button>
+                    </div>
+                </div>
+            </Card>
 
             {/* Competitive Positioning */}
             {hasAnalyzed && analysisData?.positioning && (

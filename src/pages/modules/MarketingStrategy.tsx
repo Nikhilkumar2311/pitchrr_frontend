@@ -70,7 +70,6 @@ export default function MarketingStrategy() {
 
     const {
         data: moduleData,
-        isFetching: isPolling,
     } = useModuleData(activeIdeaId, 'marketing_strategy');
 
     const { mutate: generateModule, isPending: isTriggering } = useGenerateModule(activeIdeaId || '');
@@ -82,7 +81,8 @@ export default function MarketingStrategy() {
     const hasGenerated = moduleData?.exists && moduleData.data;
     const strategy = moduleData?.data || null;
     const isLoading = isLoadingIdeas || isLoadingIdea;
-    const isGenerating = isTriggering || (isPolling && !hasGenerated);
+    // Use status from backend to detect pending state (survives page refresh)
+    const isGenerating = isTriggering || moduleData?.status === 'IN_PROGRESS';
 
     // ==========================================================================
     // EFFECTS

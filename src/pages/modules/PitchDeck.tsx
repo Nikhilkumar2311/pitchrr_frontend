@@ -52,12 +52,66 @@ interface Slide {
     bullet_points?: string[];
 }
 
+// Pitch Deck Theme Definitions
+interface Theme {
+    name: string;
+    bgColor: string;
+    textColor: string;
+    headingColor: string;
+    accentColor: string;
+    borderColor: string;
+}
+
+const themes: Theme[] = [
+    {
+        name: 'Dark',
+        bgColor: '#1F2937',
+        textColor: '#D1D5DB',
+        headingColor: '#FFFFFF',
+        accentColor: '#F59E0B',
+        borderColor: '#374151',
+    },
+    {
+        name: 'Light',
+        bgColor: '#FFFFFF',
+        textColor: '#4B5563',
+        headingColor: '#111827',
+        accentColor: '#3B82F6',
+        borderColor: '#E5E7EB',
+    },
+    {
+        name: 'Gradient Blue',
+        bgColor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        textColor: '#E0E7FF',
+        headingColor: '#FFFFFF',
+        accentColor: '#FCD34D',
+        borderColor: '#818CF8',
+    },
+    {
+        name: 'Corporate Green',
+        bgColor: '#064E3B',
+        textColor: '#A7F3D0',
+        headingColor: '#ECFDF5',
+        accentColor: '#34D399',
+        borderColor: '#047857',
+    },
+    {
+        name: 'Startup Orange',
+        bgColor: '#7C2D12',
+        textColor: '#FED7AA',
+        headingColor: '#FFF7ED',
+        accentColor: '#FB923C',
+        borderColor: '#9A3412',
+    },
+];
+
 export default function PitchDeck() {
     const { ideaId: urlIdeaId } = useParams<{ ideaId?: string }>();
 
-    // Current slide index
+    // Current slide index and theme
     const [currentSlide, setCurrentSlide] = useState(0);
     const [editedSlides, setEditedSlides] = useState<Slide[]>([]);
+    const [selectedTheme, setSelectedTheme] = useState<Theme>(themes[0]);
 
     // ==========================================================================
     // API HOOKS
@@ -70,7 +124,6 @@ export default function PitchDeck() {
 
     const {
         data: moduleData,
-        isFetching: isPolling,
     } = useModuleData(activeIdeaId, 'pitch_deck');
 
     const { mutate: generateModule, isPending: isTriggering } = useGenerateModule(activeIdeaId || '');
@@ -83,7 +136,8 @@ export default function PitchDeck() {
     const deckData = moduleData?.data || null;
     const slides: Slide[] = editedSlides.length > 0 ? editedSlides : (deckData?.slides || []);
     const isLoading = isLoadingIdeas || isLoadingIdea;
-    const isGenerating = isTriggering || (isPolling && !hasGenerated);
+    // Use status from backend to detect pending state (survives page refresh)
+    const isGenerating = isTriggering || moduleData?.status === 'IN_PROGRESS';
 
     // ==========================================================================
     // EFFECTS
@@ -251,7 +305,34 @@ export default function PitchDeck() {
                     </div>
 
                     {/* Slide Preview */}
-                    <div className="lg:col-span-2">
+                    <div className="lg:col-span-2 space-y-4">
+                        {/* Theme Selector */}
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-700">Theme:</span>
+                            <div className="flex gap-2">
+                                {themes.map((theme) => (
+                                    <button
+                                        key={theme.name}
+                                        onClick={() => setSelectedTheme(theme)}
+                                        className={`
+                                            w-8 h-8 rounded-full border-2 transition-all
+                                            ${selectedTheme.name === theme.name
+                                                ? 'border-blue-500 ring-2 ring-blue-200'
+                                                : 'border-gray-300 hover:border-gray-400'
+                                            }
+                                        `}
+                                        style={{
+                                            background: theme.bgColor.includes('gradient')
+                                                ? theme.bgColor
+                                                : theme.bgColor
+                                        }}
+                                        title={theme.name}
+                                    />
+                                ))}
+                            </div>
+                            <span className="text-xs text-gray-500 ml-2">{selectedTheme.name}</span>
+                        </div>
+
                         <Card className="min-h-[400px] relative">
                             {/* Slide Content */}
                             <motion.div
@@ -262,19 +343,35 @@ export default function PitchDeck() {
                             >
                                 <div
                                     className="h-full p-8 rounded-lg"
-                                    style={{ backgroundColor: '#1F2937' }}
+                                    style={{
+                                        background: selectedTheme.bgColor,
+                                        border: `1px solid ${selectedTheme.borderColor}`,
+                                    }}
                                 >
-                                    <h2 className="text-2xl font-bold text-white mb-6">
+                                    <h2
+                                        className="text-2xl font-bold mb-6"
+                                        style={{ color: selectedTheme.headingColor }}
+                                    >
                                         {slides[currentSlide]?.title}
                                     </h2>
-                                    <div className="text-gray-300 whitespace-pre-line">
+                                    <div
+                                        className="whitespace-pre-line"
+                                        style={{ color: selectedTheme.textColor }}
+                                    >
                                         {slides[currentSlide]?.content}
                                     </div>
                                     {slides[currentSlide]?.bullet_points && (
                                         <ul className="mt-4 space-y-2">
                                             {slides[currentSlide].bullet_points?.map((point, i) => (
-                                                <li key={i} className="text-gray-300 flex items-start gap-2">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2" />
+                                                <li
+                                                    key={i}
+                                                    className="flex items-start gap-2"
+                                                    style={{ color: selectedTheme.textColor }}
+                                                >
+                                                    <span
+                                                        className="w-1.5 h-1.5 rounded-full mt-2"
+                                                        style={{ backgroundColor: selectedTheme.accentColor }}
+                                                    />
                                                     {point}
                                                 </li>
                                             ))}

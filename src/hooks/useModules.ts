@@ -45,6 +45,7 @@ export interface ModuleDataResponse {
     moduleType: string;
     data: any | null;
     exists: boolean;
+    status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
 }
 
 /** All modules data response */
