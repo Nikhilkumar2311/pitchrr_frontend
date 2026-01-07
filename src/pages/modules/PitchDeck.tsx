@@ -27,6 +27,7 @@ import {
     ChevronRight,
     Edit,
     Loader2,
+    FileText,
 } from 'lucide-react';
 import {
     Card,
@@ -51,6 +52,7 @@ interface Slide {
     type?: string;
     bullet_points?: string[];
     headline?: string;
+    image?: string; // Base64 image data
     chart?: {
         type: 'pie' | 'bar' | 'line' | 'radar' | 'none';
         title?: string;
@@ -59,6 +61,8 @@ interface Slide {
 }
 
 import { SlideChart } from '@/components/pitch-deck/SlideChart';
+import { ImageUploader } from '@/components/pitch-deck/ImageUploader';
+import { OnePager } from '@/components/pitch-deck/OnePager';
 
 // Pitch Deck Theme Definitions
 interface Theme {
@@ -192,13 +196,16 @@ export default function PitchDeck() {
         headingColor: '#FFFFFF',
         accentColor: '#3B82F6',
         borderColor: '#374151',
-        tooltipBg: '#111827',
-        tooltipText: '#F9FAFB',
+        tooltipBg: '#FFFFFF', // White background - visible on all themes
+        tooltipText: '#1F2937', // Dark text for contrast
     });
 
     // Chart editing state - store chart data locally during editing
     const [editingChartSlide, setEditingChartSlide] = useState<number | null>(null);
     const [editingChartData, setEditingChartData] = useState<Array<{ name: string; value: number }>>([]);
+
+    // One Pager state
+    const [showOnePager, setShowOnePager] = useState(false);
 
     // ==========================================================================
     // API HOOKS
@@ -207,7 +214,7 @@ export default function PitchDeck() {
     const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
     const activeIdeaId = urlIdeaId || ideas?.[0]?.id;
 
-    const { isLoading: isLoadingIdea } = useIdea(activeIdeaId);
+    const { data: ideaData, isLoading: isLoadingIdea } = useIdea(activeIdeaId);
 
     const {
         data: moduleData,
@@ -269,9 +276,18 @@ export default function PitchDeck() {
      * Update slide content
      */
     const updateSlideContent = (content: string) => {
-        const newSlides = [...editedSlides];
-        newSlides[currentSlide] = { ...newSlides[currentSlide], content };
-        setEditedSlides(newSlides);
+        const baseSlides = editedSlides.length > 0 ? [...editedSlides] : slides.map(s => ({ ...s }));
+        baseSlides[currentSlide] = { ...baseSlides[currentSlide], content };
+        setEditedSlides(baseSlides);
+    };
+
+    /**
+     * Update slide image
+     */
+    const updateSlideImage = (image: string | undefined) => {
+        const baseSlides = editedSlides.length > 0 ? [...editedSlides] : slides.map(s => ({ ...s }));
+        baseSlides[currentSlide] = { ...baseSlides[currentSlide], image };
+        setEditedSlides(baseSlides);
     };
 
     /**
@@ -417,6 +433,31 @@ export default function PitchDeck() {
                                 </button>
                             ))}
                         </div>
+
+                        {/* Generate One Pager Button */}
+                        <div className="mt-4 pt-4 border-t">
+                            <Button
+                                onClick={() => setShowOnePager(true)}
+                                className="w-full"
+                                variant="secondary"
+                                size="sm"
+                                leftIcon={<FileText className="w-4 h-4" />}
+                            >
+                                Generate One Pager
+                            </Button>
+                            <p className="text-xs text-gray-500 mt-1 text-center">
+                                Investor summary
+                            </p>
+                        </div>
+
+                        {/* One Pager Modal */}
+                        {showOnePager && (
+                            <OnePager
+                                slides={slides}
+                                companyName={ideaData?.title || 'My Startup'}
+                                onClose={() => setShowOnePager(false)}
+                            />
+                        )}
                     </div>
 
                     {/* Slide Preview */}
@@ -547,6 +588,17 @@ export default function PitchDeck() {
                                                 </li>
                                             ))}
                                         </ul>
+                                    )}
+
+                                    {/* Uploaded Image */}
+                                    {slides[currentSlide]?.image && (
+                                        <div className="mt-4">
+                                            <img
+                                                src={slides[currentSlide].image}
+                                                alt="Slide image"
+                                                className="w-full max-h-48 object-contain rounded-lg"
+                                            />
+                                        </div>
                                     )}
                                     {/* Chart Visualization */}
                                     {(() => {
@@ -714,20 +766,33 @@ export default function PitchDeck() {
                         </Card>
 
                         {/* Editor */}
-                        <Card className="mt-4">
-                            <CardHeader>
+                        <Card className="mt-4 p-4">
+                            <CardHeader className="p-0 pb-4">
                                 <CardTitle className="flex items-center gap-2">
                                     <Edit className="w-5 h-5" />
                                     Edit Slide Content
                                 </CardTitle>
                             </CardHeader>
-                            <Textarea
-                                value={slides[currentSlide]?.content || ''}
-                                onChange={(e) => updateSlideContent(e.target.value)}
-                                rows={4}
-                                className="mt-4"
-                                placeholder="Enter slide content..."
-                            />
+                            <div className="space-y-4">
+                                <Textarea
+                                    value={slides[currentSlide]?.content || ''}
+                                    onChange={(e) => updateSlideContent(e.target.value)}
+                                    rows={4}
+                                    placeholder="Enter slide content..."
+                                />
+
+                                {/* Image Upload Section */}
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                        Slide Image
+                                    </label>
+                                    <ImageUploader
+                                        image={slides[currentSlide]?.image}
+                                        onImageChange={updateSlideImage}
+                                        className="w-full"
+                                    />
+                                </div>
+                            </div>
                         </Card>
                     </div>
                 </div>
