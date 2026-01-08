@@ -96,14 +96,21 @@ export default function MarketingStrategy() {
     // EFFECTS
     // ==========================================================================
 
-    // Populate target audience from idea
+    // Track the last known idea data to detect when NEW data arrives
+    const [lastIdeaKey, setLastIdeaKey] = useState<string | null>(null);
+
+    // Populate target audience from idea (only when idea data actually changes)
     useEffect(() => {
-        if (idea?.targetAudience) {
+        const currentIdeaKey = idea ? `${idea.id}-${idea.targetAudience || ''}` : null;
+
+        if (idea?.targetAudience && currentIdeaKey !== lastIdeaKey) {
             setTargetAudience(idea.targetAudience);
-        } else if (currentIdea?.targetMarket) {
+            setLastIdeaKey(currentIdeaKey);
+        } else if (!idea && currentIdea?.targetMarket && !lastIdeaKey) {
             setTargetAudience(currentIdea.targetMarket);
+            setLastIdeaKey('store-initialized');
         }
-    }, [idea, currentIdea]);
+    }, [idea, currentIdea, lastIdeaKey]);
 
     // Handle export completion
     useEffect(() => {

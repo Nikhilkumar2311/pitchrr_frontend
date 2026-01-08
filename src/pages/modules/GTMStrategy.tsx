@@ -89,14 +89,21 @@ export default function GTMStrategy() {
     // EFFECTS
     // ==========================================================================
 
-    // Populate product description from idea
+    // Track the last known idea data to detect when NEW data arrives
+    const [lastIdeaKey, setLastIdeaKey] = useState<string | null>(null);
+
+    // Populate product description from idea (only when idea data actually changes)
     useEffect(() => {
-        if (idea?.description) {
+        const currentIdeaKey = idea ? `${idea.id}-${idea.description}` : null;
+
+        if (idea?.description && currentIdeaKey !== lastIdeaKey) {
             setProductDescription(idea.description);
-        } else if (currentIdea?.description) {
+            setLastIdeaKey(currentIdeaKey);
+        } else if (!idea && currentIdea?.description && !lastIdeaKey) {
             setProductDescription(currentIdea.description);
+            setLastIdeaKey('store-initialized');
         }
-    }, [idea, currentIdea]);
+    }, [idea, currentIdea, lastIdeaKey]);
 
     // ==========================================================================
     // HANDLERS

@@ -110,14 +110,21 @@ export default function Branding() {
     // EFFECTS
     // ==========================================================================
 
-    // Populate startup name from idea
+    // Track the last known idea data to detect when NEW data arrives
+    const [lastIdeaKey, setLastIdeaKey] = useState<string | null>(null);
+
+    // Populate startup name from idea (only when idea data actually changes)
     useEffect(() => {
-        if (idea?.title) {
+        const currentIdeaKey = idea ? `${idea.id}-${idea.title}` : null;
+
+        if (idea?.title && currentIdeaKey !== lastIdeaKey) {
             setStartupName(idea.title);
-        } else if (currentIdea?.title) {
+            setLastIdeaKey(currentIdeaKey);
+        } else if (!idea && currentIdea?.title && !lastIdeaKey) {
             setStartupName(currentIdea.title);
+            setLastIdeaKey('store-initialized');
         }
-    }, [idea, currentIdea]);
+    }, [idea, currentIdea, lastIdeaKey]);
 
     // Update color from AI response
     useEffect(() => {

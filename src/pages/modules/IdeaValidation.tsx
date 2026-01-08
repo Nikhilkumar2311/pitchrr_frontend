@@ -54,6 +54,7 @@ import {
     useExportStatus,
 } from '@/hooks';
 import { downloadFile } from '@/utils';
+import api from '@/services/api';
 
 /**
  * Risk level type
@@ -127,11 +128,19 @@ export default function IdeaValidation() {
     // EFFECTS
     // ==========================================================================
 
-    // Populate form when idea is loaded from API
+    // Track the last known idea data to detect when NEW data arrives
+    const [lastIdeaKey, setLastIdeaKey] = useState<string | null>(null);
+
+    // Populate form when idea is loaded from API (only when idea data actually changes)
     useEffect(() => {
-        if (idea) {
+        // Create a unique key from the idea data
+        const currentIdeaKey = idea ? `${idea.id}-${idea.title}-${idea.description}` : null;
+
+        // Only update form if this is a NEW idea or the idea data actually changed
+        if (idea && currentIdeaKey !== lastIdeaKey) {
             setIdeaTitle(idea.title);
             setIdeaSummary(idea.description);
+            setLastIdeaKey(currentIdeaKey);
             // Also update the store for cross-module compatibility
             setIdea({
                 title: idea.title,
@@ -141,15 +150,16 @@ export default function IdeaValidation() {
                 industry: idea.industry || undefined,
             });
         }
-    }, [idea, setIdea]);
+    }, [idea, lastIdeaKey, setIdea]);
 
-    // Populate from store if no idea in DB (new user flow)
+    // Populate from store if no idea in DB (new user flow) - only once
     useEffect(() => {
-        if (!idea && currentIdea && !ideaSummary) {
+        if (!idea && currentIdea && !lastIdeaKey) {
             setIdeaTitle(currentIdea.title || '');
             setIdeaSummary(currentIdea.description || '');
+            setLastIdeaKey('store-initialized');
         }
-    }, [idea, currentIdea, ideaSummary]);
+    }, [idea, currentIdea, lastIdeaKey]);
 
     // ==========================================================================
     // HANDLERS
@@ -199,17 +209,27 @@ export default function IdeaValidation() {
             return;
         }
 
-        // If no idea exists yet, create one first
+        // If no idea exists yet, create one first and then trigger generation
         if (!activeIdeaId) {
             createIdea({
                 title: ideaTitle || 'Untitled Idea',
                 description: ideaSummary,
             }, {
-                onSuccess: (newIdea) => {
-                    // Navigate to the new idea and trigger generation
+                onSuccess: async (newIdea) => {
+                    // Navigate to the new idea
                     navigate(`/dashboard/idea/${newIdea.id}`, { replace: true });
-                    toast.success('Idea saved! Starting AI analysis...');
-                    // The generation will be triggered after navigation
+
+                    // Immediately trigger AI generation
+                    try {
+                        toast.success('Idea saved! Starting AI analysis...');
+                        await api.post(`/ideas/${newIdea.id}/modules/idea_validation/generate`);
+                    } catch (err: any) {
+                        if (err?.response?.status === 402) {
+                            toast.error('Insufficient credits. Please add more credits to continue.');
+                        } else {
+                            toast.error('Failed to start generation');
+                        }
+                    }
                 }
             });
             return;
