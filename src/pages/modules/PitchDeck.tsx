@@ -278,7 +278,7 @@ export default function PitchDeck() {
 
     useEffect(() => {
         if (exportStatus?.state === 'completed' && exportStatus.downloadUrl) {
-            const filename = `${ideaData?.title || 'pitch'}_deck.pdf`.replace(/[^a-zA-Z0-9_.-]/g, '_');
+            const filename = `${ideaData?.title || 'pitch'}_deck.pptx`.replace(/[^a-zA-Z0-9_.-]/g, '_');
             downloadFile(exportStatus.downloadUrl, filename)
                 .then(() => toast.success('Pitch deck downloaded!'))
                 .catch(() => toast.error('Download failed'));
@@ -289,14 +289,27 @@ export default function PitchDeck() {
         }
     }, [exportStatus, ideaData?.title]);
 
-    const exportToPDF = () => {
+    const exportToPPT = async () => {
         if (!hasGenerated) {
             toast.error('Please generate pitch deck first');
             return;
         }
-        exportModule({}, {
-            onSuccess: (data) => setExportJobId(data.jobId),
-        });
+
+        try {
+            // Note: Chart images capture disabled due to html2canvas CSS compatibility issues
+            // Charts will be rendered as formatted data tables in the PPTX
+
+            // Pass theme and slides to the export
+            exportModule({
+                theme: selectedTheme,
+                slides: slides,
+            } as any, {
+                onSuccess: (data) => setExportJobId(data.jobId),
+            });
+        } catch (err) {
+            toast.error('Failed to prepare export');
+            console.error('Export preparation failed:', err);
+        }
     };
 
     const handleSave = () => {
@@ -382,9 +395,9 @@ export default function PitchDeck() {
                         leftIcon={<Download className="w-4 h-4" />}
                         disabled={!hasGenerated || isExporting || !!exportJobId}
                         isLoading={isExporting || !!exportJobId}
-                        onClick={exportToPDF}
+                        onClick={exportToPPT}
                     >
-                        {exportJobId ? 'Exporting...' : 'Export PDF'}
+                        {exportJobId ? 'Exporting...' : 'Export PPT'}
                     </Button>
                 </div>
             </div>
@@ -638,7 +651,7 @@ export default function PitchDeck() {
                                         const chart = slides[currentSlide]?.chart;
                                         if (chart && chart.type && chart.type !== 'none' && chart.data && chart.data.length > 0) {
                                             return (
-                                                <div className="mt-6 p-4 rounded-lg relative" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
+                                                <div id={`slide-chart-${currentSlide}`} className="mt-6 p-4 rounded-lg relative" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
                                                     {/* Edit Button */}
                                                     <button
                                                         onClick={() => {

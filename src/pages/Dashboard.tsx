@@ -4,10 +4,11 @@
  * Generate Idea feature, and skeleton loading
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useUser } from '@clerk/clerk-react';
+import toast from 'react-hot-toast';
 import {
     Lightbulb,
     Megaphone,
@@ -21,11 +22,15 @@ import {
     Play,
     Sparkles,
     X,
+    Loader2,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, Button, ProgressBar, Badge } from '@/components/ui';
 import { useIdeaStore } from '@/store';
 import { GenerateIdeaModal } from '@/components/common/GenerateIdeaModal';
 import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeleton';
+import { useIdeas } from '@/hooks';
+import api from '@/services/api';
+import { downloadFile } from '@/utils/download';
 
 type ModuleStatus = 'not-started' | 'in-progress' | 'completed';
 
@@ -63,8 +68,57 @@ export default function Dashboard() {
     const [isLoading, setIsLoading] = useState(true);
     const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
     const [isIdeaBannerVisible, setIsIdeaBannerVisible] = useState(true);
+    const [isExporting, setIsExporting] = useState(false);
+    const [moduleProgress, setModuleProgress] = useState<Record<string, number>>({});
 
-    const overallProgress = Math.round(modules.reduce((acc, m) => acc + m.progress, 0) / modules.length);
+    // Fetch user's ideas
+    const { data: ideas } = useIdeas();
+    const activeIdeaId = ideas?.[0]?.id;
+
+    // Map module types to API names
+    const moduleApiNames: Record<string, string> = {
+        idea: 'IDEA_VALIDATION',
+        marketing: 'MARKETING_STRATEGY',
+        branding: 'BRANDING',
+        pitch: 'PITCH_DECK',
+        gtm: 'GTM_STRATEGY',
+        competitors: 'COMPETITOR_ANALYSIS',
+    };
+
+    // Fetch progress when idea changes
+    useEffect(() => {
+        async function fetchProgress() {
+            if (!activeIdeaId) {
+                setIsLoading(false);
+                return;
+            }
+            try {
+                const { data } = await api.get(`/ideas/${activeIdeaId}/modules/progress-summary`);
+                const progressMap: Record<string, number> = {};
+                data.modules?.forEach((m: { moduleType: string; progress: number }) => {
+                    // Find matching module id
+                    const entry = Object.entries(moduleApiNames).find(([, v]) => v === m.moduleType);
+                    if (entry) progressMap[entry[0]] = m.progress;
+                });
+                setModuleProgress(progressMap);
+            } catch (err) {
+                console.error('Failed to fetch progress:', err);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        fetchProgress();
+    }, [activeIdeaId]);
+
+    // Calculate modules with real progress
+    const modulesWithProgress = useMemo(() =>
+        modules.map(m => ({
+            ...m,
+            progress: moduleProgress[m.id] ?? 0,
+            status: (moduleProgress[m.id] === 100 ? 'completed' : moduleProgress[m.id] > 0 ? 'in-progress' : 'not-started') as ModuleStatus
+        })), [moduleProgress]);
+
+    const overallProgress = Math.round(modulesWithProgress.reduce((acc, m) => acc + m.progress, 0) / modulesWithProgress.length);
 
     // Simulate initial data loading
     useEffect(() => {
@@ -88,6 +142,38 @@ export default function Dashboard() {
         // Navigate to Idea Validation to start validating
         navigate('/dashboard/idea');
     };
+
+    // Export All handler
+    const handleExportAll = useCallback(async () => {
+        if (!activeIdeaId) {
+            toast.error('No idea found. Please create one first.');
+            return;
+        }
+        setIsExporting(true);
+        try {
+            const { data } = await api.post(`/export/all/${activeIdeaId}`);
+            const jobId = data.jobId;
+
+            // Poll for completion
+            const pollStatus = async () => {
+                const { data: status } = await api.get(`/export/status/${jobId}`);
+                if (status.state === 'completed' && status.downloadUrl) {
+                    await downloadFile(status.downloadUrl, 'complete_export.zip');
+                    toast.success('Export completed!');
+                    setIsExporting(false);
+                } else if (status.state === 'failed') {
+                    toast.error('Export failed: ' + (status.failedReason || 'Unknown error'));
+                    setIsExporting(false);
+                } else {
+                    setTimeout(pollStatus, 2000);
+                }
+            };
+            pollStatus();
+        } catch (err) {
+            toast.error('Failed to start export');
+            setIsExporting(false);
+        }
+    }, [activeIdeaId]);
 
     // Show skeleton while loading
     if (isLoading) {
@@ -117,8 +203,13 @@ export default function Dashboard() {
                         >
                             Generate Idea
                         </Button>
-                        <Button variant="secondary" leftIcon={<Download className="w-4 h-4" />}>
-                            Export All
+                        <Button
+                            variant="secondary"
+                            leftIcon={isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                            onClick={handleExportAll}
+                            disabled={isExporting || !activeIdeaId}
+                        >
+                            {isExporting ? 'Exporting...' : 'Export All'}
                         </Button>
                         <Link to="/dashboard/idea">
                             <Button rightIcon={<Play className="w-4 h-4" />}>
@@ -171,13 +262,13 @@ export default function Dashboard() {
                     </div>
                     <div className="mt-4 flex flex-wrap gap-2">
                         <Badge variant="default">
-                            {modules.filter(m => m.status === 'not-started').length} Not Started
+                            {modulesWithProgress.filter(m => m.status === 'not-started').length} Not Started
                         </Badge>
                         <Badge variant="warning">
-                            {modules.filter(m => m.status === 'in-progress').length} In Progress
+                            {modulesWithProgress.filter(m => m.status === 'in-progress').length} In Progress
                         </Badge>
                         <Badge variant="success">
-                            {modules.filter(m => m.status === 'completed').length} Completed
+                            {modulesWithProgress.filter(m => m.status === 'completed').length} Completed
                         </Badge>
                     </div>
                 </Card>
@@ -186,7 +277,7 @@ export default function Dashboard() {
                 <div>
                     <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Modules</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {modules.map((module, index) => {
+                        {modulesWithProgress.map((module, index) => {
                             const Icon = module.icon;
                             const statusBadge = getStatusBadge(module.status);
                             return (

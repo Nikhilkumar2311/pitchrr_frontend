@@ -216,7 +216,7 @@ export default function Branding() {
                         isLoading={isExporting || !!exportJobId}
                         onClick={downloadBrandKit}
                     >
-                        {exportJobId ? 'Downloading...' : 'Download Brand Kit'}
+                        {exportJobId ? 'Exporting...' : 'Export PDF'}
                     </Button>
                 </div>
             </div>
