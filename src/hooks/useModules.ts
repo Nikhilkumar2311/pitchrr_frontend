@@ -257,3 +257,76 @@ function formatModuleName(moduleType: ModuleType): string {
     };
     return names[moduleType] || moduleType;
 }
+
+// =============================================================================
+// EXPORT HOOKS
+// =============================================================================
+
+/** Export job response */
+export interface ExportJobResponse {
+    jobId: string;
+}
+
+/** Export status response */
+export interface ExportStatusResponse {
+    id: string;
+    state: 'waiting' | 'active' | 'completed' | 'failed' | 'NOT_FOUND';
+    progress: number;
+    result: any | null;
+    downloadUrl: string | null;
+    failedReason: string | null;
+}
+
+/** 
+ * Generic hook to export any module as PDF/ZIP
+ * @param moduleType - The module type slug (e.g., 'idea-validation', 'pitch-deck')
+ * @param ideaId - The idea ID
+ */
+export function useExportModule(moduleType: string, ideaId: string | undefined) {
+    return useMutation<ExportJobResponse, Error, { chartImages?: Record<string, string> }>({
+        mutationFn: async (data = {}) => {
+            if (!ideaId) throw new Error('No idea selected');
+            const response = await api.post(`/export/${moduleType}/${ideaId}`, data);
+            return response.data;
+        },
+        onSuccess: () => {
+            toast.success('Export started! Your file will be ready shortly.');
+        },
+        onError: (error: any) => {
+            const message = error.response?.data?.message || error.message || 'Export failed';
+            toast.error(message);
+        },
+    });
+}
+
+/** 
+ * Hook to export pitch deck as PDF (legacy - uses generic hook)
+ */
+export function useExportPitchDeck(ideaId: string | undefined) {
+    return useExportModule('pitch-deck', ideaId);
+}
+
+/**
+ * Hook to check export job status
+ */
+export function useExportStatus(jobId: string | null, options?: { enabled?: boolean }) {
+    return useQuery<ExportStatusResponse>({
+        queryKey: ['export-status', jobId],
+        queryFn: async () => {
+            if (!jobId) throw new Error('No job ID');
+            const response = await api.get(`/export/status/${jobId}`);
+            return response.data;
+        },
+        enabled: !!jobId && (options?.enabled !== false),
+        refetchInterval: (query) => {
+            const data = query.state.data;
+            // Stop polling when completed or failed
+            if (data?.state === 'completed' || data?.state === 'failed' || data?.state === 'NOT_FOUND') {
+                return false;
+            }
+            return 2000; // Poll every 2 seconds
+        },
+    });
+}
+
+

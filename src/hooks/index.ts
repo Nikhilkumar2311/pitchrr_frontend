@@ -31,5 +31,8 @@ export {
     useGenerateModule,
     useJobStatus,
     moduleKeys,
+    useExportModule,
+    useExportPitchDeck,
+    useExportStatus,
 } from './useModules';
-export type { ModuleType, ModuleDataResponse, GenerateModuleResponse } from './useModules';
+export type { ModuleType, ModuleDataResponse, GenerateModuleResponse, ExportJobResponse, ExportStatusResponse } from './useModules';

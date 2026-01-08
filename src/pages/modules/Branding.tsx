@@ -45,7 +45,10 @@ import {
     useIdeas,
     useModuleData,
     useGenerateModule,
+    useExportModule,
+    useExportStatus,
 } from '@/hooks';
+import { downloadFile } from '@/utils';
 import { LogoEditor } from '@/components/branding';
 import { CanvasLogoEditor } from '@/components/branding/CanvasLogoEditor';
 import { Layers, Edit3 } from 'lucide-react';
@@ -145,6 +148,34 @@ export default function Branding() {
         generateModule('branding');
     };
 
+    // Export hooks (ZIP for brand kit)
+    const { mutate: exportModule, isPending: isExporting } = useExportModule('branding', activeIdeaId);
+    const [exportJobId, setExportJobId] = useState<string | null>(null);
+    const { data: exportStatus } = useExportStatus(exportJobId);
+
+    useEffect(() => {
+        if (exportStatus?.state === 'completed' && exportStatus.downloadUrl) {
+            const filename = `${idea?.title || 'brand'}_kit.pdf`.replace(/[^a-zA-Z0-9_.-]/g, '_');
+            downloadFile(exportStatus.downloadUrl, filename)
+                .then(() => toast.success('Brand kit downloaded!'))
+                .catch(() => toast.error('Download failed'));
+            setExportJobId(null);
+        } else if (exportStatus?.state === 'failed') {
+            toast.error('Export failed: ' + (exportStatus.failedReason || 'Unknown error'));
+            setExportJobId(null);
+        }
+    }, [exportStatus, idea?.title]);
+
+    const downloadBrandKit = () => {
+        if (!hasGenerated) {
+            toast.error('Please generate branding first');
+            return;
+        }
+        exportModule({}, {
+            onSuccess: (data) => setExportJobId(data.jobId),
+        });
+    };
+
     const handleSave = () => {
         toast.success('Branding saved!');
     };
@@ -181,9 +212,11 @@ export default function Branding() {
                     <Button
                         variant="secondary"
                         leftIcon={<Download className="w-4 h-4" />}
-                        disabled={!hasGenerated}
+                        disabled={!hasGenerated || isExporting || !!exportJobId}
+                        isLoading={isExporting || !!exportJobId}
+                        onClick={downloadBrandKit}
                     >
-                        Download Brand Kit
+                        {exportJobId ? 'Downloading...' : 'Download Brand Kit'}
                     </Button>
                 </div>
             </div>

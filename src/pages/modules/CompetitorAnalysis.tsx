@@ -15,7 +15,7 @@
  * - React Query polls for results
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -45,7 +45,10 @@ import {
     useIdeas,
     useModuleData,
     useGenerateModule,
+    useExportModule,
+    useExportStatus,
 } from '@/hooks';
+import { downloadFile } from '@/utils';
 
 interface Competitor {
     name: string;
@@ -119,6 +122,34 @@ export default function CompetitorAnalysis() {
         generateModule('competitor_analysis');
     };
 
+    // Export hooks
+    const { mutate: exportModule, isPending: isExporting } = useExportModule('competitor-analysis', activeIdeaId);
+    const [exportJobId, setExportJobId] = useState<string | null>(null);
+    const { data: exportStatus } = useExportStatus(exportJobId);
+
+    useEffect(() => {
+        if (exportStatus?.state === 'completed' && exportStatus.downloadUrl) {
+            const filename = 'competitor_analysis.pdf';
+            downloadFile(exportStatus.downloadUrl, filename)
+                .then(() => toast.success('PDF downloaded!'))
+                .catch(() => toast.error('Download failed'));
+            setExportJobId(null);
+        } else if (exportStatus?.state === 'failed') {
+            toast.error('Export failed: ' + (exportStatus.failedReason || 'Unknown error'));
+            setExportJobId(null);
+        }
+    }, [exportStatus]);
+
+    const exportToPDF = () => {
+        if (!hasAnalyzed) {
+            toast.error('Please analyze competitors first');
+            return;
+        }
+        exportModule({}, {
+            onSuccess: (data) => setExportJobId(data.jobId),
+        });
+    };
+
     const handleSave = () => {
         toast.success('Competitor analysis saved!');
     };
@@ -183,9 +214,11 @@ export default function CompetitorAnalysis() {
                     <Button
                         variant="secondary"
                         leftIcon={<Download className="w-4 h-4" />}
-                        disabled={!hasAnalyzed}
+                        disabled={!hasAnalyzed || isExporting || !!exportJobId}
+                        isLoading={isExporting || !!exportJobId}
+                        onClick={exportToPDF}
                     >
-                        Export PDF
+                        {exportJobId ? 'Exporting...' : 'Export PDF'}
                     </Button>
                 </div>
             </div>

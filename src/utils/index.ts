@@ -151,3 +151,7 @@ export function setStorageItem<T>(key: string, value: T): void {
         console.error('Failed to save to localStorage:', error);
     }
 }
+
+// File download utility
+export { downloadFile } from './download';
+

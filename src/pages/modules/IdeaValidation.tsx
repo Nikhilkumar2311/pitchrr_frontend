@@ -50,7 +50,10 @@ import {
     useUpdateIdea,
     useModuleData,
     useGenerateModule,
+    useExportModule,
+    useExportStatus,
 } from '@/hooks';
+import { downloadFile } from '@/utils';
 
 /**
  * Risk level type
@@ -232,12 +235,36 @@ export default function IdeaValidation() {
     /**
      * Export to PDF
      */
+    const { mutate: exportModule, isPending: isExporting } = useExportModule('idea-validation', activeIdeaId);
+    const [exportJobId, setExportJobId] = useState<string | null>(null);
+
+    const { data: exportStatus } = useExportStatus(exportJobId);
+
+    // Handle export completion
+    useEffect(() => {
+        if (exportStatus?.state === 'completed' && exportStatus.downloadUrl) {
+            // Use downloadFile utility for proper cross-origin download
+            const filename = `${idea?.title || 'idea'}_validation.pdf`.replace(/[^a-zA-Z0-9_.-]/g, '_');
+            downloadFile(exportStatus.downloadUrl, filename)
+                .then(() => toast.success('PDF downloaded!'))
+                .catch(() => toast.error('Download failed'));
+            setExportJobId(null);
+        } else if (exportStatus?.state === 'failed') {
+            toast.error('Export failed: ' + (exportStatus.failedReason || 'Unknown error'));
+            setExportJobId(null);
+        }
+    }, [exportStatus, idea?.title]);
+
     const exportToPDF = () => {
         if (!hasAnalysis) {
             toast.error('Please generate analysis first');
             return;
         }
-        toast.success('PDF export coming soon!');
+        exportModule({}, {
+            onSuccess: (data) => {
+                setExportJobId(data.jobId);
+            },
+        });
     };
 
     // ==========================================================================
@@ -274,9 +301,10 @@ export default function IdeaValidation() {
                         variant="secondary"
                         leftIcon={<Download className="w-4 h-4" />}
                         onClick={exportToPDF}
-                        disabled={!hasAnalysis}
+                        disabled={!hasAnalysis || isExporting || !!exportJobId}
+                        isLoading={isExporting || !!exportJobId}
                     >
-                        Export PDF
+                        {exportJobId ? 'Exporting...' : 'Export PDF'}
                     </Button>
                 </div>
             </div>

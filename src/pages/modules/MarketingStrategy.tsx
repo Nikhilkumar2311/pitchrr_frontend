@@ -48,7 +48,10 @@ import {
     useIdeas,
     useModuleData,
     useGenerateModule,
+    useExportModule,
+    useExportStatus,
 } from '@/hooks';
+import { downloadFile } from '@/utils';
 
 export default function MarketingStrategy() {
     const { ideaId: urlIdeaId } = useParams<{ ideaId?: string }>();
@@ -74,6 +77,11 @@ export default function MarketingStrategy() {
 
     const { mutate: generateModule, isPending: isTriggering } = useGenerateModule(activeIdeaId || '');
 
+    // Export hooks
+    const { mutate: exportModule, isPending: isExporting } = useExportModule('marketing-strategy', activeIdeaId);
+    const [exportJobId, setExportJobId] = useState<string | null>(null);
+    const { data: exportStatus } = useExportStatus(exportJobId);
+
     // ==========================================================================
     // DERIVED STATE
     // ==========================================================================
@@ -97,6 +105,20 @@ export default function MarketingStrategy() {
         }
     }, [idea, currentIdea]);
 
+    // Handle export completion
+    useEffect(() => {
+        if (exportStatus?.state === 'completed' && exportStatus.downloadUrl) {
+            const filename = `${idea?.title || 'idea'}_marketing_strategy.pdf`.replace(/[^a-zA-Z0-9_.-]/g, '_');
+            downloadFile(exportStatus.downloadUrl, filename)
+                .then(() => toast.success('PDF downloaded!'))
+                .catch(() => toast.error('Download failed'));
+            setExportJobId(null);
+        } else if (exportStatus?.state === 'failed') {
+            toast.error('Export failed: ' + (exportStatus.failedReason || 'Unknown error'));
+            setExportJobId(null);
+        }
+    }, [exportStatus, idea?.title]);
+
     // ==========================================================================
     // HANDLERS
     // ==========================================================================
@@ -107,6 +129,18 @@ export default function MarketingStrategy() {
             return;
         }
         generateModule('marketing_strategy');
+    };
+
+    const exportToPDF = () => {
+        if (!hasGenerated) {
+            toast.error('Please generate strategy first');
+            return;
+        }
+        exportModule({}, {
+            onSuccess: (data) => {
+                setExportJobId(data.jobId);
+            },
+        });
     };
 
     const handleSave = () => {
@@ -145,9 +179,11 @@ export default function MarketingStrategy() {
                     <Button
                         variant="secondary"
                         leftIcon={<Download className="w-4 h-4" />}
-                        disabled={!hasGenerated}
+                        disabled={!hasGenerated || isExporting || !!exportJobId}
+                        isLoading={isExporting || !!exportJobId}
+                        onClick={exportToPDF}
                     >
-                        Export PDF
+                        {exportJobId ? 'Exporting...' : 'Export PDF'}
                     </Button>
                 </div>
             </div>

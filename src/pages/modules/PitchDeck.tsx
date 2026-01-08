@@ -44,7 +44,10 @@ import {
     useIdeas,
     useModuleData,
     useGenerateModule,
+    useExportModule,
+    useExportStatus,
 } from '@/hooks';
+import { downloadFile } from '@/utils';
 
 interface Slide {
     title: string;
@@ -268,6 +271,34 @@ export default function PitchDeck() {
         generateModule('pitch_deck');
     };
 
+    // Export hooks (ZIP for pitch deck)
+    const { mutate: exportModule, isPending: isExporting } = useExportModule('pitch-deck', activeIdeaId);
+    const [exportJobId, setExportJobId] = useState<string | null>(null);
+    const { data: exportStatus } = useExportStatus(exportJobId);
+
+    useEffect(() => {
+        if (exportStatus?.state === 'completed' && exportStatus.downloadUrl) {
+            const filename = `${ideaData?.title || 'pitch'}_deck.pdf`.replace(/[^a-zA-Z0-9_.-]/g, '_');
+            downloadFile(exportStatus.downloadUrl, filename)
+                .then(() => toast.success('Pitch deck downloaded!'))
+                .catch(() => toast.error('Download failed'));
+            setExportJobId(null);
+        } else if (exportStatus?.state === 'failed') {
+            toast.error('Export failed: ' + (exportStatus.failedReason || 'Unknown error'));
+            setExportJobId(null);
+        }
+    }, [exportStatus, ideaData?.title]);
+
+    const exportToPDF = () => {
+        if (!hasGenerated) {
+            toast.error('Please generate pitch deck first');
+            return;
+        }
+        exportModule({}, {
+            onSuccess: (data) => setExportJobId(data.jobId),
+        });
+    };
+
     const handleSave = () => {
         toast.success('Pitch deck saved!');
     };
@@ -349,9 +380,11 @@ export default function PitchDeck() {
                     <Button
                         variant="secondary"
                         leftIcon={<Download className="w-4 h-4" />}
-                        disabled={!hasGenerated}
+                        disabled={!hasGenerated || isExporting || !!exportJobId}
+                        isLoading={isExporting || !!exportJobId}
+                        onClick={exportToPDF}
                     >
-                        Export PDF
+                        {exportJobId ? 'Exporting...' : 'Export PDF'}
                     </Button>
                 </div>
             </div>
