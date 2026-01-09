@@ -8,6 +8,7 @@ import { Menu } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { Breadcrumbs } from '@/components/common/Breadcrumbs';
 import { AIFloatingButton } from '@/components/common/AIFloatingButton';
+import { CreditsDisplay } from '@/components/common/CreditsDisplay';
 import { useUIStore } from '@/store';
 
 export function DashboardLayout() {
@@ -35,6 +36,12 @@ export function DashboardLayout() {
 
                         {/* Breadcrumbs */}
                         <Breadcrumbs />
+
+                        {/* Spacer */}
+                        <div className="flex-1" />
+
+                        {/* Credits Display */}
+                        <CreditsDisplay />
                     </div>
                 </div>
 

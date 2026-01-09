@@ -59,6 +59,9 @@ const GTMStrategy = lazy(() => import('@/pages/modules/GTMStrategy'));
 const CompetitorAnalysis = lazy(() => import('@/pages/modules/CompetitorAnalysis'));
 const StartupChatbot = lazy(() => import('@/pages/modules/StartupChatbot'));
 
+// Lazy load store pages
+const CreditsStore = lazy(() => import('@/pages/store/CreditsStore'));
+
 // Layouts - named export needs different lazy import
 const DashboardLayout = lazy(() =>
     import('@/layout/DashboardLayout').then(mod => ({ default: mod.DashboardLayout }))
@@ -220,6 +223,11 @@ const router = createBrowserRouter([
                     {
                         path: 'chat/:ideaId',
                         element: <LazyPage><StartupChatbot /></LazyPage>,
+                    },
+                    // Store: Credits
+                    {
+                        path: 'store/credits',
+                        element: <LazyPage><CreditsStore /></LazyPage>,
                     },
                 ],
             },

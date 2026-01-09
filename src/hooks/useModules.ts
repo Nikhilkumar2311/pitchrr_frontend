@@ -199,9 +199,13 @@ export function useGenerateModule(ideaId: string) {
         onError: (error: any) => {
             const message = error?.response?.data?.message || 'Failed to start generation';
 
-            // Handle specific errors
+            // Handle 402 Payment Required - insufficient credits
             if (error?.response?.status === 402) {
-                toast.error('Insufficient credits. Please add more credits to continue.');
+                toast.error('Insufficient credits. Redirecting to store...');
+                // Redirect to credits store after a short delay
+                setTimeout(() => {
+                    window.location.href = '/dashboard/store/credits';
+                }, 1500);
             } else {
                 toast.error(message);
             }

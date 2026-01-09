@@ -15,6 +15,8 @@ const pathNames: Record<string, string> = {
     gtm: 'GTM Strategy',
     competitors: 'Competitor Analysis',
     chat: 'AI Chatbot',
+    store: 'Store',
+    credits: 'Buy Credits',
 };
 
 export function Breadcrumbs() {
