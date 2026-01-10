@@ -33,7 +33,7 @@ export function Breadcrumbs() {
     });
 
     return (
-        <nav className="flex items-center gap-2 text-sm" aria-label="Breadcrumb">
+        <nav className="hidden sm:flex items-center gap-2 text-sm" aria-label="Breadcrumb">
             {/* Home icon */}
             <Link
                 to="/dashboard"

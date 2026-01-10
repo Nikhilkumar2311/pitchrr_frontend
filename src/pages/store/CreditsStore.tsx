@@ -141,7 +141,7 @@ export default function CreditsStore() {
     }
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8">
+        <div className="max-w-6xl mx-auto space-y-8">
             {/* Page Header */}
             <div className="text-center">
                 <h1 className="text-3xl font-bold text-gray-900 flex items-center justify-center gap-3">
@@ -167,7 +167,7 @@ export default function CreditsStore() {
             </Card>
 
             {/* Credit Packs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {packs?.map((pack, index) => {
                     const Icon = PACK_ICONS[pack.id as keyof typeof PACK_ICONS] || Coins;
                     const isSelected = selectedPack === pack.id;
