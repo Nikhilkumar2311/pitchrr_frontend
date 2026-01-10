@@ -287,13 +287,22 @@ export interface ExportStatusResponse {
  * @param ideaId - The idea ID
  */
 export function useExportModule(moduleType: string, ideaId: string | undefined) {
-    return useMutation<ExportJobResponse, Error, { chartImages?: Record<string, string> }>({
+    const queryClient = useQueryClient();
+
+    return useMutation<ExportJobResponse & { newBalance?: number }, Error, { chartImages?: Record<string, string> }>({
         mutationFn: async (data = {}) => {
             if (!ideaId) throw new Error('No idea selected');
             const response = await api.post(`/export/${moduleType}/${ideaId}`, data);
             return response.data;
         },
-        onSuccess: () => {
+        onSuccess: (data) => {
+            // Update credits cache directly with new balance from response
+            if (data.newBalance !== undefined) {
+                queryClient.setQueryData(['credits', 'stats'], (old: any) => ({
+                    ...old,
+                    balance: data.newBalance,
+                }));
+            }
             toast.success('Export started! Your file will be ready shortly.');
         },
         onError: (error: any) => {

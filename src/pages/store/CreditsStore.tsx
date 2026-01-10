@@ -5,23 +5,14 @@
  */
 
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
     Coins,
     Sparkles,
     Zap,
     Crown,
-    Check,
-    Loader2,
-    AlertCircle,
-    Lightbulb,
-    Megaphone,
-    Palette,
-    Presentation,
-    Rocket,
-    Users,
-    MessageSquare,
-    type LucideIcon,
+    Loader2
 } from 'lucide-react';
 import { Card, Button } from '@/components/ui';
 import {
@@ -33,22 +24,17 @@ import {
 import toast from 'react-hot-toast';
 import api from '@/services/api';
 
-// Module credit costs for reference
-const MODULE_COSTS: { name: string; credits: number; Icon: LucideIcon }[] = [
-    { name: 'Idea Validation', credits: 10, Icon: Lightbulb },
-    { name: 'Marketing Strategy', credits: 15, Icon: Megaphone },
-    { name: 'Branding', credits: 10, Icon: Palette },
-    { name: 'Pitch Deck', credits: 20, Icon: Presentation },
-    { name: 'GTM Strategy', credits: 15, Icon: Rocket },
-    { name: 'Competitor Analysis', credits: 15, Icon: Users },
-    { name: 'AI Chat (per message)', credits: 5, Icon: MessageSquare },
-];
-
 // Pack icons mapping
 const PACK_ICONS = {
+    mini: Coins,
     starter: Zap,
+    basic: Coins,
     growth: Sparkles,
     pro: Crown,
+    business: Sparkles,
+    enterprise: Crown,
+    unlimited: Crown,
+    team: Crown,
 };
 
 // Declare Razorpay on window
@@ -66,6 +52,7 @@ export default function CreditsStore() {
     // const { mutateAsync: verifyPayment, isPending: isVerifying } = useVerifyPayment();
 
     const [selectedPack, setSelectedPack] = useState<string | null>(null);
+    const queryClient = useQueryClient();
 
     const handlePurchase = async (packId: string) => {
         setSelectedPack(packId);
@@ -107,8 +94,13 @@ export default function CreditsStore() {
                             packName: order.packName,
                         });
                         toast.success(`${data.creditsAdded} credits added! New balance: ${data.newBalance}`);
-                        // Refresh credits display
-                        window.location.reload();
+                        // Update credits cache directly with new balance
+                        queryClient.setQueryData(['credits', 'stats'], (old: any) => ({
+                            ...old,
+                            balance: data.newBalance,
+                        }));
+                        // Also invalidate to ensure fresh data on next fetch
+                        queryClient.invalidateQueries({ queryKey: ['credits', 'stats'] });
                     } catch (err) {
                         console.error('Failed to add test credits:', err);
                         toast.error('Failed to add credits in test mode');
@@ -142,7 +134,7 @@ export default function CreditsStore() {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-[400px]">
+            <div className="flex items-center justify-center min-h-100">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
             </div>
         );
@@ -162,7 +154,7 @@ export default function CreditsStore() {
             </div>
 
             {/* Current Balance */}
-            <Card className="bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200">
+            <Card className="bg-linear-to-r from-amber-50 to-yellow-50 border-amber-200">
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-sm font-medium text-amber-700">Current Balance</p>
@@ -175,7 +167,7 @@ export default function CreditsStore() {
             </Card>
 
             {/* Credit Packs */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {packs?.map((pack, index) => {
                     const Icon = PACK_ICONS[pack.id as keyof typeof PACK_ICONS] || Coins;
                     const isSelected = selectedPack === pack.id;
@@ -253,49 +245,6 @@ export default function CreditsStore() {
                     );
                 })}
             </div>
-
-            {/* Module Costs Reference */}
-            <Card>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <AlertCircle className="w-5 h-5 text-blue-500" />
-                    Credit Usage Guide
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {MODULE_COSTS.map((module) => (
-                        <div
-                            key={module.name}
-                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                        >
-                            <div className="flex items-center gap-2">
-                                <module.Icon className="w-4 h-4 text-gray-500" />
-                                <span className="text-sm text-gray-700">{module.name}</span>
-                            </div>
-                            <span className="text-sm font-semibold text-gray-900">
-                                {module.credits}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            </Card>
-
-            {/* Benefits */}
-            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Why Buy Credits?
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {[
-                        'Instant AI-powered analysis',
-                        'Export to PDF & PPTX',
-                        'No subscription required',
-                    ].map((benefit, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                            <Check className="w-5 h-5 text-green-500" />
-                            <span className="text-gray-700">{benefit}</span>
-                        </div>
-                    ))}
-                </div>
-            </Card>
         </div>
     );
 }

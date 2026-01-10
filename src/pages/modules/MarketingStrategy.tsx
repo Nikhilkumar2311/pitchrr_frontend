@@ -43,6 +43,7 @@ import {
 import toast from 'react-hot-toast';
 import { useIdeaStore } from '@/store';
 import { MarketingStrategySkeleton } from '@/components/skeletons/MarketingStrategySkeleton';
+import { CreditCost } from '@/components/common';
 import {
     useIdea,
     useIdeas,
@@ -190,7 +191,10 @@ export default function MarketingStrategy() {
                         isLoading={isExporting || !!exportJobId}
                         onClick={exportToPDF}
                     >
-                        {exportJobId ? 'Exporting...' : 'Export PDF'}
+                        <span className="flex items-center gap-2">
+                            {exportJobId ? 'Exporting...' : 'Export PDF'}
+                            {!exportJobId && <CreditCost cost={2} />}
+                        </span>
                     </Button>
                 </div>
             </div>
@@ -217,7 +221,10 @@ export default function MarketingStrategy() {
                         leftIcon={<Sparkles className="w-4 h-4" />}
                         disabled={!activeIdeaId}
                     >
-                        Generate Marketing Strategy
+                        <span className="flex items-center gap-2">
+                            Generate Marketing Strategy
+                            <CreditCost cost={15} />
+                        </span>
                     </Button>
                     {!activeIdeaId && (
                         <p className="text-sm text-gray-500 mt-2">

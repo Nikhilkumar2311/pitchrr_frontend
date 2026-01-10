@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { useUser } from '@clerk/clerk-react';
 import toast from 'react-hot-toast';
@@ -43,14 +44,15 @@ const modules: {
     color: string;
     progress: number;
     status: ModuleStatus;
+    exportCost: number;
 }[] = [
-        { id: 'idea', icon: Lightbulb, title: 'Idea Validation', description: 'Validate your startup idea with AI-powered analysis', path: '/dashboard/idea', color: '#3B82F6', progress: 0, status: 'not-started' },
-        { id: 'marketing', icon: Megaphone, title: 'Marketing Strategy', description: '30-day marketing plan and customer personas', path: '/dashboard/marketing', color: '#10B981', progress: 0, status: 'not-started' },
-        { id: 'branding', icon: Palette, title: 'Branding', description: 'Logo, colors, fonts, and brand identity', path: '/dashboard/branding', color: '#8B5CF6', progress: 0, status: 'not-started' },
-        { id: 'pitch', icon: Presentation, title: 'Pitch Deck', description: 'Professional pitch deck with AI assistance', path: '/dashboard/pitch', color: '#F59E0B', progress: 0, status: 'not-started' },
-        { id: 'gtm', icon: Rocket, title: 'GTM Strategy', description: 'Go-to-market plan with launch timeline', path: '/dashboard/gtm', color: '#EF4444', progress: 0, status: 'not-started' },
-        { id: 'competitors', icon: Users, title: 'Competitor Analysis', description: 'Compare features and find your edge', path: '/dashboard/competitors', color: '#06B6D4', progress: 0, status: 'not-started' },
-        { id: 'chat', icon: MessageSquare, title: 'AI Chatbot', description: 'Get personalized guidance from your AI mentor', path: '/dashboard/chat', color: '#EC4899', progress: 0, status: 'not-started' },
+        { id: 'idea', icon: Lightbulb, title: 'Idea Validation', description: 'Validate your startup idea with AI-powered analysis', path: '/dashboard/idea', color: '#3B82F6', progress: 0, status: 'not-started', exportCost: 2 },
+        { id: 'marketing', icon: Megaphone, title: 'Marketing Strategy', description: '30-day marketing plan and customer personas', path: '/dashboard/marketing', color: '#10B981', progress: 0, status: 'not-started', exportCost: 2 },
+        { id: 'branding', icon: Palette, title: 'Branding', description: 'Logo, colors, fonts, and brand identity', path: '/dashboard/branding', color: '#8B5CF6', progress: 0, status: 'not-started', exportCost: 2 },
+        { id: 'pitch', icon: Presentation, title: 'Pitch Deck', description: 'Professional pitch deck with AI assistance', path: '/dashboard/pitch', color: '#F59E0B', progress: 0, status: 'not-started', exportCost: 5 },
+        { id: 'gtm', icon: Rocket, title: 'GTM Strategy', description: 'Go-to-market plan with launch timeline', path: '/dashboard/gtm', color: '#EF4444', progress: 0, status: 'not-started', exportCost: 2 },
+        { id: 'competitors', icon: Users, title: 'Competitor Analysis', description: 'Compare features and find your edge', path: '/dashboard/competitors', color: '#06B6D4', progress: 0, status: 'not-started', exportCost: 2 },
+        { id: 'chat', icon: MessageSquare, title: 'AI Chatbot', description: 'Get personalized guidance from your AI mentor', path: '/dashboard/chat', color: '#EC4899', progress: 0, status: 'not-started', exportCost: 0 },
     ];
 
 const getStatusBadge = (status: ModuleStatus) => {
@@ -70,6 +72,7 @@ export default function Dashboard() {
     const [isIdeaBannerVisible, setIsIdeaBannerVisible] = useState(true);
     const [isExporting, setIsExporting] = useState(false);
     const [moduleProgress, setModuleProgress] = useState<Record<string, number>>({});
+    const queryClient = useQueryClient();
 
     // Fetch user's ideas
     const { data: ideas } = useIdeas();
@@ -153,6 +156,14 @@ export default function Dashboard() {
         try {
             const { data } = await api.post(`/export/all/${activeIdeaId}`);
             const jobId = data.jobId;
+
+            // Update credits cache directly with new balance from response
+            if (data.newBalance !== undefined) {
+                queryClient.setQueryData(['credits', 'stats'], (old: any) => ({
+                    ...old,
+                    balance: data.newBalance,
+                }));
+            }
 
             // Poll for completion
             const pollStatus = async () => {
@@ -299,7 +310,14 @@ export default function Dashboard() {
                                                 <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
                                             </div>
                                             <h3 className="font-semibold text-gray-900 mb-1">{module.title}</h3>
-                                            <p className="text-sm text-gray-600 mb-4">{module.description}</p>
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <p className="text-sm text-gray-600 flex-1">{module.description}</p>
+                                                {module.exportCost > 0 && (
+                                                    <span className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-1 rounded-full border border-amber-200 whitespace-nowrap">
+                                                        {module.exportCost} credits
+                                                    </span>
+                                                )}
+                                            </div>
                                             <div className="mt-auto">
                                                 <div className="flex items-center justify-between mb-1 text-xs">
                                                     <span className="text-gray-500">Progress</span>

@@ -5,6 +5,7 @@
  */
 
 import { useState, useRef, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
     Circle,
@@ -33,10 +34,19 @@ import {
 } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
 import toast from 'react-hot-toast';
+import api from '@/services/api';
 
 // Shape options for logo
 type LogoShape = 'circle' | 'square' | 'rounded' | 'hexagon';
 type LogoSize = 64 | 128 | 256 | 512;
+
+// Credit costs based on logo size
+const LOGO_CREDIT_COSTS: Record<LogoSize, number> = {
+    64: 1,
+    128: 1,
+    256: 2,
+    512: 3,
+};
 
 // Expanded icon options
 const iconOptions = [
@@ -113,6 +123,7 @@ export function LogoEditor({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const logoRef = useRef<HTMLDivElement>(null);
+    const queryClient = useQueryClient();
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -153,6 +164,28 @@ export function LogoEditor({
 
     // Export logo as PNG
     const downloadLogo = useCallback(async () => {
+        // Check and deduct credits first
+        const cost = LOGO_CREDIT_COSTS[logoSize];
+        try {
+            const { data } = await api.post('/credits/deduct', {
+                amount: cost,
+                reason: `Logo export ${logoSize}x${logoSize}`,
+            });
+            // Update credits cache directly with new balance
+            queryClient.setQueryData(['credits', 'stats'], (old: any) => ({
+                ...old,
+                balance: data.newBalance,
+            }));
+            queryClient.invalidateQueries({ queryKey: ['credits', 'stats'] });
+        } catch (err: any) {
+            if (err?.response?.status === 402) {
+                toast.error(`Insufficient credits. Logo export requires ${cost} credits.`);
+            } else {
+                toast.error('Failed to process credits. Please try again.');
+            }
+            return;
+        }
+
         const canvas = document.createElement('canvas');
         canvas.width = logoSize;
         canvas.height = logoSize;
@@ -199,7 +232,7 @@ export function LogoEditor({
 
             downloadCanvas(canvas);
         }
-    }, [logoSize, backgroundColor, logoShape, customImage, textColor, fontSize, fontFamily, logoText]);
+    }, [logoSize, backgroundColor, logoShape, customImage, textColor, fontSize, fontFamily, logoText, queryClient]);
 
     const downloadCanvas = (canvas: HTMLCanvasElement) => {
         const link = document.createElement('a');

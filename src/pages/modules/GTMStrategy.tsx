@@ -42,6 +42,7 @@ import {
 import toast from 'react-hot-toast';
 import { useIdeaStore } from '@/store';
 import { GTMStrategySkeleton } from '@/components/skeletons/GTMStrategySkeleton';
+import { CreditCost } from '@/components/common';
 import {
     useIdea,
     useIdeas,
@@ -185,7 +186,10 @@ export default function GTMStrategy() {
                         isLoading={isExporting || !!exportJobId}
                         onClick={exportToPDF}
                     >
-                        {exportJobId ? 'Exporting...' : 'Export PDF'}
+                        <span className="flex items-center gap-2">
+                            {exportJobId ? 'Exporting...' : 'Export PDF'}
+                            {!exportJobId && <CreditCost cost={2} />}
+                        </span>
                     </Button>
                 </div>
             </div>
@@ -212,7 +216,10 @@ export default function GTMStrategy() {
                     className="mt-4"
                     disabled={!activeIdeaId}
                 >
-                    Generate GTM Strategy
+                    <span className="flex items-center gap-2">
+                        Generate GTM Strategy
+                        <CreditCost cost={15} />
+                    </span>
                 </Button>
                 {!activeIdeaId && (
                     <p className="text-sm text-gray-500 mt-2">

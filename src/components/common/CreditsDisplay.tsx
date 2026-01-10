@@ -8,11 +8,22 @@
 import { Link } from 'react-router-dom';
 import { Coins, Plus } from 'lucide-react';
 import { useAuth } from '@clerk/clerk-react';
-import { useCredits } from '@/hooks';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/services/api';
 
 export function CreditsDisplay() {
     const { isSignedIn, isLoaded } = useAuth();
-    const { data: credits, isLoading } = useCredits();
+
+    // Fetch credits with automatic refetch every 5 seconds for real-time updates
+    const { data: credits, isLoading } = useQuery({
+        queryKey: ['credits', 'stats'],
+        queryFn: async () => {
+            const response = await api.get('/credits');
+            return response.data;
+        },
+        refetchInterval: 5000, // Refetch every 5 seconds
+        enabled: isLoaded && isSignedIn,
+    });
 
     // Don't render if not authenticated
     if (!isLoaded || !isSignedIn) {

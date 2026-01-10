@@ -39,6 +39,7 @@ import {
 } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { PitchDeckSkeleton } from '@/components/skeletons/PitchDeckSkeleton';
+import { CreditCost } from '@/components/common';
 import {
     useIdea,
     useIdeas,
@@ -397,7 +398,10 @@ export default function PitchDeck() {
                         isLoading={isExporting || !!exportJobId}
                         onClick={exportToPPT}
                     >
-                        {exportJobId ? 'Exporting...' : 'Export PPT'}
+                        <span className="flex items-center gap-2">
+                            {exportJobId ? 'Exporting...' : 'Export PPT'}
+                            {!exportJobId && <CreditCost cost={5} />}
+                        </span>
                     </Button>
                 </div>
             </div>
@@ -417,7 +421,10 @@ export default function PitchDeck() {
                     className="mt-4"
                     disabled={!activeIdeaId}
                 >
-                    {hasGenerated ? 'Regenerate with AI' : 'Generate Pitch Deck'}
+                    <span className="flex items-center gap-2">
+                        {hasGenerated ? 'Regenerate with AI' : 'Generate Pitch Deck'}
+                        <CreditCost cost={20} />
+                    </span>
                 </Button>
                 {!activeIdeaId && (
                     <p className="text-sm text-gray-500 mt-2">

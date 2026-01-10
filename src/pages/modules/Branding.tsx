@@ -40,6 +40,7 @@ import {
 import toast from 'react-hot-toast';
 import { useIdeaStore } from '@/store';
 import { BrandingSkeleton } from '@/components/skeletons/BrandingSkeleton';
+import { CreditCost } from '@/components/common';
 import {
     useIdea,
     useIdeas,
@@ -223,7 +224,10 @@ export default function Branding() {
                         isLoading={isExporting || !!exportJobId}
                         onClick={downloadBrandKit}
                     >
-                        {exportJobId ? 'Exporting...' : 'Export PDF'}
+                        <span className="flex items-center gap-2">
+                            {exportJobId ? 'Exporting...' : 'Export PDF'}
+                            {!exportJobId && <CreditCost cost={2} />}
+                        </span>
                     </Button>
                 </div>
             </div>
@@ -319,7 +323,10 @@ export default function Branding() {
                         className="w-full"
                         disabled={!activeIdeaId}
                     >
-                        Generate Brand Identity
+                        <span className="flex items-center gap-2">
+                            Generate Brand Identity
+                            <CreditCost cost={10} />
+                        </span>
                     </Button>
                     {!activeIdeaId && (
                         <p className="text-sm text-gray-500 text-center">

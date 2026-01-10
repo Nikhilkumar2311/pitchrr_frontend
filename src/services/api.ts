@@ -54,15 +54,12 @@ export const setTokenGetter = (fn: () => Promise<string | null>) => {
  */
 api.interceptors.request.use(
     async (config: InternalAxiosRequestConfig) => {
-        const fullUrl = `${config.baseURL}${config.url}`;
-        console.log(`[API REQUEST] ${config.method?.toUpperCase()} ${fullUrl}`);
 
         if (getToken) {
             try {
                 const token = await getToken();
                 if (token && config.headers) {
                     config.headers.Authorization = `Bearer ${token}`;
-                    console.log('[API] Token attached:', token.substring(0, 20) + '...');
                 } else {
                     console.warn('[API] Request:', config.url, 'No token available from Clerk');
                 }

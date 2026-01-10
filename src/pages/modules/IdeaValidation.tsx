@@ -43,6 +43,7 @@ import {
 import toast from 'react-hot-toast';
 import { useIdeaStore } from '@/store';
 import { IdeaValidationSkeleton } from '@/components/skeletons/IdeaValidationSkeleton';
+import { CreditCost } from '@/components/common';
 import {
     useIdea,
     useIdeas,
@@ -324,7 +325,10 @@ export default function IdeaValidation() {
                         disabled={!hasAnalysis || isExporting || !!exportJobId}
                         isLoading={isExporting || !!exportJobId}
                     >
-                        {exportJobId ? 'Exporting...' : 'Export PDF'}
+                        <span className="flex items-center gap-2">
+                            {exportJobId ? 'Exporting...' : 'Export PDF'}
+                            {!exportJobId && <CreditCost cost={2} />}
+                        </span>
                     </Button>
                 </div>
             </div>
@@ -356,14 +360,17 @@ export default function IdeaValidation() {
                             onChange={(e) => setIdeaSummary(e.target.value)}
                             className="mt-4"
                         />
-                        <div className="mt-4">
+                        <div className="mt-4 flex items-center gap-3">
                             <Button
                                 onClick={handleAnalyze}
                                 isLoading={isAnalyzing}
                                 leftIcon={<Sparkles className="w-4 h-4" />}
                                 className="w-full sm:w-auto"
                             >
-                                {hasAnalysis ? 'Re-Analyze with AI' : 'Analyze with AI'}
+                                <span className="flex items-center gap-2">
+                                    {hasAnalysis ? 'Re-Analyze' : 'Analyze with AI'}
+                                    <CreditCost cost={10} />
+                                </span>
                             </Button>
                         </div>
                     </Card>

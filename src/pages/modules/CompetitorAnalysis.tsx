@@ -41,6 +41,7 @@ import {
 } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { CompetitorAnalysisSkeleton } from '@/components/skeletons/CompetitorAnalysisSkeleton';
+import { CreditCost } from '@/components/common';
 import {
     useIdeas,
     useModuleData,
@@ -218,7 +219,10 @@ export default function CompetitorAnalysis() {
                         isLoading={isExporting || !!exportJobId}
                         onClick={exportToPDF}
                     >
-                        {exportJobId ? 'Exporting...' : 'Export PDF'}
+                        <span className="flex items-center gap-2">
+                            {exportJobId ? 'Exporting...' : 'Export PDF'}
+                            {!exportJobId && <CreditCost cost={2} />}
+                        </span>
                     </Button>
                 </div>
             </div>
@@ -238,7 +242,10 @@ export default function CompetitorAnalysis() {
                     className="mt-4"
                     disabled={!activeIdeaId}
                 >
-                    {hasAnalyzed ? 'Re-analyze with AI' : 'Analyze with AI'}
+                    <span className="flex items-center gap-2">
+                        {hasAnalyzed ? 'Re-analyze with AI' : 'Analyze with AI'}
+                        <CreditCost cost={15} />
+                    </span>
                 </Button>
                 {!activeIdeaId && (
                     <p className="text-sm text-gray-500 mt-2">
