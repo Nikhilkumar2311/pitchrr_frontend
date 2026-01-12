@@ -8,6 +8,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Button, Textarea } from '@/components/ui';
+import { useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 
 interface GenerateIdeaModalProps {
     isOpen: boolean;
@@ -68,6 +70,7 @@ const questions = [
 ];
 
 export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: GenerateIdeaModalProps) {
+    const queryClient = useQueryClient();
     const [currentStep, setCurrentStep] = useState(0);
     const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
     const [isGenerating, setIsGenerating] = useState(false);
@@ -133,6 +136,9 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                 resources: answers.resources || [],
             });
 
+            // Invalidate credits cache to refresh balance after deduction
+            queryClient.invalidateQueries({ queryKey: ['credits', 'stats'] });
+
             // Map API response to GeneratedIdea format
             const generatedIdea: GeneratedIdea = {
                 title: data.title || 'AI-Generated Startup Idea',
@@ -143,22 +149,22 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
             };
 
             setGeneratedIdea(generatedIdea);
-        } catch (error) {
+            toast.success('Idea generated successfully!');
+        } catch (error: any) {
             console.error('Failed to generate idea:', error);
 
-            // Fallback to mock data if API fails
-            const interests = (answers.interests as string[]) || [];
-            const primaryInterest = interests[0] || 'Technology';
+            // Handle insufficient credits (402 Payment Required)
+            if (error.response?.status === 402) {
+                const { required, available } = error.response.data;
+                toast.error(
+                    `Insufficient credits. You need ${required} credits but only have ${available}. Please purchase more credits.`,
+                    { duration: 5000 }
+                );
+                return;
+            }
 
-            const mockIdea: GeneratedIdea = {
-                title: `AI-Powered ${primaryInterest} Platform`,
-                description: `A modern platform that leverages AI to solve key challenges in the ${primaryInterest.toLowerCase()} space, making it more accessible and efficient for users.`,
-                problem: `Current solutions in ${primaryInterest.toLowerCase()} are fragmented, expensive, or difficult to use for the average person.`,
-                solution: `An all-in-one platform that uses AI to automate complex tasks, provide personalized recommendations, and streamline the user experience.`,
-                targetMarket: `Young professionals and businesses in the ${primaryInterest.toLowerCase()} industry looking for modern, efficient solutions.`,
-            };
-
-            setGeneratedIdea(mockIdea);
+            // Handle other errors
+            toast.error('Failed to generate idea. Please try again.');
         } finally {
             setIsGenerating(false);
         }

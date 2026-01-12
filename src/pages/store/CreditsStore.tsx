@@ -69,7 +69,7 @@ export default function CreditsStore() {
                 name: 'Pitchrr',
                 description: order.packName,
                 order_id: order.razorpayOrderId,
-                handler: async (response: {
+                handler: async (_response: {
                     razorpay_payment_id: string;
                     razorpay_order_id: string;
                     razorpay_signature: string;
@@ -86,7 +86,6 @@ export default function CreditsStore() {
                     // }
 
                     // For testing: add credits directly via test endpoint
-                    console.log('Payment successful (test mode):', response);
                     try {
                         const pack = packs?.find(p => p.id === packId);
                         const { data } = await api.post('/credits/add-test', {

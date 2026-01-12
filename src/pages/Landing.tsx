@@ -116,7 +116,7 @@ export default function Landing() {
     }
 
     return (
-        <div className="bg-white max-w-[90rem] mx-auto">
+        <div className="bg-white max-w-360 mx-auto">
             {/* Navigation Header */}
             <Header />
 

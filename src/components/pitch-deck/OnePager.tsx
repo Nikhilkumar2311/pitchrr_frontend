@@ -55,7 +55,8 @@ export function OnePager({ slides, companyName = 'Company Name', onClose }: OneP
     };
 
     const handleExportPDF = async () => {
-        if (!contentRef.current) return;
+        // Prevent multiple clicks
+        if (isExporting || !contentRef.current) return;
 
         setIsExporting(true);
 
@@ -218,7 +219,9 @@ export function OnePager({ slides, companyName = 'Company Name', onClose }: OneP
                     <h2 className="text-xl font-bold">One Pager - {companyName}</h2>
                     <div className="flex items-center gap-2">
                         <Button size="sm" variant="secondary" onClick={handleExportPDF} disabled={isExporting} leftIcon={isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}>
-                            {isExporting ? 'Exporting...' : 'Export PDF'}
+                            <span className="flex items-center gap-2">
+                                <span>{isExporting ? 'Exporting...' : 'Export PDF'}</span>
+                            </span>
                         </Button>
                         <Button size="sm" variant="ghost" onClick={onClose}>
                             <X className="w-4 h-4" />
