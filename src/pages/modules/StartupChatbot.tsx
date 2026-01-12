@@ -92,6 +92,7 @@ import {
 } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { StartupChatbotSkeleton } from '@/components/skeletons/StartupChatbotSkeleton';
+import { SEO } from '@/components/common';
 import { useIdea, useIdeas, useAllModules } from '@/hooks';
 import api from '@/services/api';
 
@@ -360,6 +361,12 @@ export default function StartupChatbot() {
 
     return (
         <div className="h-[calc(100vh-12rem)] flex flex-col">
+            <SEO
+                title="AI Mentor"
+                description="Get personalized startup guidance from your AI mentor. Context-aware advice based on your idea, progress, and module data."
+                canonical="/dashboard/chat"
+            />
+
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
                 <div>

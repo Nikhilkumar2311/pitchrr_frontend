@@ -42,7 +42,7 @@ import {
 import toast from 'react-hot-toast';
 import { useIdeaStore } from '@/store';
 import { GTMStrategySkeleton } from '@/components/skeletons/GTMStrategySkeleton';
-import { CreditCost } from '@/components/common';
+import { CreditCost, SEO } from '@/components/common';
 import {
     useIdea,
     useIdeas,
@@ -160,6 +160,12 @@ export default function GTMStrategy() {
 
     return (
         <div className="space-y-6">
+            <SEO
+                title="Go-To-Market Strategy"
+                description="Create a comprehensive launch strategy with AI. Get target user segments, pricing strategies, launch timelines, and growth tactics."
+                canonical="/dashboard/gtm"
+            />
+
             {/* Page Header */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>

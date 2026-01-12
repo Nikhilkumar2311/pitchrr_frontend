@@ -18,17 +18,20 @@
  * - Benefits animate on scroll
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Header } from '@/layout/Header';
 import { HeroSection } from './Landing/HeroSection';
 import { FeaturesSection } from './Landing/FeaturesSection';
-import { HowItWorksSection } from './Landing/HowItWorksSection';
-import { BenefitsSection } from './Landing/BenefitsSection';
-import { CTASection } from './Landing/CTASection';
-import { Footer } from './Landing/Footer';
 import { LandingSkeleton } from '@/components/skeletons/LandingSkeleton';
+import { SEO } from '@/components/common';
+
+// Lazy load below-the-fold sections for faster initial page load
+const HowItWorksSection = lazy(() => import('./Landing/HowItWorksSection').then(m => ({ default: m.HowItWorksSection })));
+const BenefitsSection = lazy(() => import('./Landing/BenefitsSection').then(m => ({ default: m.BenefitsSection })));
+const CTASection = lazy(() => import('./Landing/CTASection').then(m => ({ default: m.CTASection })));
+const Footer = lazy(() => import('./Landing/Footer').then(m => ({ default: m.Footer })));
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);
@@ -117,6 +120,13 @@ export default function Landing() {
 
     return (
         <div className="bg-white max-w-360 mx-auto">
+            <SEO
+                title="AI-Powered Startup Tools"
+                description="Build investor-ready pitch decks, validate startup ideas, and create winning strategies with AI. Transform your vision into a fundable startup in minutes."
+                keywords="pitch deck, startup, AI, idea validation, marketing strategy, branding, investor, fundraising"
+                canonical="/"
+            />
+
             {/* Navigation Header */}
             <Header />
 
@@ -126,17 +136,20 @@ export default function Landing() {
             {/* Features Section */}
             <FeaturesSection ref={featuresRef} />
 
-            {/* How It Works Section */}
-            <HowItWorksSection />
+            {/* Below-the-fold sections - lazy loaded */}
+            <Suspense fallback={null}>
+                {/* How It Works Section */}
+                <HowItWorksSection />
 
-            {/* Benefits Section */}
-            <BenefitsSection ref={benefitsRef} />
+                {/* Benefits Section */}
+                <BenefitsSection ref={benefitsRef} />
 
-            {/* CTA Section */}
-            <CTASection />
+                {/* CTA Section */}
+                <CTASection />
 
-            {/* Footer */}
-            <Footer />
+                {/* Footer */}
+                <Footer />
+            </Suspense>
         </div>
     );
 }

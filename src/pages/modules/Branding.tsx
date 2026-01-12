@@ -40,7 +40,7 @@ import {
 import toast from 'react-hot-toast';
 import { useIdeaStore } from '@/store';
 import { BrandingSkeleton } from '@/components/skeletons/BrandingSkeleton';
-import { CreditCost } from '@/components/common';
+import { CreditCost, SEO } from '@/components/common';
 import {
     useIdea,
     useIdeas,
@@ -198,6 +198,12 @@ export default function Branding() {
 
     return (
         <div className="space-y-6">
+            <SEO
+                title="Branding"
+                description="Create your brand identity with AI. Generate logos, taglines, color palettes, typography, and brand voice guidelines."
+                canonical="/dashboard/branding"
+            />
+
             {/* Page Header */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>

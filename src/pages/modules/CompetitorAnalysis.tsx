@@ -41,7 +41,7 @@ import {
 } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { CompetitorAnalysisSkeleton } from '@/components/skeletons/CompetitorAnalysisSkeleton';
-import { CreditCost } from '@/components/common';
+import { CreditCost, SEO } from '@/components/common';
 import {
     useIdeas,
     useModuleData,
@@ -193,6 +193,12 @@ export default function CompetitorAnalysis() {
 
     return (
         <div className="space-y-6">
+            <SEO
+                title="Competitor Analysis"
+                description="Analyze your competitive landscape with AI. Discover competitors, compare features, find market gaps, and identify your unique advantages."
+                canonical="/dashboard/competitors"
+            />
+
             {/* Page Header */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>

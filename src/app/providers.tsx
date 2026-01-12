@@ -18,6 +18,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
+import { HelmetProvider } from 'react-helmet-async';
 import { useEffect, type ReactNode } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { setTokenGetter } from '@/services/api';
@@ -46,33 +47,35 @@ export function Providers({ children }: ProvidersProps) {
     }, [getToken]);
 
     return (
-        <QueryClientProvider client={queryClient}>
-            {children}
-            <Toaster
-                position="top-right"
-                toastOptions={{
-                    duration: 4000,
-                    style: {
-                        background: '#fff',
-                        color: '#111827',
-                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                        borderRadius: '0.5rem',
-                        padding: '12px 16px',
-                    },
-                    success: {
-                        iconTheme: {
-                            primary: '#10b981',
-                            secondary: '#fff',
+        <HelmetProvider>
+            <QueryClientProvider client={queryClient}>
+                {children}
+                <Toaster
+                    position="top-right"
+                    toastOptions={{
+                        duration: 4000,
+                        style: {
+                            background: '#fff',
+                            color: '#111827',
+                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                            borderRadius: '0.5rem',
+                            padding: '12px 16px',
                         },
-                    },
-                    error: {
-                        iconTheme: {
-                            primary: '#ef4444',
-                            secondary: '#fff',
+                        success: {
+                            iconTheme: {
+                                primary: '#10b981',
+                                secondary: '#fff',
+                            },
                         },
-                    },
-                }}
-            />
-        </QueryClientProvider>
+                        error: {
+                            iconTheme: {
+                                primary: '#ef4444',
+                                secondary: '#fff',
+                            },
+                        },
+                    }}
+                />
+            </QueryClientProvider>
+        </HelmetProvider>
     );
 }

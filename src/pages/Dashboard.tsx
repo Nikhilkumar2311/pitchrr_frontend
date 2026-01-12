@@ -40,7 +40,7 @@ import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { useIdeas } from "@/hooks";
 import api from "@/services/api";
 import { downloadFile } from "@/utils/download";
-import { CreditCost } from "@/components/common";
+import { CreditCost, SEO } from "@/components/common";
 
 type ModuleStatus = "not-started" | "in-progress" | "completed";
 
@@ -299,6 +299,11 @@ export default function Dashboard() {
 
   return (
     <>
+      <SEO
+        title="Dashboard"
+        description="Your startup command center. Track progress across all modules, generate AI-powered ideas, and export investor-ready materials."
+        canonical="/dashboard"
+      />
       <div className="space-y-8">
         {/* Welcome Section */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">

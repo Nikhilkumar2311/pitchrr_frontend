@@ -9,3 +9,5 @@ export { Breadcrumbs } from './Breadcrumbs';
 export { AIFloatingButton } from './AIFloatingButton';
 export { CreditsDisplay } from './CreditsDisplay';
 export { CreditCost } from './CreditCost';
+export { SEO } from './SEO';
+export { ScrollToTop } from './ScrollToTop';

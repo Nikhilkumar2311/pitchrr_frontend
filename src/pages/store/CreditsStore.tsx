@@ -23,6 +23,7 @@ import {
 } from '@/hooks';
 import toast from 'react-hot-toast';
 import api from '@/services/api';
+import { SEO } from '@/components/common';
 
 // Pack icons mapping
 const PACK_ICONS = {
@@ -141,6 +142,12 @@ export default function CreditsStore() {
 
     return (
         <div className="max-w-6xl mx-auto space-y-8">
+            <SEO
+                title="Buy Credits"
+                description="Purchase credits to power your AI modules. Get idea validation, pitch deck generation, marketing strategies, and more."
+                canonical="/dashboard/store/credits"
+            />
+
             {/* Page Header */}
             <div className="text-center">
                 <h1 className="text-3xl font-bold text-gray-900 flex items-center justify-center gap-3">

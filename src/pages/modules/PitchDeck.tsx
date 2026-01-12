@@ -39,7 +39,7 @@ import {
 } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { PitchDeckSkeleton } from '@/components/skeletons/PitchDeckSkeleton';
-import { CreditCost } from '@/components/common';
+import { CreditCost, SEO } from '@/components/common';
 import {
     useIdea,
     useIdeas,
@@ -372,6 +372,12 @@ export default function PitchDeck() {
 
     return (
         <div className="space-y-6">
+            <SEO
+                title="Pitch Deck"
+                description="Generate investor-ready pitch decks with AI. Create professional 12-slide presentations with customizable themes and export to PPT."
+                canonical="/dashboard/pitch"
+            />
+
             {/* Page Header */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>

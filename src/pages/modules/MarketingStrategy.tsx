@@ -43,7 +43,7 @@ import {
 import toast from 'react-hot-toast';
 import { useIdeaStore } from '@/store';
 import { MarketingStrategySkeleton } from '@/components/skeletons/MarketingStrategySkeleton';
-import { CreditCost } from '@/components/common';
+import { CreditCost, SEO } from '@/components/common';
 import {
     useIdea,
     useIdeas,
@@ -165,6 +165,12 @@ export default function MarketingStrategy() {
 
     return (
         <div className="space-y-6">
+            <SEO
+                title="Marketing Strategy"
+                description="Create a comprehensive AI-powered marketing plan with 30-day timeline, target segments, channel strategies, and messaging frameworks."
+                canonical="/dashboard/marketing"
+            />
+
             {/* Page Header */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>

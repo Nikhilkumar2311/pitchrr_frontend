@@ -36,4 +36,38 @@ export default defineConfig({
       '@/app': path.resolve(__dirname, './src/app'),
     },
   },
+
+  // Build optimization - split vendor libraries into separate chunks
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // Core React libraries
+          if (id.includes('node_modules/react/') ||
+            id.includes('node_modules/react-dom/') ||
+            id.includes('node_modules/react-router-dom/') ||
+            id.includes('node_modules/react-router/')) {
+            return 'vendor-react';
+          }
+          // Animation libraries
+          if (id.includes('node_modules/gsap/') ||
+            id.includes('node_modules/framer-motion/')) {
+            return 'vendor-animation';
+          }
+          // Charting library
+          if (id.includes('node_modules/recharts/')) {
+            return 'vendor-charts';
+          }
+          // State management and data fetching
+          if (id.includes('node_modules/@tanstack/react-query/') ||
+            id.includes('node_modules/zustand/') ||
+            id.includes('node_modules/axios/')) {
+            return 'vendor-utils';
+          }
+        },
+      },
+    },
+    // Increase chunk size warning limit slightly (default is 500kb)
+    chunkSizeWarningLimit: 600,
+  },
 })

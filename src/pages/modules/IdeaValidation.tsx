@@ -43,7 +43,7 @@ import {
 import toast from 'react-hot-toast';
 import { useIdeaStore } from '@/store';
 import { IdeaValidationSkeleton } from '@/components/skeletons/IdeaValidationSkeleton';
-import { CreditCost } from '@/components/common';
+import { CreditCost, SEO } from '@/components/common';
 import {
     useIdea,
     useIdeas,
@@ -298,6 +298,12 @@ export default function IdeaValidation() {
 
     return (
         <div className="space-y-6">
+            <SEO
+                title="Idea Validation"
+                description="Validate your startup idea with AI-powered analysis. Get viability scores, risk assessments, SWOT analysis, and market demand insights."
+                canonical="/dashboard/idea"
+            />
+
             {/* Page Header */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>

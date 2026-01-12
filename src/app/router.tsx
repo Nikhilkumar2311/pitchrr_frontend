@@ -29,6 +29,7 @@ import { Rocket } from 'lucide-react';
 // Components
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
 import { AuthModal } from '@/components/common/AuthModal';
+import { ScrollToTop } from '@/components/common/ScrollToTop';
 
 /**
  * LAZY LOADING EXPLAINED
@@ -62,6 +63,13 @@ const StartupChatbot = lazy(() => import('@/pages/modules/StartupChatbot'));
 // Lazy load store pages
 const CreditsStore = lazy(() => import('@/pages/store/CreditsStore'));
 
+// Lazy load legal pages (Razorpay compliance)
+const PrivacyPolicy = lazy(() => import('@/pages/legal/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('@/pages/legal/TermsOfService'));
+const RefundPolicy = lazy(() => import('@/pages/legal/RefundPolicy'));
+const ContactUs = lazy(() => import('@/pages/legal/ContactUs'));
+const AboutUs = lazy(() => import('@/pages/legal/AboutUs'));
+
 // Layouts - named export needs different lazy import
 const DashboardLayout = lazy(() =>
     import('@/layout/DashboardLayout').then(mod => ({ default: mod.DashboardLayout }))
@@ -86,6 +94,7 @@ function LazyPage({ children }: { children: React.ReactNode }) {
 function RootLayout() {
     return (
         <>
+            <ScrollToTop />
             <Outlet />
             <AuthModal />
         </>
@@ -116,6 +125,27 @@ const router = createBrowserRouter([
             {
                 path: '/register',
                 element: <LazyPage><Register /></LazyPage>,
+            },
+            // Legal pages (Razorpay compliance)
+            {
+                path: '/privacy',
+                element: <LazyPage><PrivacyPolicy /></LazyPage>,
+            },
+            {
+                path: '/terms',
+                element: <LazyPage><TermsOfService /></LazyPage>,
+            },
+            {
+                path: '/refund',
+                element: <LazyPage><RefundPolicy /></LazyPage>,
+            },
+            {
+                path: '/contact',
+                element: <LazyPage><ContactUs /></LazyPage>,
+            },
+            {
+                path: '/about',
+                element: <LazyPage><AboutUs /></LazyPage>,
             },
             {
                 path: '/sso-callback',
