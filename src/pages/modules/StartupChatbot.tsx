@@ -42,7 +42,7 @@ const formatMessage = (content: string): React.ReactNode => {
         if (numberedMatch) {
             return (
                 <div key={lineIndex} className="flex gap-2 my-1.5">
-                    <span className="w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                    <span className="w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-semibold shrink-0">
                         {numberedMatch[1]}
                     </span>
                     <span>{formatInlineText(numberedMatch[2])}</span>
@@ -54,7 +54,7 @@ const formatMessage = (content: string): React.ReactNode => {
         if (line.match(/^[-•*]\s/)) {
             return (
                 <div key={lineIndex} className="flex gap-2 my-1">
-                    <span className="w-1.5 h-1.5 bg-pink-500 rounded-full mt-2 flex-shrink-0" />
+                    <span className="w-1.5 h-1.5 bg-pink-500 rounded-full mt-2 shrink-0" />
                     <span>{formatInlineText(line.slice(2))}</span>
                 </div>
             );
@@ -410,7 +410,7 @@ export default function StartupChatbot() {
                                 className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}
                             >
                                 {message.role === 'assistant' && (
-                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 flex items-center justify-center flex-shrink-0">
+                                    <div className="w-8 h-8 rounded-full bg-linear-to-br from-pink-400 to-pink-600 flex items-center justify-center shrink-0">
                                         <Bot className="w-4 h-4 text-white" />
                                     </div>
                                 )}
@@ -432,7 +432,7 @@ export default function StartupChatbot() {
                                     </div>
                                 </div>
                                 {message.role === 'user' && (
-                                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
                                         <User className="w-4 h-4 text-gray-600" />
                                     </div>
                                 )}
@@ -447,7 +447,7 @@ export default function StartupChatbot() {
                             animate={{ opacity: 1 }}
                             className="flex gap-3"
                         >
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-full bg-linear-to-br from-pink-400 to-pink-600 flex items-center justify-center">
                                 <Bot className="w-4 h-4 text-white" />
                             </div>
                             <div className="bg-gray-100 rounded-2xl px-4 py-3">

@@ -535,7 +535,7 @@ export default function IdeaValidation() {
                                         <ul className="space-y-2">
                                             {analysis.swot.strengths?.map((item: string, i: number) => (
                                                 <li key={i} className="text-sm text-green-700 flex items-start gap-2">
-                                                    <span className="mt-1.5 w-1 h-1 rounded-full bg-green-500 flex-shrink-0" />
+                                                    <span className="mt-1.5 w-1 h-1 rounded-full bg-green-500 shrink-0" />
                                                     {item}
                                                 </li>
                                             ))}
@@ -550,7 +550,7 @@ export default function IdeaValidation() {
                                         <ul className="space-y-2">
                                             {analysis.swot.weaknesses?.map((item: string, i: number) => (
                                                 <li key={i} className="text-sm text-red-700 flex items-start gap-2">
-                                                    <span className="mt-1.5 w-1 h-1 rounded-full bg-red-500 flex-shrink-0" />
+                                                    <span className="mt-1.5 w-1 h-1 rounded-full bg-red-500 shrink-0" />
                                                     {item}
                                                 </li>
                                             ))}
@@ -633,7 +633,7 @@ export default function IdeaValidation() {
                                 <ul className="mt-4 space-y-2">
                                     {analysis.recommendations.map((rec: string, i: number) => (
                                         <li key={i} className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
-                                            <span className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                                            <span className="shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
                                                 {i + 1}
                                             </span>
                                             <p className="text-sm text-blue-800">{rec}</p>

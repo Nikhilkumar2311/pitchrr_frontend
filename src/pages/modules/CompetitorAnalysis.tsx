@@ -550,7 +550,7 @@ export default function CompetitorAnalysis() {
                         <ul className="mt-4 space-y-2">
                             {analysisData.recommendations.map((rec: string, i: number) => (
                                 <li key={i} className="flex items-start gap-3 p-3 bg-cyan-50 rounded-lg">
-                                    <span className="flex-shrink-0 w-6 h-6 bg-cyan-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                                    <span className="shrink-0 w-6 h-6 bg-cyan-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
                                         {i + 1}
                                     </span>
                                     <p className="text-sm text-cyan-800">{rec}</p>

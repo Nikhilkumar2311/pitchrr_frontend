@@ -462,7 +462,7 @@ export default function PitchDeck() {
                     {/* Slide Thumbnails */}
                     <div className="lg:col-span-1 space-y-2">
                         <h3 className="font-medium text-gray-900 mb-3">Slides</h3>
-                        <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
+                        <div className="space-y-2 max-h-125 overflow-y-auto pr-2">
                             {slides.map((slide, index) => (
                                 <button
                                     key={index}
@@ -604,7 +604,7 @@ export default function PitchDeck() {
                             </Card>
                         )}
 
-                        <Card className="min-h-[400px] relative">
+                        <Card className="min-h-100 relative">
                             {/* Slide Content */}
                             <motion.div
                                 key={currentSlide}
@@ -711,7 +711,7 @@ export default function PitchDeck() {
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                                                    <div className="space-y-3 max-h-75 overflow-y-auto">
                                                         {editingChartData.map((item, idx) => (
                                                             <div key={idx} className="flex items-center gap-2">
                                                                 <input

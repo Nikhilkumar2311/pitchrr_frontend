@@ -107,6 +107,24 @@ api.interceptors.response.use(
                     // eventBus.emit('auth:unauthorized');
                     break;
 
+                case 402:
+                    // Payment Required - insufficient credits
+                    const errorData = error.response.data as { required?: number; available?: number; message?: string };
+                    const required = errorData?.required;
+                    const available = errorData?.available;
+
+                    if (required && available !== undefined) {
+                        toast.error(`Insufficient credits. You need ${required} but have ${available}.`);
+                    } else {
+                        toast.error('Insufficient credits. Please purchase more credits.');
+                    }
+
+                    // Redirect to credits store after a short delay
+                    setTimeout(() => {
+                        window.location.href = '/dashboard/store/credits';
+                    }, 1500);
+                    break;
+
                 case 403:
                     // Forbidden - user doesn't have permission
                     toast.error('You do not have permission to do this.');

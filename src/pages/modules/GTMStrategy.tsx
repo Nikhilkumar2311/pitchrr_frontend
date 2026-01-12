@@ -291,7 +291,7 @@ export default function GTMStrategy() {
                             Pricing Strategy
                         </CardTitle>
                     </CardHeader>
-                    <div className="mt-4 p-4 rounded-lg bg-gradient-to-r from-green-50 to-blue-50 border border-green-200">
+                    <div className="mt-4 p-4 rounded-lg bg-linear-to-r from-green-50 to-blue-50 border border-green-200">
                         {hasGenerated && strategy?.pricing_strategy ? (
                             <>
                                 <div className="flex items-center justify-between mb-2">

@@ -184,10 +184,10 @@ export function useGenerateModule(ideaId: string) {
             );
             return data;
         },
-        onSuccess: (response, moduleType) => {
+        onSuccess: (_response, moduleType) => {
             // Show toast with credits info
             toast.success(
-                `Generating ${formatModuleName(moduleType)}... (${response.creditsDeducted} credits)`,
+                `Generating ${formatModuleName(moduleType)}...`,
                 { duration: 4000 }
             );
 
