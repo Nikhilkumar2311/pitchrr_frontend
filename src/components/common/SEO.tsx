@@ -23,7 +23,7 @@ export function SEO({
     noIndex = false
 }: SEOProps) {
     const fullTitle = title === 'Pitchrr' ? title : `${title} | Pitchrr`;
-    const baseUrl = 'https://pitchrr.com';
+    const baseUrl = 'https://pitchrr.in';
     const canonicalUrl = canonical ? `${baseUrl}${canonical}` : undefined;
 
     return (

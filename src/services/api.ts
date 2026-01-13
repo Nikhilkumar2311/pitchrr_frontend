@@ -29,7 +29,7 @@ import toast from 'react-hot-toast';
 
 // Core Service API (all features: auth, ideas, modules, credits, etc.)
 const API_BASE_URL = import.meta.env.VITE_CORE_API_URL || 'http://localhost:3001/api/v1';
-console.log('[API] Core API Base URL:', API_BASE_URL);
+// console.log('[API] Core API Base URL:', API_BASE_URL);
 
 const api = axios.create({
     baseURL: API_BASE_URL,
