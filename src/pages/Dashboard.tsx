@@ -24,11 +24,11 @@ import {
   Sparkles,
   X,
   Loader2,
+  ChevronRight,
 } from "lucide-react";
 import {
   Card,
   CardHeader,
-  CardTitle,
   CardDescription,
   Button,
   ProgressBar,
@@ -36,6 +36,7 @@ import {
 } from "@/components/ui";
 import { useIdeaStore } from "@/store";
 import { GenerateIdeaModal } from "@/components/common/GenerateIdeaModal";
+import { IdeasListModal } from "@/components/common/IdeasListModal";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { useIdeas } from "@/hooks";
 import api from "@/services/api";
@@ -148,9 +149,10 @@ const getStatusBadge = (status: ModuleStatus) => {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useUser();
-  const { setIdea, currentIdea } = useIdeaStore();
+  const { setIdea, currentIdea, setActiveIdeaId, activeIdeaId: storedActiveIdeaId } = useIdeaStore();
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+  const [isIdeasListOpen, setIsIdeasListOpen] = useState(false);
   const [isIdeaBannerVisible, setIsIdeaBannerVisible] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [moduleProgress, setModuleProgress] = useState<Record<string, number>>(
@@ -160,7 +162,19 @@ export default function Dashboard() {
 
   // Fetch user's ideas
   const { data: ideas } = useIdeas();
-  const activeIdeaId = ideas?.[0]?.id;
+
+  // Use stored active idea or fall back to first idea
+  const activeIdeaId = storedActiveIdeaId || ideas?.[0]?.id;
+  const activeIdea = ideas?.find(idea => idea.id === activeIdeaId) || ideas?.[0];
+
+  // Derive currentIdea display from activeIdea if store is empty
+  const displayIdea = currentIdea || (activeIdea ? {
+    title: activeIdea.title,
+    description: activeIdea.description,
+    problem: activeIdea.problemSolved || undefined,
+    targetMarket: activeIdea.targetAudience || undefined,
+    industry: activeIdea.industry || undefined,
+  } : null);
 
   // Map module types to API names
   const moduleApiNames: Record<string, string> = {
@@ -352,7 +366,7 @@ export default function Dashboard() {
         </div>
 
         {/* Current Idea Card - Show if idea exists */}
-        {currentIdea && isIdeaBannerVisible && (
+        {displayIdea && isIdeaBannerVisible && (
           <Card className="bg-linear-to-r from-blue-50 to-indigo-50 border-blue-200 relative">
             <button
               onClick={() => setIsIdeaBannerVisible(false)}
@@ -370,10 +384,10 @@ export default function Dashboard() {
                   Your Current Idea
                 </h3>
                 <p className="text-lg font-bold text-gray-900">
-                  {currentIdea.title}
+                  {displayIdea.title}
                 </p>
                 <p className="text-sm text-blue-700 mt-1 line-clamp-2">
-                  {currentIdea.description}
+                  {displayIdea.description}
                 </p>
               </div>
               <Link to="/dashboard/idea">
@@ -385,10 +399,23 @@ export default function Dashboard() {
           </Card>
         )}
 
-        {/* Overall Progress */}
+        {/* See All Ideas + Overall Progress */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
+          <h2 className="text-xl font-semibold text-gray-900">Your Progress</h2>
+          {ideas && ideas.length > 1 && (
+            <Button
+              variant="secondary"
+              size="sm"
+              rightIcon={<ChevronRight className="w-4 h-4" />}
+              onClick={() => setIsIdeasListOpen(true)}
+              className="shrink-0"
+            >
+              See All Ideas ({ideas.length})
+            </Button>
+          )}
+        </div>
         <Card>
           <CardHeader>
-            <CardTitle>Your Progress</CardTitle>
             <CardDescription>
               Complete all 7 modules to be investor-ready
             </CardDescription>
@@ -500,7 +527,7 @@ export default function Dashboard() {
         </div>
 
         {/* Don't have an idea card - Primary Blue */}
-        {!currentIdea && (
+        {!displayIdea && (
           <Card className="bg-linear-to-r from-blue-50 to-indigo-50 border-blue-200">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
@@ -550,6 +577,24 @@ export default function Dashboard() {
         isOpen={isGenerateModalOpen}
         onClose={() => setIsGenerateModalOpen(false)}
         onIdeaGenerated={handleIdeaGenerated}
+      />
+
+      {/* Ideas List Modal */}
+      <IdeasListModal
+        isOpen={isIdeasListOpen}
+        onClose={() => setIsIdeasListOpen(false)}
+        onSelectIdea={(idea) => {
+          setActiveIdeaId(idea.id);
+          setIdea({
+            id: idea.id,
+            title: idea.title,
+            description: idea.description,
+            problem: idea.problemSolved || undefined,
+            targetMarket: idea.targetAudience || undefined,
+            industry: idea.industry || undefined,
+          });
+        }}
+        onCreateNew={() => setIsGenerateModalOpen(true)}
       />
     </>
   );

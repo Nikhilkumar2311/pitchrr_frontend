@@ -8,6 +8,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export interface StartupIdea {
+    id?: string;
     title: string;
     description: string;
     problem?: string;
@@ -19,11 +20,13 @@ export interface StartupIdea {
 interface IdeaState {
     currentIdea: StartupIdea | null;
     isIdeaSet: boolean;
+    activeIdeaId: string | null;
 
     // Actions
     setIdea: (idea: StartupIdea) => void;
     updateIdea: (updates: Partial<StartupIdea>) => void;
     clearIdea: () => void;
+    setActiveIdeaId: (id: string | null) => void;
 }
 
 export const useIdeaStore = create<IdeaState>()(
@@ -31,8 +34,13 @@ export const useIdeaStore = create<IdeaState>()(
         (set) => ({
             currentIdea: null,
             isIdeaSet: false,
+            activeIdeaId: null,
 
-            setIdea: (idea) => set({ currentIdea: idea, isIdeaSet: true }),
+            setIdea: (idea) => set({
+                currentIdea: idea,
+                isIdeaSet: true,
+                activeIdeaId: idea.id || null
+            }),
 
             updateIdea: (updates) => set((state) => ({
                 currentIdea: state.currentIdea
@@ -40,7 +48,9 @@ export const useIdeaStore = create<IdeaState>()(
                     : null,
             })),
 
-            clearIdea: () => set({ currentIdea: null, isIdeaSet: false }),
+            clearIdea: () => set({ currentIdea: null, isIdeaSet: false, activeIdeaId: null }),
+
+            setActiveIdeaId: (id) => set({ activeIdeaId: id }),
         }),
         {
             name: 'pitchrr-idea-storage',

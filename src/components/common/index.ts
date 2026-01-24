@@ -11,3 +11,4 @@ export { CreditsDisplay } from './CreditsDisplay';
 export { CreditCost } from './CreditCost';
 export { SEO } from './SEO';
 export { ScrollToTop } from './ScrollToTop';
+export { IdeasListModal } from './IdeasListModal';
