@@ -38,7 +38,7 @@ import { useIdeaStore } from "@/store";
 import { GenerateIdeaModal } from "@/components/common/GenerateIdeaModal";
 import { IdeasListModal } from "@/components/common/IdeasListModal";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
-import { useIdeas } from "@/hooks";
+import { useIdeas, useCreateIdea } from "@/hooks";
 import api from "@/services/api";
 import { downloadFile } from "@/utils/download";
 import { CreditCost, SEO } from "@/components/common";
@@ -243,7 +243,10 @@ export default function Dashboard() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Handle generated idea - save to store and navigate to Idea Validation
+  // Create idea mutation
+  const { mutate: createIdea } = useCreateIdea();
+
+  // Handle generated idea - save to database AND store, then navigate
   const handleIdeaGenerated = (idea: {
     title: string;
     description: string;
@@ -251,17 +254,31 @@ export default function Dashboard() {
     solution?: string;
     targetMarket?: string;
   }) => {
-    // Save idea to global store - this will auto-fill across all modules
-    setIdea({
-      title: idea.title,
-      description: idea.description,
-      problem: idea.problem,
-      solution: idea.solution,
-      targetMarket: idea.targetMarket,
-    });
-
-    // Navigate to Idea Validation to start validating
-    navigate("/dashboard/idea");
+    // Create idea in database first
+    createIdea(
+      {
+        title: idea.title,
+        description: idea.description,
+        problemSolved: idea.problem,
+        targetAudience: idea.targetMarket,
+      },
+      {
+        onSuccess: (newIdea) => {
+          // Save to local store with the database ID
+          setIdea({
+            id: newIdea.id,
+            title: newIdea.title,
+            description: newIdea.description,
+            problem: newIdea.problemSolved || undefined,
+            targetMarket: newIdea.targetAudience || undefined,
+          });
+          // Set as active idea
+          setActiveIdeaId(newIdea.id);
+          // Navigate to Idea Validation
+          navigate("/dashboard/idea");
+        },
+      }
+    );
   };
 
   // Export All handler
