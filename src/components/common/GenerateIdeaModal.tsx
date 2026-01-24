@@ -171,8 +171,15 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
     };
 
     const handleUseIdea = () => {
+        console.log('[GenerateIdeaModal] handleUseIdea called');
+        console.log('[GenerateIdeaModal] generatedIdea:', generatedIdea);
+        console.log('[GenerateIdeaModal] onIdeaGenerated exists:', !!onIdeaGenerated);
+
         if (generatedIdea && onIdeaGenerated) {
+            console.log('[GenerateIdeaModal] Calling onIdeaGenerated with:', generatedIdea);
             onIdeaGenerated(generatedIdea);
+        } else {
+            console.log('[GenerateIdeaModal] NOT calling onIdeaGenerated - missing data');
         }
         onClose();
     };
