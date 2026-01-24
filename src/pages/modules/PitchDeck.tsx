@@ -49,6 +49,7 @@ import {
     useExportStatus,
 } from '@/hooks';
 import { downloadFile } from '@/utils';
+import { useIdeaStore } from '@/store';
 
 interface Slide {
     title: string;
@@ -215,8 +216,11 @@ export default function PitchDeck() {
     // API HOOKS
     // ==========================================================================
 
+    // Get active idea from store
+    const { activeIdeaId: storedActiveIdeaId } = useIdeaStore();
+
     const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
-    const activeIdeaId = urlIdeaId || ideas?.[0]?.id;
+    const activeIdeaId = urlIdeaId || storedActiveIdeaId || ideas?.[0]?.id;
 
     const { data: ideaData, isLoading: isLoadingIdea } = useIdea(activeIdeaId);
 

@@ -40,6 +40,7 @@ import {
     Input,
 } from '@/components/ui';
 import toast from 'react-hot-toast';
+import { useIdeaStore } from '@/store';
 import { CompetitorAnalysisSkeleton } from '@/components/skeletons/CompetitorAnalysisSkeleton';
 import { CreditCost, SEO } from '@/components/common';
 import {
@@ -88,8 +89,11 @@ export default function CompetitorAnalysis() {
     // API HOOKS
     // ==========================================================================
 
+    // Get active idea from store
+    const { activeIdeaId: storedActiveIdeaId } = useIdeaStore();
+
     const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
-    const activeIdeaId = urlIdeaId || ideas?.[0]?.id;
+    const activeIdeaId = urlIdeaId || storedActiveIdeaId || ideas?.[0]?.id;
 
     const {
         data: moduleData,

@@ -94,6 +94,7 @@ import toast from 'react-hot-toast';
 import { StartupChatbotSkeleton } from '@/components/skeletons/StartupChatbotSkeleton';
 import { SEO } from '@/components/common';
 import { useIdea, useIdeas, useAllModules } from '@/hooks';
+import { useIdeaStore } from '@/store';
 import api from '@/services/api';
 
 interface Message {
@@ -129,8 +130,11 @@ export default function StartupChatbot() {
     // API HOOKS
     // ==========================================================================
 
+    // Get active idea from store
+    const { activeIdeaId: storedActiveIdeaId } = useIdeaStore();
+
     const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
-    const activeIdeaId = urlIdeaId || ideas?.[0]?.id;
+    const activeIdeaId = urlIdeaId || storedActiveIdeaId || ideas?.[0]?.id;
 
     const { data: idea, isLoading: isLoadingIdea } = useIdea(activeIdeaId);
     const { data: allModules } = useAllModules(activeIdeaId);
