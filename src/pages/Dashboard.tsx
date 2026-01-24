@@ -254,6 +254,8 @@ export default function Dashboard() {
     solution?: string;
     targetMarket?: string;
   }) => {
+    console.log('[Dashboard] handleIdeaGenerated called with:', idea);
+
     // Create idea in database first
     createIdea(
       {
@@ -264,6 +266,7 @@ export default function Dashboard() {
       },
       {
         onSuccess: (newIdea) => {
+          console.log('[Dashboard] createIdea SUCCESS:', newIdea);
           // Save to local store with the database ID
           setIdea({
             id: newIdea.id,
@@ -274,8 +277,12 @@ export default function Dashboard() {
           });
           // Set as active idea
           setActiveIdeaId(newIdea.id);
+          console.log('[Dashboard] Set active idea ID:', newIdea.id);
           // Navigate to Idea Validation
           navigate("/dashboard/idea");
+        },
+        onError: (error) => {
+          console.error('[Dashboard] createIdea FAILED:', error);
         },
       }
     );
