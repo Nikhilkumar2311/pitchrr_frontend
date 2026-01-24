@@ -80,14 +80,14 @@ export default function Branding() {
     const [editorMode, setEditorMode] = useState<'simple' | 'advanced'>('simple');
 
     // Get current idea from store for backward compatibility
-    const { currentIdea, activeIdeaId: storedActiveIdeaId } = useIdeaStore();
+    const { currentIdea, activeIdeaId: storedActiveIdeaId, _hasHydrated } = useIdeaStore();
 
     // ==========================================================================
     // API HOOKS
     // ==========================================================================
 
     const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
-    const activeIdeaId = urlIdeaId || storedActiveIdeaId || ideas?.[0]?.id;
+    const activeIdeaId = urlIdeaId || (_hasHydrated ? storedActiveIdeaId : null) || ideas?.[0]?.id;
 
     const { data: idea, isLoading: isLoadingIdea } = useIdea(activeIdeaId);
 

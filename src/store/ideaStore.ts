@@ -21,12 +21,14 @@ interface IdeaState {
     currentIdea: StartupIdea | null;
     isIdeaSet: boolean;
     activeIdeaId: string | null;
+    _hasHydrated: boolean;
 
     // Actions
     setIdea: (idea: StartupIdea) => void;
     updateIdea: (updates: Partial<StartupIdea>) => void;
     clearIdea: () => void;
     setActiveIdeaId: (id: string | null) => void;
+    setHasHydrated: (state: boolean) => void;
 }
 
 export const useIdeaStore = create<IdeaState>()(
@@ -35,6 +37,7 @@ export const useIdeaStore = create<IdeaState>()(
             currentIdea: null,
             isIdeaSet: false,
             activeIdeaId: null,
+            _hasHydrated: false,
 
             setIdea: (idea) => set({
                 currentIdea: idea,
@@ -51,9 +54,14 @@ export const useIdeaStore = create<IdeaState>()(
             clearIdea: () => set({ currentIdea: null, isIdeaSet: false, activeIdeaId: null }),
 
             setActiveIdeaId: (id) => set({ activeIdeaId: id }),
+
+            setHasHydrated: (state) => set({ _hasHydrated: state }),
         }),
         {
             name: 'pitchrr-idea-storage',
+            onRehydrateStorage: () => (state) => {
+                state?.setHasHydrated(true);
+            },
         }
     )
 );

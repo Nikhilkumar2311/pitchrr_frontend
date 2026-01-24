@@ -149,7 +149,7 @@ const getStatusBadge = (status: ModuleStatus) => {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useUser();
-  const { setIdea, currentIdea, setActiveIdeaId, activeIdeaId: storedActiveIdeaId } = useIdeaStore();
+  const { setIdea, currentIdea, setActiveIdeaId, activeIdeaId: storedActiveIdeaId, _hasHydrated } = useIdeaStore();
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [isIdeasListOpen, setIsIdeasListOpen] = useState(false);
@@ -163,8 +163,8 @@ export default function Dashboard() {
   // Fetch user's ideas
   const { data: ideas } = useIdeas();
 
-  // Use stored active idea or fall back to first idea
-  const activeIdeaId = storedActiveIdeaId || ideas?.[0]?.id;
+  // Use stored active idea (only after hydration) or fall back to first idea
+  const activeIdeaId = (_hasHydrated ? storedActiveIdeaId : null) || ideas?.[0]?.id;
   const activeIdea = ideas?.find(idea => idea.id === activeIdeaId) || ideas?.[0];
 
   // Derive currentIdea display from activeIdea if store is empty

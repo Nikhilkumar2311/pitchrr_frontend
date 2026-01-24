@@ -90,10 +90,10 @@ export default function CompetitorAnalysis() {
     // ==========================================================================
 
     // Get active idea from store
-    const { activeIdeaId: storedActiveIdeaId } = useIdeaStore();
+    const { activeIdeaId: storedActiveIdeaId, _hasHydrated } = useIdeaStore();
 
     const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
-    const activeIdeaId = urlIdeaId || storedActiveIdeaId || ideas?.[0]?.id;
+    const activeIdeaId = urlIdeaId || (_hasHydrated ? storedActiveIdeaId : null) || ideas?.[0]?.id;
 
     const {
         data: moduleData,

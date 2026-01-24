@@ -85,7 +85,7 @@ export default function IdeaValidation() {
     const [ideaTitle, setIdeaTitle] = useState('');
 
     // Get global idea from store (for backward compatibility with Generate Idea flow)
-    const { currentIdea, setIdea, updateIdea: updateStoreIdea, activeIdeaId: storedActiveIdeaId } = useIdeaStore();
+    const { currentIdea, setIdea, updateIdea: updateStoreIdea, activeIdeaId: storedActiveIdeaId, _hasHydrated } = useIdeaStore();
 
     // ==========================================================================
     // API HOOKS
@@ -94,8 +94,8 @@ export default function IdeaValidation() {
     // Fetch all ideas to get the current one if no URL param
     const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
 
-    // Determine which idea to use: URL param > store activeIdeaId > first idea
-    const activeIdeaId = urlIdeaId || storedActiveIdeaId || ideas?.[0]?.id;
+    // Determine which idea to use: URL param > store activeIdeaId (only after hydration) > first idea
+    const activeIdeaId = urlIdeaId || (_hasHydrated ? storedActiveIdeaId : null) || ideas?.[0]?.id;
 
     // Fetch the active idea
     const { data: idea, isLoading: isLoadingIdea } = useIdea(activeIdeaId);
