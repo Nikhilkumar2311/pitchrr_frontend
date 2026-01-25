@@ -34,7 +34,7 @@ import {
   ProgressBar,
   Badge,
 } from "@/components/ui";
-import { useIdeaStore } from "@/store";
+import { useIdeaStore, getStoredActiveIdeaId } from "@/store";
 import { GenerateIdeaModal } from "@/components/common/GenerateIdeaModal";
 import { IdeasListModal } from "@/components/common/IdeasListModal";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
@@ -163,9 +163,12 @@ export default function Dashboard() {
   // Fetch user's ideas
   const { data: ideas } = useIdeas();
 
+  // Read from localStorage directly on initial render to avoid async hydration delay
+  const initialStoredId = useMemo(() => getStoredActiveIdeaId(), []);
+
   // Use stored active idea from zustand (now syncs properly with localStorage)
-  // Fall back to first idea if no active idea is set
-  const activeIdeaId = storedActiveIdeaId || ideas?.[0]?.id;
+  // Fall back to localStorage sync read, then first idea if no active idea is set
+  const activeIdeaId = storedActiveIdeaId || initialStoredId || ideas?.[0]?.id;
   const activeIdea = ideas?.find(idea => idea.id === activeIdeaId) || ideas?.[0];
 
   // Derive currentIdea display from activeIdea if store is empty

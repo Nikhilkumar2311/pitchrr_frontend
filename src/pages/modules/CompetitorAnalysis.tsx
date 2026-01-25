@@ -15,7 +15,7 @@
  * - React Query polls for results
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -37,7 +37,7 @@ import {
     Badge,
 } from '@/components/ui';
 import toast from 'react-hot-toast';
-import { useIdeaStore } from '@/store';
+import { useIdeaStore, getStoredActiveIdeaId } from '@/store';
 import { CompetitorAnalysisSkeleton } from '@/components/skeletons/CompetitorAnalysisSkeleton';
 import { CreditCost, SEO } from '@/components/common';
 import {
@@ -72,11 +72,14 @@ export default function CompetitorAnalysis() {
     // API HOOKS
     // ==========================================================================
 
-    // Get active idea from store
+    // Get active idea from store (also sync read from localStorage on initial mount)
     const { activeIdeaId: storedActiveIdeaId } = useIdeaStore();
+    // Read from localStorage directly on initial render to avoid async hydration delay
+    const initialStoredId = useMemo(() => getStoredActiveIdeaId(), []);
 
     const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
-    const activeIdeaId = urlIdeaId || storedActiveIdeaId || ideas?.[0]?.id;
+    // Priority: URL param > zustand store > localStorage sync read > first idea
+    const activeIdeaId = urlIdeaId || storedActiveIdeaId || initialStoredId || ideas?.[0]?.id;
 
 
     const { data: moduleData } = useModuleData(activeIdeaId, 'competitor_analysis');

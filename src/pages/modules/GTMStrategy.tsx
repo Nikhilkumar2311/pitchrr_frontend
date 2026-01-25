@@ -16,7 +16,7 @@
  * - React Query polls for results
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import {
     Rocket,
@@ -40,7 +40,7 @@ import {
     Badge,
 } from '@/components/ui';
 import toast from 'react-hot-toast';
-import { useIdeaStore } from '@/store';
+import { useIdeaStore, getStoredActiveIdeaId } from '@/store';
 import { GTMStrategySkeleton } from '@/components/skeletons/GTMStrategySkeleton';
 import { CreditCost, SEO } from '@/components/common';
 import {
@@ -60,13 +60,15 @@ export default function GTMStrategy() {
 
     // Get current idea from store for backward compatibility
     const { currentIdea, activeIdeaId: storedActiveIdeaId } = useIdeaStore();
+    // Read from localStorage directly on initial render to avoid async hydration delay
+    const initialStoredId = useMemo(() => getStoredActiveIdeaId(), []);
 
     // ==========================================================================
     // API HOOKS
     // ==========================================================================
 
     const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
-    const activeIdeaId = urlIdeaId || storedActiveIdeaId || ideas?.[0]?.id;
+    const activeIdeaId = urlIdeaId || storedActiveIdeaId || initialStoredId || ideas?.[0]?.id;
 
     const { data: idea, isLoading: isLoadingIdea } = useIdea(activeIdeaId);
 

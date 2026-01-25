@@ -15,7 +15,7 @@
  * - React Query polls for results
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -49,7 +49,7 @@ import {
     useExportStatus,
 } from '@/hooks';
 import { downloadFile } from '@/utils';
-import { useIdeaStore } from '@/store';
+import { useIdeaStore, getStoredActiveIdeaId } from '@/store';
 
 interface Slide {
     title: string;
@@ -218,9 +218,11 @@ export default function PitchDeck() {
 
     // Get active idea from store
     const { activeIdeaId: storedActiveIdeaId } = useIdeaStore();
+    // Read from localStorage directly on initial render to avoid async hydration delay
+    const initialStoredId = useMemo(() => getStoredActiveIdeaId(), []);
 
     const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
-    const activeIdeaId = urlIdeaId || storedActiveIdeaId || ideas?.[0]?.id;
+    const activeIdeaId = urlIdeaId || storedActiveIdeaId || initialStoredId || ideas?.[0]?.id;
 
     const { data: ideaData, isLoading: isLoadingIdea } = useIdea(activeIdeaId);
 

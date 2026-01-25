@@ -16,7 +16,7 @@
  * - Displays AI responses
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -94,7 +94,7 @@ import toast from 'react-hot-toast';
 import { StartupChatbotSkeleton } from '@/components/skeletons/StartupChatbotSkeleton';
 import { SEO } from '@/components/common';
 import { useIdea, useIdeas, useAllModules } from '@/hooks';
-import { useIdeaStore } from '@/store';
+import { useIdeaStore, getStoredActiveIdeaId } from '@/store';
 import api from '@/services/api';
 
 interface Message {
@@ -132,9 +132,11 @@ export default function StartupChatbot() {
 
     // Get active idea from store
     const { activeIdeaId: storedActiveIdeaId } = useIdeaStore();
+    // Read from localStorage directly on initial render to avoid async hydration delay
+    const initialStoredId = useMemo(() => getStoredActiveIdeaId(), []);
 
     const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
-    const activeIdeaId = urlIdeaId || storedActiveIdeaId || ideas?.[0]?.id;
+    const activeIdeaId = urlIdeaId || storedActiveIdeaId || initialStoredId || ideas?.[0]?.id;
 
     const { data: idea, isLoading: isLoadingIdea } = useIdea(activeIdeaId);
     const { data: allModules } = useAllModules(activeIdeaId);

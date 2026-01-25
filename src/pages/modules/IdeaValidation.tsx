@@ -16,7 +16,7 @@
  * - React Query polls for results → displays when ready
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -41,7 +41,7 @@ import {
     Badge,
 } from '@/components/ui';
 import toast from 'react-hot-toast';
-import { useIdeaStore } from '@/store';
+import { useIdeaStore, getStoredActiveIdeaId } from '@/store';
 import { IdeaValidationSkeleton } from '@/components/skeletons/IdeaValidationSkeleton';
 import { CreditCost, SEO } from '@/components/common';
 import {
@@ -86,6 +86,8 @@ export default function IdeaValidation() {
 
     // Get global idea from store (for backward compatibility with Generate Idea flow)
     const { currentIdea, setIdea, updateIdea: updateStoreIdea, activeIdeaId: storedActiveIdeaId } = useIdeaStore();
+    // Read from localStorage directly on initial render to avoid async hydration delay
+    const initialStoredId = useMemo(() => getStoredActiveIdeaId(), []);
 
     // ==========================================================================
     // API HOOKS
@@ -94,8 +96,8 @@ export default function IdeaValidation() {
     // Fetch all ideas to get the current one if no URL param
     const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
 
-    // Determine which idea to use: URL param > store activeIdeaId > first idea
-    const activeIdeaId = urlIdeaId || storedActiveIdeaId || ideas?.[0]?.id;
+    // Determine which idea to use: URL param > zustand store > localStorage sync read > first idea
+    const activeIdeaId = urlIdeaId || storedActiveIdeaId || initialStoredId || ideas?.[0]?.id;
 
     // Fetch the active idea
     const { data: idea, isLoading: isLoadingIdea } = useIdea(activeIdeaId);

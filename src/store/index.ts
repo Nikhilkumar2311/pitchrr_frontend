@@ -6,5 +6,5 @@
  */
 
 export { useUIStore } from './uiStore';
-export { useIdeaStore } from './ideaStore';
+export { useIdeaStore, getStoredActiveIdeaId } from './ideaStore';
 export type { StartupIdea } from './ideaStore';
