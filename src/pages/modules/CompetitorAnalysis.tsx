@@ -26,9 +26,7 @@ import {
     Check,
     X,
     Loader2,
-    Plus,
     Coins,
-    Trash2,
 } from 'lucide-react';
 import {
     Card,
@@ -37,7 +35,6 @@ import {
     CardDescription,
     Button,
     Badge,
-    Input,
 } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { useIdeaStore } from '@/store';
@@ -61,12 +58,6 @@ interface Competitor {
     weaknesses: string[];
 }
 
-interface UniqueAdvantage {
-    id: string;
-    feature: string;
-    description: string;
-}
-
 const INITIAL_COMPETITOR_COUNT = 3;
 const CREDITS_PER_LOAD = 5;
 
@@ -77,28 +68,19 @@ export default function CompetitorAnalysis() {
     const [visibleCount, setVisibleCount] = useState(INITIAL_COMPETITOR_COUNT);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-    // State for unique advantages
-    const [uniqueAdvantages, setUniqueAdvantages] = useState<UniqueAdvantage[]>([
-        { id: '1', feature: 'AI-Powered Analysis', description: 'Competitors use manual processes' },
-        { id: '2', feature: 'Real-time Updates', description: 'Others only update monthly' },
-    ]);
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [newAdvantage, setNewAdvantage] = useState({ feature: '', description: '' });
-
     // ==========================================================================
     // API HOOKS
     // ==========================================================================
 
     // Get active idea from store
-    const { activeIdeaId: storedActiveIdeaId, _hasHydrated } = useIdeaStore();
+    const { activeIdeaId: storedActiveIdeaId } = useIdeaStore();
 
     const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
-    const activeIdeaId = urlIdeaId || (_hasHydrated ? storedActiveIdeaId : null) || ideas?.[0]?.id;
+    const activeIdeaId = urlIdeaId || storedActiveIdeaId || ideas?.[0]?.id;
 
-    const {
-        data: moduleData,
-        isFetching: isPolling,
-    } = useModuleData(activeIdeaId, 'competitor_analysis');
+
+    const { data: moduleData } = useModuleData(activeIdeaId, 'competitor_analysis');
+
 
     const { mutate: generateModule, isPending: isTriggering } = useGenerateModule(activeIdeaId || '');
 
@@ -113,7 +95,8 @@ export default function CompetitorAnalysis() {
     const hasMoreCompetitors = allCompetitors.length > visibleCount;
     const remainingCount = allCompetitors.length - visibleCount;
     const isLoading = isLoadingIdeas;
-    const isAnalyzing = isTriggering || (isPolling && !hasAnalyzed);
+    // Use status from backend to detect pending state (survives page refresh)
+    const isAnalyzing = isTriggering || moduleData?.status === 'IN_PROGRESS';
 
     // ==========================================================================
     // HANDLERS
@@ -166,25 +149,6 @@ export default function CompetitorAnalysis() {
         setVisibleCount(prev => prev + 3);
         toast.success(`Loaded more competitors! (${CREDITS_PER_LOAD} credits used)`);
         setIsLoadingMore(false);
-    };
-
-    const handleAddAdvantage = () => {
-        if (!newAdvantage.feature.trim()) return;
-        const id = Date.now().toString();
-        setUniqueAdvantages(prev => [...prev, { ...newAdvantage, id }]);
-        setNewAdvantage({ feature: '', description: '' });
-        toast.success('Advantage added!');
-    };
-
-    const handleDeleteAdvantage = (id: string) => {
-        setUniqueAdvantages(prev => prev.filter(a => a.id !== id));
-        toast.success('Advantage removed');
-    };
-
-    const handleEditAdvantage = (id: string, field: 'feature' | 'description', value: string) => {
-        setUniqueAdvantages(prev =>
-            prev.map(a => a.id === id ? { ...a, [field]: value } : a)
-        );
     };
 
     // ==========================================================================
@@ -344,103 +308,6 @@ export default function CompetitorAnalysis() {
                     )}
                 </div>
             )}
-
-            {/* Your Unique Advantages */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Check className="w-5 h-5 text-green-500" />
-                        What You Offer That Competitors Don't
-                    </CardTitle>
-                    <CardDescription>
-                        Add your unique selling points that set you apart
-                    </CardDescription>
-                </CardHeader>
-                <div className="mt-4 space-y-4">
-                    {/* Existing Advantages */}
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b border-gray-200">
-                                    <th className="text-left py-2 px-3 font-medium text-gray-700">Feature</th>
-                                    <th className="text-left py-2 px-3 font-medium text-gray-700">Why Competitors Can't Match</th>
-                                    <th className="w-10"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {uniqueAdvantages.map((advantage) => (
-                                    <tr key={advantage.id} className="border-b border-gray-100 group">
-                                        <td className="py-2 px-3">
-                                            {editingId === advantage.id ? (
-                                                <Input
-                                                    value={advantage.feature}
-                                                    onChange={(e) => handleEditAdvantage(advantage.id, 'feature', e.target.value)}
-                                                    className="h-8"
-                                                />
-                                            ) : (
-                                                <span
-                                                    className="cursor-pointer hover:text-blue-600"
-                                                    onClick={() => setEditingId(advantage.id)}
-                                                >
-                                                    {advantage.feature}
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="py-2 px-3">
-                                            {editingId === advantage.id ? (
-                                                <Input
-                                                    value={advantage.description}
-                                                    onChange={(e) => handleEditAdvantage(advantage.id, 'description', e.target.value)}
-                                                    className="h-8"
-                                                    onBlur={() => setEditingId(null)}
-                                                />
-                                            ) : (
-                                                <span className="text-gray-600">{advantage.description}</span>
-                                            )}
-                                        </td>
-                                        <td className="py-2 px-3">
-                                            <button
-                                                onClick={() => handleDeleteAdvantage(advantage.id)}
-                                                className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 rounded transition-all"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Add New Advantage */}
-                    <div className="flex gap-2 items-end">
-                        <div className="flex-1">
-                            <label className="text-xs text-gray-500 mb-1 block">Feature</label>
-                            <Input
-                                placeholder="e.g., AI-powered insights"
-                                value={newAdvantage.feature}
-                                onChange={(e) => setNewAdvantage(prev => ({ ...prev, feature: e.target.value }))}
-                            />
-                        </div>
-                        <div className="flex-1">
-                            <label className="text-xs text-gray-500 mb-1 block">Description</label>
-                            <Input
-                                placeholder="Why competitors can't match this"
-                                value={newAdvantage.description}
-                                onChange={(e) => setNewAdvantage(prev => ({ ...prev, description: e.target.value }))}
-                            />
-                        </div>
-                        <Button
-                            variant="secondary"
-                            leftIcon={<Plus className="w-4 h-4" />}
-                            onClick={handleAddAdvantage}
-                            disabled={!newAdvantage.feature.trim()}
-                        >
-                            Add
-                        </Button>
-                    </div>
-                </div>
-            </Card>
 
             {/* Competitive Positioning */}
             {hasAnalyzed && analysisData?.positioning && (

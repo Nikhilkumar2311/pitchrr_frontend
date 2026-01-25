@@ -61,14 +61,14 @@ export default function MarketingStrategy() {
     const [targetAudience, setTargetAudience] = useState('');
 
     // Get current idea from store for backward compatibility
-    const { currentIdea, activeIdeaId: storedActiveIdeaId, _hasHydrated } = useIdeaStore();
+    const { currentIdea, activeIdeaId: storedActiveIdeaId } = useIdeaStore();
 
     // ==========================================================================
     // API HOOKS
     // ==========================================================================
 
     const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
-    const activeIdeaId = urlIdeaId || (_hasHydrated ? storedActiveIdeaId : null) || ideas?.[0]?.id;
+    const activeIdeaId = urlIdeaId || storedActiveIdeaId || ideas?.[0]?.id;
 
     const { data: idea, isLoading: isLoadingIdea } = useIdea(activeIdeaId);
 

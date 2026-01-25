@@ -5,7 +5,7 @@
  */
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 export interface StartupIdea {
     id?: string;
@@ -21,14 +21,12 @@ interface IdeaState {
     currentIdea: StartupIdea | null;
     isIdeaSet: boolean;
     activeIdeaId: string | null;
-    _hasHydrated: boolean;
 
     // Actions
     setIdea: (idea: StartupIdea) => void;
     updateIdea: (updates: Partial<StartupIdea>) => void;
     clearIdea: () => void;
     setActiveIdeaId: (id: string | null) => void;
-    setHasHydrated: (state: boolean) => void;
 }
 
 export const useIdeaStore = create<IdeaState>()(
@@ -37,7 +35,6 @@ export const useIdeaStore = create<IdeaState>()(
             currentIdea: null,
             isIdeaSet: false,
             activeIdeaId: null,
-            _hasHydrated: false,
 
             setIdea: (idea) => set({
                 currentIdea: idea,
@@ -54,14 +51,27 @@ export const useIdeaStore = create<IdeaState>()(
             clearIdea: () => set({ currentIdea: null, isIdeaSet: false, activeIdeaId: null }),
 
             setActiveIdeaId: (id) => set({ activeIdeaId: id }),
-
-            setHasHydrated: (state) => set({ _hasHydrated: state }),
         }),
         {
             name: 'pitchrr-idea-storage',
-            onRehydrateStorage: () => (state) => {
-                state?.setHasHydrated(true);
-            },
+            storage: createJSONStorage(() => localStorage),
         }
     )
 );
+
+/**
+ * Get the active idea ID directly from localStorage
+ * This is a sync function that can be used before the store hydrates
+ */
+export function getStoredActiveIdeaId(): string | null {
+    try {
+        const stored = localStorage.getItem('pitchrr-idea-storage');
+        if (stored) {
+            const data = JSON.parse(stored);
+            return data.state?.activeIdeaId || null;
+        }
+    } catch (e) {
+        console.error('Failed to read activeIdeaId from localStorage:', e);
+    }
+    return null;
+}

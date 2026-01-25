@@ -131,10 +131,10 @@ export default function StartupChatbot() {
     // ==========================================================================
 
     // Get active idea from store
-    const { activeIdeaId: storedActiveIdeaId, _hasHydrated } = useIdeaStore();
+    const { activeIdeaId: storedActiveIdeaId } = useIdeaStore();
 
     const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
-    const activeIdeaId = urlIdeaId || (_hasHydrated ? storedActiveIdeaId : null) || ideas?.[0]?.id;
+    const activeIdeaId = urlIdeaId || storedActiveIdeaId || ideas?.[0]?.id;
 
     const { data: idea, isLoading: isLoadingIdea } = useIdea(activeIdeaId);
     const { data: allModules } = useAllModules(activeIdeaId);
