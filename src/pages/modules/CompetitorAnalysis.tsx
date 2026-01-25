@@ -23,8 +23,6 @@ import {
     Save,
     Download,
     Sparkles,
-    Check,
-    X,
     Loader2,
     Coins,
 } from 'lucide-react';
@@ -312,8 +310,28 @@ export default function CompetitorAnalysis() {
                 </div>
             )}
 
-            {/* Competitive Positioning */}
-            {hasAnalyzed && analysisData?.positioning && (
+            {/* Market Overview */}
+            {hasAnalyzed && analysisData?.market_overview && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                >
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Market Overview</CardTitle>
+                            <CardDescription>
+                                The competitive landscape for your startup
+                            </CardDescription>
+                        </CardHeader>
+                        <div className="mt-4 p-4 rounded-lg bg-gray-50 border border-gray-200">
+                            <p className="text-gray-700">{analysisData.market_overview}</p>
+                        </div>
+                    </Card>
+                </motion.div>
+            )}
+
+            {/* Competitive Advantages & Market Gaps */}
+            {hasAnalyzed && (analysisData?.competitive_advantages || analysisData?.gaps_in_market) && (
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -326,17 +344,21 @@ export default function CompetitorAnalysis() {
                             </CardDescription>
                         </CardHeader>
                         <div className="mt-4 space-y-4">
-                            {analysisData.positioning.unique_value && (
+                            {analysisData.competitive_advantages && analysisData.competitive_advantages.length > 0 && (
                                 <div className="p-4 rounded-lg bg-green-50 border border-green-200">
-                                    <div className="font-medium text-green-800 mb-2">Your Unique Value</div>
-                                    <p className="text-green-700">{analysisData.positioning.unique_value}</p>
+                                    <div className="font-medium text-green-800 mb-2">Your Competitive Advantages</div>
+                                    <ul className="space-y-1">
+                                        {analysisData.competitive_advantages.map((adv: string, i: number) => (
+                                            <li key={i} className="text-sm text-green-700">• {adv}</li>
+                                        ))}
+                                    </ul>
                                 </div>
                             )}
-                            {analysisData.positioning.gaps && (
+                            {analysisData.gaps_in_market && analysisData.gaps_in_market.length > 0 && (
                                 <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
-                                    <div className="font-medium text-blue-800 mb-2">Market Gaps</div>
+                                    <div className="font-medium text-blue-800 mb-2">Market Gaps & Opportunities</div>
                                     <ul className="space-y-1">
-                                        {analysisData.positioning.gaps.map((gap: string, i: number) => (
+                                        {analysisData.gaps_in_market.map((gap: string, i: number) => (
                                             <li key={i} className="text-sm text-blue-700">• {gap}</li>
                                         ))}
                                     </ul>
@@ -347,72 +369,8 @@ export default function CompetitorAnalysis() {
                 </motion.div>
             )}
 
-            {/* Feature Comparison Table */}
-            {hasAnalyzed && analysisData?.feature_comparison && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                >
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Feature Comparison</CardTitle>
-                            <CardDescription>
-                                How your startup compares to competitors
-                            </CardDescription>
-                        </CardHeader>
-                        <div className="mt-4 overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b border-gray-200">
-                                        <th className="text-left py-3 px-4 font-medium text-gray-700">
-                                            Feature
-                                        </th>
-                                        <th className="text-center py-3 px-4 font-medium text-blue-600">
-                                            Your Startup
-                                        </th>
-                                        {competitors.slice(0, 3).map((c) => (
-                                            <th key={c.name} className="text-center py-3 px-4 font-medium text-gray-700">
-                                                {c.name}
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {analysisData.feature_comparison.map((feature: { feature: string; your_startup: boolean; competitors: Record<string, boolean> }, i: number) => (
-                                        <tr
-                                            key={feature.feature}
-                                            className={i % 2 === 0 ? 'bg-gray-50' : ''}
-                                        >
-                                            <td className="py-3 px-4 text-gray-900">
-                                                {feature.feature}
-                                            </td>
-                                            <td className="text-center py-3 px-4">
-                                                {feature.your_startup ? (
-                                                    <Check className="w-5 h-5 text-green-500 mx-auto" />
-                                                ) : (
-                                                    <X className="w-5 h-5 text-red-400 mx-auto" />
-                                                )}
-                                            </td>
-                                            {competitors.slice(0, 3).map((c) => (
-                                                <td key={c.name} className="text-center py-3 px-4">
-                                                    {feature.competitors[c.name] ? (
-                                                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                                                    ) : (
-                                                        <X className="w-5 h-5 text-red-400 mx-auto" />
-                                                    )}
-                                                </td>
-                                            ))}
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </Card>
-                </motion.div>
-            )}
-
-            {/* Recommendations */}
-            {hasAnalyzed && analysisData?.recommendations && (
+            {/* Strategic Recommendations */}
+            {hasAnalyzed && analysisData?.positioning_recommendations && analysisData.positioning_recommendations.length > 0 && (
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -420,9 +378,12 @@ export default function CompetitorAnalysis() {
                     <Card>
                         <CardHeader>
                             <CardTitle>Strategic Recommendations</CardTitle>
+                            <CardDescription>
+                                How to position against competitors
+                            </CardDescription>
                         </CardHeader>
                         <ul className="mt-4 space-y-2">
-                            {analysisData.recommendations.map((rec: string, i: number) => (
+                            {analysisData.positioning_recommendations.map((rec: string, i: number) => (
                                 <li key={i} className="flex items-start gap-3 p-3 bg-cyan-50 rounded-lg">
                                     <span className="shrink-0 w-6 h-6 bg-cyan-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
                                         {i + 1}
