@@ -119,7 +119,7 @@ export default function Landing() {
     }
 
     return (
-        <div className="bg-white max-w-360 mx-auto">
+        <div className="bg-white w-full mx-auto overflow-x-hidden">
             <SEO
                 title="AI-Powered Startup Tools"
                 description="Build investor-ready pitch decks, validate startup ideas, and create winning strategies with AI. Transform your vision into a fundable startup in minutes."
