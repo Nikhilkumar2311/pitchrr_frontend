@@ -13,6 +13,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/services/api';
 import { useAuth } from '@clerk/clerk-react';
 import toast from 'react-hot-toast';
+import { trackIdeaSubmitted, trackIdeaDeleted } from '@/utils/analytics';
 
 // =============================================================================
 // TYPES
@@ -143,6 +144,10 @@ export function useCreateIdea() {
             });
             // Also add to individual cache
             queryClient.setQueryData(ideaKeys.detail(newIdea.id), newIdea);
+
+            // Track analytics event
+            trackIdeaSubmitted(newIdea.id, newIdea.title);
+
             toast.success('Idea created!');
         },
         onError: (error: any) => {
@@ -212,6 +217,10 @@ export function useDeleteIdea() {
             });
             // Invalidate individual cache
             queryClient.removeQueries({ queryKey: ideaKeys.detail(ideaId) });
+
+            // Track analytics event
+            trackIdeaDeleted(ideaId);
+
             toast.success('Idea deleted');
         },
         onError: (error: any) => {

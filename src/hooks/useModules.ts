@@ -17,6 +17,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/services/api';
 import { useAuth } from '@clerk/clerk-react';
 import toast from 'react-hot-toast';
+import { trackModuleGenerated, trackCreditUsed, trackPitchDeckCreated } from '@/utils/analytics';
 
 // =============================================================================
 // TYPES
@@ -184,12 +185,18 @@ export function useGenerateModule(ideaId: string) {
             );
             return data;
         },
-        onSuccess: (_response, moduleType) => {
+        onSuccess: (response, moduleType) => {
             // Show toast with credits info
             toast.success(
                 `Generating ${formatModuleName(moduleType)}...`,
                 { duration: 4000 }
             );
+
+            // Track analytics event
+            trackModuleGenerated(moduleType, ideaId, response.creditsDeducted);
+            if (response.creditsDeducted > 0) {
+                trackCreditUsed('module_generation', response.creditsDeducted, ideaId);
+            }
 
             // Invalidate module data to start polling
             queryClient.invalidateQueries({
@@ -303,6 +310,12 @@ export function useExportModule(moduleType: string, ideaId: string | undefined) 
                     balance: data.newBalance,
                 }));
             }
+
+            // Track analytics event for pitch deck export
+            if (ideaId) {
+                trackPitchDeckCreated(ideaId, 'pdf');
+            }
+
             toast.success('Export started! Your file will be ready shortly.');
         },
         onError: (error: any) => {

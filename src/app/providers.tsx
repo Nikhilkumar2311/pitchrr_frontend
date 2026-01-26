@@ -20,8 +20,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { HelmetProvider } from 'react-helmet-async';
 import { useEffect, type ReactNode } from 'react';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth, useUser } from '@clerk/clerk-react';
 import { setTokenGetter } from '@/services/api';
+import { setUserId } from '@/utils/analytics';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -40,11 +41,19 @@ interface ProvidersProps {
 
 export function Providers({ children }: ProvidersProps) {
     const { getToken } = useAuth();
+    const { user, isSignedIn } = useUser();
 
     // Connect Clerk token to our axios instance
     useEffect(() => {
         setTokenGetter(() => getToken());
     }, [getToken]);
+
+    // Set user ID for Google Analytics when authenticated
+    useEffect(() => {
+        if (isSignedIn && user?.id) {
+            setUserId(user.id);
+        }
+    }, [isSignedIn, user?.id]);
 
     return (
         <HelmetProvider>

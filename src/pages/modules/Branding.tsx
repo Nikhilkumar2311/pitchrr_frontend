@@ -241,7 +241,7 @@ export default function Branding() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Left Column: Input */}
+                {/* Left Column: Input & Additional Info */}
                 <div className="space-y-6">
                     {/* Startup Name */}
                     <Card>
@@ -340,6 +340,64 @@ export default function Branding() {
                         <p className="text-sm text-gray-500 text-center">
                             Please create an idea in Idea Validation first
                         </p>
+                    )}
+
+                    {/* Brand Voice - Moved to left column */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Brand Voice</CardTitle>
+                        </CardHeader>
+                        <div className="mt-4">
+                            {hasGenerated && branding?.brand_voice ? (
+                                <>
+                                    <div className="text-sm text-gray-600 mb-2">
+                                        Tone: <span className="font-medium">{branding.brand_voice.tone}</span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {branding.brand_voice.keywords?.map((keyword: string, i: number) => (
+                                            <Badge key={i} variant="primary">{keyword}</Badge>
+                                        ))}
+                                    </div>
+                                    {branding.brand_voice.description && (
+                                        <p className="text-gray-600 mt-3 text-sm">{branding.brand_voice.description}</p>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="text-center py-6 text-gray-400">
+                                    <div className="text-sm">Tone:</div>
+                                    <p className="text-xs mt-2">Generate branding to see voice recommendations</p>
+                                </div>
+                            )}
+                        </div>
+                    </Card>
+
+                    {/* Font Recommendations - Moved to left column */}
+                    {hasGenerated && branding?.typography && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                        >
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Font Recommendations</CardTitle>
+                                </CardHeader>
+                                <div className="mt-4 space-y-3">
+                                    <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                                        <span className="text-sm text-gray-600">Heading Font</span>
+                                        <span className="font-semibold" style={{ fontFamily: branding.typography.heading_font }}>
+                                            {branding.typography.heading_font}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                                        <span className="text-sm text-gray-600">Body Font</span>
+                                        <span className="font-semibold" style={{ fontFamily: branding.typography.body_font }}>
+                                            {branding.typography.body_font}
+                                        </span>
+                                    </div>
+                                </div>
+                            </Card>
+                        </motion.div>
                     )}
                 </div>
 
@@ -497,64 +555,6 @@ export default function Branding() {
                             </Card>
                         </motion.div>
                     )}
-
-                    {/* Font Recommendations */}
-                    {hasGenerated && branding?.typography && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                        >
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Font Recommendations</CardTitle>
-                                </CardHeader>
-                                <div className="mt-4 space-y-3">
-                                    <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
-                                        <span className="text-sm text-gray-600">Heading Font</span>
-                                        <span className="font-semibold" style={{ fontFamily: branding.typography.heading_font }}>
-                                            {branding.typography.heading_font}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
-                                        <span className="text-sm text-gray-600">Body Font</span>
-                                        <span className="font-semibold" style={{ fontFamily: branding.typography.body_font }}>
-                                            {branding.typography.body_font}
-                                        </span>
-                                    </div>
-                                </div>
-                            </Card>
-                        </motion.div>
-                    )}
-
-                    {/* Brand Voice - Always show, with empty state */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Brand Voice</CardTitle>
-                        </CardHeader>
-                        <div className="mt-4">
-                            {hasGenerated && branding?.brand_voice ? (
-                                <>
-                                    <div className="text-sm text-gray-600 mb-2">
-                                        Tone: <span className="font-medium">{branding.brand_voice.tone}</span>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {branding.brand_voice.keywords?.map((keyword: string, i: number) => (
-                                            <Badge key={i} variant="primary">{keyword}</Badge>
-                                        ))}
-                                    </div>
-                                    {branding.brand_voice.description && (
-                                        <p className="text-gray-600 mt-3 text-sm">{branding.brand_voice.description}</p>
-                                    )}
-                                </>
-                            ) : (
-                                <div className="text-center py-6 text-gray-400">
-                                    <div className="text-sm">Tone:</div>
-                                    <p className="text-xs mt-2">Generate branding to see voice recommendations</p>
-                                </div>
-                            )}
-                        </div>
-                    </Card>
                 </div>
             </div>
         </div>

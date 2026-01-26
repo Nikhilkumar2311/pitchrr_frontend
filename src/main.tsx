@@ -3,6 +3,10 @@ import { createRoot } from 'react-dom/client';
 import { ClerkProvider } from '@clerk/clerk-react';
 import App from './App.tsx';
 import './index.css';
+import { initGA } from './utils/analytics';
+
+// Initialize Google Analytics
+initGA();
 
 // Import your publishable key
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;

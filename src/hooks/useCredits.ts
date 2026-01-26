@@ -7,6 +7,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/services/api';
 import toast from 'react-hot-toast';
+import { trackCreditPurchased } from '@/utils/analytics';
 
 // =============================================================================
 // TYPES
@@ -118,6 +119,10 @@ export function useVerifyPayment() {
         onSuccess: (data) => {
             // Invalidate credits query to refresh balance
             queryClient.invalidateQueries({ queryKey: creditKeys.stats() });
+
+            // Track analytics event
+            trackCreditPurchased('credit_pack', data.creditsAdded, 0);
+
             toast.success(`${data.creditsAdded} credits added to your account!`);
         },
         onError: () => {
