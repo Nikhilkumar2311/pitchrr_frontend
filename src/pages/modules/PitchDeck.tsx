@@ -217,7 +217,7 @@ export default function PitchDeck() {
     // ==========================================================================
 
     // Get active idea from store
-    const { activeIdeaId: storedActiveIdeaId } = useIdeaStore();
+    const { activeIdeaId: storedActiveIdeaId, setActiveIdeaId } = useIdeaStore();
     // Read from localStorage directly on initial render to avoid async hydration delay
     const initialStoredId = useMemo(() => getStoredActiveIdeaId(), []);
 
@@ -262,6 +262,13 @@ export default function PitchDeck() {
             setCurrentSlide(0); // Reset to first slide on new data
         }
     }, [deckData, lastDataTimestamp]);
+
+    // Sync activeIdeaId in store when idea changes to keep persistence across modules
+    useEffect(() => {
+        if (activeIdeaId && activeIdeaId !== storedActiveIdeaId) {
+            setActiveIdeaId(activeIdeaId);
+        }
+    }, [activeIdeaId, storedActiveIdeaId, setActiveIdeaId]);
 
     // ==========================================================================
     // HANDLERS

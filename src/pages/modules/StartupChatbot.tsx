@@ -131,7 +131,7 @@ export default function StartupChatbot() {
     // ==========================================================================
 
     // Get active idea from store
-    const { activeIdeaId: storedActiveIdeaId } = useIdeaStore();
+    const { activeIdeaId: storedActiveIdeaId, setActiveIdeaId } = useIdeaStore();
     // Read from localStorage directly on initial render to avoid async hydration delay
     const initialStoredId = useMemo(() => getStoredActiveIdeaId(), []);
 
@@ -142,6 +142,13 @@ export default function StartupChatbot() {
     const { data: allModules } = useAllModules(activeIdeaId);
 
     const isLoading = isLoadingIdeas || isLoadingIdea;
+
+    // Sync activeIdeaId in store when idea changes to keep persistence across modules
+    useEffect(() => {
+        if (activeIdeaId && activeIdeaId !== storedActiveIdeaId) {
+            setActiveIdeaId(activeIdeaId);
+        }
+    }, [activeIdeaId, storedActiveIdeaId, setActiveIdeaId]);
 
     // ==========================================================================
     // EFFECTS

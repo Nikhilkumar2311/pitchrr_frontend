@@ -80,7 +80,7 @@ export default function Branding() {
     const [editorMode, setEditorMode] = useState<'simple' | 'advanced'>('simple');
 
     // Get current idea from store for backward compatibility
-    const { currentIdea, activeIdeaId: storedActiveIdeaId } = useIdeaStore();
+    const { currentIdea, activeIdeaId: storedActiveIdeaId, setActiveIdeaId } = useIdeaStore();
     // Read from localStorage directly on initial render to avoid async hydration delay
     const initialStoredId = useMemo(() => getStoredActiveIdeaId(), []);
 
@@ -128,6 +128,13 @@ export default function Branding() {
             setLastIdeaKey('store-initialized');
         }
     }, [idea, currentIdea, lastIdeaKey]);
+
+    // Sync activeIdeaId in store when idea changes to keep persistence across modules
+    useEffect(() => {
+        if (activeIdeaId && activeIdeaId !== storedActiveIdeaId) {
+            setActiveIdeaId(activeIdeaId);
+        }
+    }, [activeIdeaId, storedActiveIdeaId, setActiveIdeaId]);
 
     // Update color from AI response
     useEffect(() => {

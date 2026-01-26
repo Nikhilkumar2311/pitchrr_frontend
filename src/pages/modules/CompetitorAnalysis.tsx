@@ -71,7 +71,7 @@ export default function CompetitorAnalysis() {
     // ==========================================================================
 
     // Get active idea from store (also sync read from localStorage on initial mount)
-    const { activeIdeaId: storedActiveIdeaId } = useIdeaStore();
+    const { activeIdeaId: storedActiveIdeaId, setActiveIdeaId } = useIdeaStore();
     // Read from localStorage directly on initial render to avoid async hydration delay
     const initialStoredId = useMemo(() => getStoredActiveIdeaId(), []);
 
@@ -98,6 +98,13 @@ export default function CompetitorAnalysis() {
     const isLoading = isLoadingIdeas;
     // Use status from backend to detect pending state (survives page refresh)
     const isAnalyzing = isTriggering || moduleData?.status === 'IN_PROGRESS';
+
+    // Sync activeIdeaId in store when idea changes to keep persistence across modules
+    useEffect(() => {
+        if (activeIdeaId && activeIdeaId !== storedActiveIdeaId) {
+            setActiveIdeaId(activeIdeaId);
+        }
+    }, [activeIdeaId, storedActiveIdeaId, setActiveIdeaId]);
 
     // ==========================================================================
     // HANDLERS
