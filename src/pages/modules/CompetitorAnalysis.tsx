@@ -40,7 +40,6 @@ import { CompetitorAnalysisSkeleton } from '@/components/skeletons/CompetitorAna
 import { CreditCost, SEO } from '@/components/common';
 import {
     useIdeas,
-    useIdea,
     useModuleData,
     useGenerateModule,
     useExportModule,
@@ -72,15 +71,13 @@ export default function CompetitorAnalysis() {
     // ==========================================================================
 
     // Get active idea from store (also sync read from localStorage on initial mount)
-    const { activeIdeaId: storedActiveIdeaId, setIdea } = useIdeaStore();
+    const { activeIdeaId: storedActiveIdeaId, setActiveIdeaId } = useIdeaStore();
     // Read from localStorage directly on initial render to avoid async hydration delay
     const initialStoredId = useMemo(() => getStoredActiveIdeaId(), []);
 
     const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
     // Priority: URL param > zustand store > localStorage sync read > first idea
     const activeIdeaId = urlIdeaId || storedActiveIdeaId || initialStoredId || ideas?.[0]?.id;
-
-    const { data: idea } = useIdea(activeIdeaId);
 
 
     const { data: moduleData } = useModuleData(activeIdeaId, 'competitor_analysis');
@@ -104,17 +101,10 @@ export default function CompetitorAnalysis() {
 
     // Sync activeIdeaId in store when idea changes to keep persistence across modules
     useEffect(() => {
-        if (idea && activeIdeaId && activeIdeaId !== storedActiveIdeaId) {
-            setIdea({
-                id: idea.id,
-                title: idea.title,
-                description: idea.description,
-                problem: idea.problemSolved || undefined,
-                targetMarket: idea.targetAudience || undefined,
-                industry: idea.industry || undefined,
-            });
+        if (activeIdeaId && activeIdeaId !== storedActiveIdeaId) {
+            setActiveIdeaId(activeIdeaId);
         }
-    }, [idea, activeIdeaId, storedActiveIdeaId, setIdea]);
+    }, [activeIdeaId, storedActiveIdeaId, setActiveIdeaId]);
 
     // ==========================================================================
     // HANDLERS

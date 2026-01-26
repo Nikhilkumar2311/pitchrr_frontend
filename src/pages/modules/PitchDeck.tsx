@@ -217,7 +217,7 @@ export default function PitchDeck() {
     // ==========================================================================
 
     // Get active idea from store
-    const { activeIdeaId: storedActiveIdeaId, setIdea } = useIdeaStore();
+    const { activeIdeaId: storedActiveIdeaId } = useIdeaStore();
     // Read from localStorage directly on initial render to avoid async hydration delay
     const initialStoredId = useMemo(() => getStoredActiveIdeaId(), []);
 
@@ -262,20 +262,6 @@ export default function PitchDeck() {
             setCurrentSlide(0); // Reset to first slide on new data
         }
     }, [deckData, lastDataTimestamp]);
-
-    // Sync activeIdeaId in store when idea changes to keep persistence across modules
-    useEffect(() => {
-        if (ideaData && activeIdeaId && activeIdeaId !== storedActiveIdeaId) {
-            setIdea({
-                id: ideaData.id,
-                title: ideaData.title,
-                description: ideaData.description,
-                problem: ideaData.problemSolved || undefined,
-                targetMarket: ideaData.targetAudience || undefined,
-                industry: ideaData.industry || undefined,
-            });
-        }
-    }, [ideaData, activeIdeaId, storedActiveIdeaId, setIdea]);
 
     // ==========================================================================
     // HANDLERS
