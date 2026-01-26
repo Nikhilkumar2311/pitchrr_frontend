@@ -146,6 +146,7 @@ export default function IdeaValidation() {
             setLastIdeaKey(currentIdeaKey);
             // Also update the store for cross-module compatibility
             setIdea({
+                id: idea.id,
                 title: idea.title,
                 description: idea.description,
                 problem: idea.problemSolved || undefined,
