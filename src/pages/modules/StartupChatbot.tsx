@@ -131,7 +131,7 @@ export default function StartupChatbot() {
     // ==========================================================================
 
     // Get active idea from store
-    const { activeIdeaId: storedActiveIdeaId, setActiveIdeaId } = useIdeaStore();
+    const { activeIdeaId: storedActiveIdeaId, setIdea } = useIdeaStore();
     // Read from localStorage directly on initial render to avoid async hydration delay
     const initialStoredId = useMemo(() => getStoredActiveIdeaId(), []);
 
@@ -145,10 +145,17 @@ export default function StartupChatbot() {
 
     // Sync activeIdeaId in store when idea changes to keep persistence across modules
     useEffect(() => {
-        if (activeIdeaId && activeIdeaId !== storedActiveIdeaId) {
-            setActiveIdeaId(activeIdeaId);
+        if (idea && activeIdeaId && activeIdeaId !== storedActiveIdeaId) {
+            setIdea({
+                id: idea.id,
+                title: idea.title,
+                description: idea.description,
+                problem: idea.problemSolved || undefined,
+                targetMarket: idea.targetAudience || undefined,
+                industry: idea.industry || undefined,
+            });
         }
-    }, [activeIdeaId, storedActiveIdeaId, setActiveIdeaId]);
+    }, [idea, activeIdeaId, storedActiveIdeaId, setIdea]);
 
     // ==========================================================================
     // EFFECTS

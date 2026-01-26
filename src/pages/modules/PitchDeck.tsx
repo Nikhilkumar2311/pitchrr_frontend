@@ -217,7 +217,7 @@ export default function PitchDeck() {
     // ==========================================================================
 
     // Get active idea from store
-    const { activeIdeaId: storedActiveIdeaId, setActiveIdeaId } = useIdeaStore();
+    const { activeIdeaId: storedActiveIdeaId, setIdea } = useIdeaStore();
     // Read from localStorage directly on initial render to avoid async hydration delay
     const initialStoredId = useMemo(() => getStoredActiveIdeaId(), []);
 
@@ -265,10 +265,17 @@ export default function PitchDeck() {
 
     // Sync activeIdeaId in store when idea changes to keep persistence across modules
     useEffect(() => {
-        if (activeIdeaId && activeIdeaId !== storedActiveIdeaId) {
-            setActiveIdeaId(activeIdeaId);
+        if (ideaData && activeIdeaId && activeIdeaId !== storedActiveIdeaId) {
+            setIdea({
+                id: ideaData.id,
+                title: ideaData.title,
+                description: ideaData.description,
+                problem: ideaData.problemSolved || undefined,
+                targetMarket: ideaData.targetAudience || undefined,
+                industry: ideaData.industry || undefined,
+            });
         }
-    }, [activeIdeaId, storedActiveIdeaId, setActiveIdeaId]);
+    }, [ideaData, activeIdeaId, storedActiveIdeaId, setIdea]);
 
     // ==========================================================================
     // HANDLERS
