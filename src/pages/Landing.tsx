@@ -61,22 +61,89 @@ export default function Landing() {
              */
             const heroTimeline = gsap.timeline();
 
+            // Entrance sequence
+            heroTimeline.fromTo('.ai-badge',
+                { y: 20, opacity: 0 },
+                { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' }
+            );
+
             heroTimeline.fromTo('.hero-heading',
                 { y: 60, opacity: 0 },
-                { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out' }
+                { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out' },
+                '-=0.3'
+            );
+
+            // Underline animation (drawing effect)
+            heroTimeline.fromTo('.hero-underline',
+                { opacity: 0, scaleX: 0 },
+                { opacity: 1, scaleX: 1, duration: 0.8, transformOrigin: 'left center', ease: 'power2.out' },
+                '-=0.4'
             );
 
             heroTimeline.fromTo('.hero-description',
                 { y: 40, opacity: 0 },
                 { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' },
-                '-=0.4'
+                '-=0.5'
             );
 
             heroTimeline.fromTo('.hero-cta',
                 { y: 30, opacity: 0 },
                 { y: 0, opacity: 1, duration: 0.5, ease: 'power3.out' },
+                '-=0.4'
+            );
+
+            heroTimeline.fromTo('.hero-trust',
+                { opacity: 0 },
+                { opacity: 1, duration: 0.5, ease: 'power1.out' },
                 '-=0.3'
             );
+
+            // Image entrance
+            gsap.fromTo('.hero-image-container',
+                { x: 50, scale: 0.95, opacity: 0 },
+                { x: 0, scale: 1, opacity: 1, duration: 1, ease: 'power2.out', delay: 0.3 }
+            );
+
+            /**
+             * CONTINUOUS FLOATING ANIMATIONS
+             */
+            // Main image floating
+            gsap.to('.hero-image-floating', {
+                y: -15,
+                duration: 2,
+                repeat: -1,
+                yoyo: true,
+                ease: 'sine.inOut'
+            });
+
+            // Decorative icons floating
+            gsap.to('.hero-float-1', {
+                y: -20,
+                rotate: 5,
+                duration: 3,
+                repeat: -1,
+                yoyo: true,
+                ease: 'sine.inOut'
+            });
+
+            gsap.to('.hero-float-2', {
+                y: 15,
+                rotate: -5,
+                duration: 3.5,
+                repeat: -1,
+                yoyo: true,
+                ease: 'sine.inOut',
+                delay: 0.5
+            });
+
+            gsap.to('.hero-float-3', {
+                y: 10,
+                duration: 2.5,
+                repeat: -1,
+                yoyo: true,
+                ease: 'sine.inOut',
+                delay: 0.8
+            });
 
             /**
              * FEATURE CARDS ANIMATION

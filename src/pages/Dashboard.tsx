@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useUser } from "@clerk/clerk-react";
@@ -38,7 +38,7 @@ import { useIdeaStore, getStoredActiveIdeaId } from "@/store";
 import { GenerateIdeaModal } from "@/components/common/GenerateIdeaModal";
 import { IdeasListModal } from "@/components/common/IdeasListModal";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
-import { useIdeas, useCreateIdea } from "@/hooks";
+import { useIdeas, useCreateIdea, type Idea } from "@/hooks";
 import api from "@/services/api";
 import { downloadFile } from "@/utils/download";
 import { CreditCost, SEO } from "@/components/common";
@@ -147,9 +147,15 @@ const getStatusBadge = (status: ModuleStatus) => {
 };
 
 export default function Dashboard() {
-  const navigate = useNavigate();
   const { user } = useUser();
-  const { setIdea, currentIdea, setActiveIdeaId, activeIdeaId: storedActiveIdeaId } = useIdeaStore();
+  const {
+    setIdea,
+    currentIdea,
+    setActiveIdeaId,
+    activeIdeaId: storedActiveIdeaId
+  } = useIdeaStore();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [isIdeasListOpen, setIsIdeasListOpen] = useState(false);
@@ -246,6 +252,17 @@ export default function Dashboard() {
     }, 1200);
     return () => clearTimeout(timer);
   }, []);
+
+  // Check for 'generate=true' query param on mount
+  useEffect(() => {
+    if (searchParams.get('generate') === 'true') {
+      setIsGenerateModalOpen(true);
+      // Clean up the URL
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('generate');
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   // Create idea mutation
   const { mutate: createIdea } = useCreateIdea();
@@ -604,7 +621,7 @@ export default function Dashboard() {
       <IdeasListModal
         isOpen={isIdeasListOpen}
         onClose={() => setIsIdeasListOpen(false)}
-        onSelectIdea={(idea) => {
+        onSelectIdea={(idea: Idea) => {
           setActiveIdeaId(idea.id);
           setIdea({
             id: idea.id,
