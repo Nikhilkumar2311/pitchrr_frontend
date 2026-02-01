@@ -4,7 +4,6 @@
  */
 
 import { ArrowRight, Sparkles, Zap, Download } from 'lucide-react';
-import { useUIStore } from '@/store';
 
 const steps = [
     {
@@ -26,7 +25,7 @@ const steps = [
     {
         step: '03',
         title: 'Download & Launch',
-        description: 'Export your pitch deck, brand kit, strategy docs, and launch with confidence',
+        description: 'Export your pitch deck, brand kit, strategy docs, and launch with confidence, stress-free',
         icon: Download,
         color: 'from-green-500 to-emerald-600',
         bgColor: 'bg-green-50',
@@ -35,7 +34,7 @@ const steps = [
 
 export function HowItWorksSection() {
     return (
-        <section id="how-it-works" className="relative py-20 lg:py-28">
+        <section id="how-it-works" className="relative py-16">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Section Header */}
                 <div className="text-center mb-16 lg:mb-24">
@@ -123,30 +122,6 @@ export function HowItWorksSection() {
                                 </div>
                             );
                         })}
-                    </div>
-                </div>
-
-                {/* Bottom CTA */}
-                <div className="text-center mt-16 lg:mt-24">
-                    <div className="inline-flex flex-col sm:flex-row items-center gap-4 p-8 bg-linear-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
-                        <div className="flex-1 text-left">
-                            <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                                Ready to get started?
-                            </h3>
-                            <p className="text-gray-600">
-                                Join 1,247+ founders building with Pitchrr
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => {
-                                useUIStore.getState().setAuthModalView('signup');
-                                useUIStore.getState().setAuthModalOpen(true);
-                            }}
-                            className="shrink-0 inline-flex items-center gap-2 px-8 py-4 bg-linear-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
-                        >
-                            Start Free Trial
-                            <ArrowRight className="w-5 h-5" />
-                        </button>
                     </div>
                 </div>
             </div>

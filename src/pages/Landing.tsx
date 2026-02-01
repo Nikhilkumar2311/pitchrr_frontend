@@ -30,8 +30,8 @@ import { SEO } from '@/components/common';
 // Lazy load below-the-fold sections for faster initial page load
 const HowItWorksSection = lazy(() => import('./Landing/HowItWorksSection').then(m => ({ default: m.HowItWorksSection })));
 const BenefitsSection = lazy(() => import('./Landing/BenefitsSection').then(m => ({ default: m.BenefitsSection })));
-const CTASection = lazy(() => import('./Landing/CTASection').then(m => ({ default: m.CTASection })));
-const Footer = lazy(() => import('./Landing/Footer').then(m => ({ default: m.Footer })));
+// const CTASection = lazy(() => import('./Landing/CTASection').then(m => ({ default: m.CTASection })));
+const Footer = lazy(() => import('../layout/Footer').then(m => ({ default: m.Footer })));
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);
@@ -212,7 +212,7 @@ export default function Landing() {
                 <BenefitsSection ref={benefitsRef} />
 
                 {/* CTA Section */}
-                <CTASection />
+                {/* <CTASection /> */}
 
                 {/* Footer */}
                 <Footer />

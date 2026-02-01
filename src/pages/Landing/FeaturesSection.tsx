@@ -4,7 +4,7 @@
  */
 
 import { forwardRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Lightbulb,
   Megaphone,
@@ -16,7 +16,6 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useAuth } from "@clerk/clerk-react";
-import { useUIStore } from "@/store";
 
 /**
  * The 7 modules shown in the features section
@@ -109,7 +108,7 @@ export const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
     <section
       id="features"
       ref={ref}
-      className="relative py-20 lg:py-28 overflow-hidden"
+      className="relative py-16 overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
@@ -143,6 +142,7 @@ export const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
                 style={{
                   animationDelay: `${index * 100}ms`,
                 }}
+                onClick={() => handleLearnMore(module.path)}
               >
                 {/* Icon Container */}
                 <div className="relative mb-6">
@@ -170,7 +170,6 @@ export const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
                   {/* Learn more link - appears on hover */}
                   <div className="pt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <button
-                      onClick={() => handleLearnMore(module.path)}
                       className="inline-flex items-center gap-1 text-sm font-semibold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent cursor-pointer hover:gap-2 transition-all"
                     >
                       Learn more
@@ -181,33 +180,6 @@ export const FeaturesSection = forwardRef<HTMLElement>((_, ref) => {
               </div>
             );
           })}
-        </div>
-
-        {/* Bottom CTA */}
-        <div className="text-center mt-16 lg:mt-20">
-          <p className="text-lg text-gray-600 mb-6">
-            Ready to transform your startup idea?
-          </p>
-          {isSignedIn ? (
-            <Link
-              to="/dashboard"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-linear-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
-            >
-              Get Started Free
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-          ) : (
-            <button
-              onClick={() => {
-                useUIStore.getState().setAuthModalView('signup');
-                useUIStore.getState().setAuthModalOpen(true);
-              }}
-              className="inline-flex items-center gap-2 px-8 py-4 bg-linear-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
-            >
-              Get Started Free
-              <ArrowRight className="w-5 h-5" />
-            </button>
-          )}
         </div>
       </div>
     </section>

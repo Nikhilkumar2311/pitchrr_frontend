@@ -4,7 +4,7 @@
  */
 
 import { Header } from '@/layout/Header';
-import { Footer } from '../Landing/Footer';
+import { Footer } from '../../layout/Footer';
 import { SEO } from '@/components/common';
 import { AlertCircle, XCircle, HelpCircle } from 'lucide-react';
 

@@ -8,4 +8,4 @@ export { FeaturesSection } from './FeaturesSection';
 export { HowItWorksSection } from './HowItWorksSection';
 export { BenefitsSection } from './BenefitsSection';
 export { CTASection } from './CTASection';
-export { Footer } from './Footer';
+export { Footer } from '../../layout/Footer';

@@ -2,10 +2,8 @@
  * Header Component - Professional public pages navigation
  */
 
-import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, LayoutDashboard, LogOut } from "lucide-react";
+import { LayoutDashboard, LogOut } from "lucide-react";
 import { Button } from "@/components/ui";
 import { useUIStore } from "@/store";
 import { useUser, useClerk } from "@clerk/clerk-react";
@@ -18,7 +16,6 @@ const navLinks = [
 ];
 
 export function Header() {
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { setAuthModalOpen } = useUIStore();
     const { user, isLoaded } = useUser();
     const { signOut } = useClerk();
@@ -58,8 +55,8 @@ export function Header() {
                         ))}
                     </div>
 
-                    {/* Desktop Auth Buttons */}
-                    <div className="hidden lg:flex items-center gap-4">
+                    {/* Auth Buttons */}
+                    <div className="flex items-center gap-4">
                         {!isLoaded ? (
                             <div className="w-10 h-10 rounded-full bg-gray-100 animate-pulse" />
                         ) : user ? (
@@ -107,66 +104,9 @@ export function Header() {
                         )}
                     </div>
 
-                    {/* Mobile Menu Button */}
-                    <button
-                        className="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-blue-600 transition-colors"
-                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        aria-label="Toggle menu"
-                    >
-                        {isMobileMenuOpen ? (
-                            <X className="w-6 h-6" />
-                        ) : (
-                            <Menu className="w-6 h-6" />
-                        )}
-                    </button>
                 </nav>
             </div>
 
-            {/* Mobile Menu */}
-            <AnimatePresence>
-                {isMobileMenuOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="lg:hidden bg-white border-t border-gray-200"
-                    >
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-1">
-                            {navLinks.map((link, index) => (
-                                <motion.a
-                                    key={link.label}
-                                    href={link.href}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: index * 0.1 }}
-                                    className="block px-4 py-3 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                >
-                                    {link.label}
-                                </motion.a>
-                            ))}
-                            <div className="pt-4 mt-4 border-t border-gray-200 space-y-3">
-                                {user ? (
-                                    <Link to="/dashboard" className="block" onClick={() => setIsMobileMenuOpen(false)}>
-                                        <Button className="w-full justify-center">Dashboard</Button>
-                                    </Link>
-                                ) : (
-                                    <Button
-                                        className="w-full justify-center"
-                                        onClick={() => {
-                                            setIsMobileMenuOpen(false);
-                                            setAuthModalOpen(true);
-                                        }}
-                                    >
-                                        Get Started
-                                    </Button>
-                                )}
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
         </header>
     );
 }
