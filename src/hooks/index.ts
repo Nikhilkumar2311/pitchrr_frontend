@@ -33,6 +33,7 @@ export {
     moduleKeys,
     useExportModule,
     useExportPitchDeck,
+    useExportOnePager,
     useExportStatus,
 } from './useModules';
 export type { ModuleType, ModuleDataResponse, GenerateModuleResponse, ExportJobResponse, ExportStatusResponse } from './useModules';

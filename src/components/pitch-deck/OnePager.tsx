@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react';
-import { Download, Edit2, Check, X, Loader2 } from 'lucide-react';
-import { Button, Card } from '@/components/ui';
-import { SlideChart } from './SlideChart';
-import html2canvas from 'html2canvas';
+import { useState, useEffect } from 'react';
+import { Download, X, Loader2, Globe, Target, Zap, Shield, Lightbulb, Upload, ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui';
+import { useExportOnePager, useExportStatus } from '@/hooks';
+import { Link } from 'react-router-dom';
 
 interface Slide {
     title: string;
@@ -21,277 +21,414 @@ interface Slide {
 interface OnePagerProps {
     slides: Slide[];
     companyName?: string;
+    ideaId: string;
     onClose: () => void;
 }
 
-export function OnePager({ slides, companyName = 'Company Name', onClose }: OnePagerProps) {
-    const [editingSection, setEditingSection] = useState<string | null>(null);
-    const [sections, setSections] = useState(() => createSections(slides));
-    const [isExporting, setIsExporting] = useState(false);
-    const contentRef = useRef<HTMLDivElement>(null);
-    const chartRefs = useRef<Record<string, HTMLDivElement | null>>({});
+// Available templates
+const TEMPLATES = [
+    { id: 'one-pager-v1', name: 'Professional (Purple)', description: 'Modern professional template with purple accent' },
+];
 
-    function createSections(slides: Slide[]) {
-        const sectionsMap: Record<string, { title: string; content: string; chart?: Slide['chart']; image?: string }> = {};
+// Chart colors matching the HBS template
+const CHART_COLORS = ['#6366F1', '#8B5CF6', '#F59E0B', '#10B981', '#EF4444', '#3B82F6'];
 
+export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose }: OnePagerProps) {
+    const [exportJobId, setExportJobId] = useState<string | null>(null);
+    const [selectedTemplate, setSelectedTemplate] = useState('one-pager-v1');
+    const [websiteUrl, setWebsiteUrl] = useState('');
+    const [logoFile, setLogoFile] = useState<File | null>(null);
+    const [logoPreview, setLogoPreview] = useState<string | null>(null);
+
+    // Use the new export hook
+    const { mutate: exportOnePager, isPending: isExporting } = useExportOnePager(ideaId);
+
+    // Poll for export status when we have a job ID
+    const { data: exportStatus } = useExportStatus(exportJobId, {
+        enabled: !!exportJobId,
+    });
+
+    // Extract data from slides
+    const extractedData = extractDataFromSlides(slides);
+
+    // Auto-download when export completes - fetch the file and trigger download
+    useEffect(() => {
+        if (exportStatus?.state === 'completed' && exportStatus?.downloadUrl) {
+            // Fetch the PDF and trigger download without opening Cloudinary URL
+            fetch(exportStatus.downloadUrl)
+                .then(response => response.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${companyName.replace(/[^a-zA-Z0-9]/g, '_')}_one_pager.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                })
+                .catch(() => {
+                    // Fallback to opening in new tab if fetch fails (CORS issues)
+                    if (exportStatus.downloadUrl) {
+                        window.open(exportStatus.downloadUrl, '_blank');
+                    }
+                })
+                .finally(() => {
+                    setExportJobId(null);
+                });
+        } else if (exportStatus?.state === 'failed') {
+            setExportJobId(null);
+        }
+    }, [exportStatus, companyName]);
+
+    function extractDataFromSlides(slides: Slide[]) {
+        const slidesByType: Record<string, Slide> = {};
         slides.forEach((slide) => {
             const type = slide.type || 'other';
-            sectionsMap[type] = {
-                title: slide.title,
-                content: slide.content + (slide.bullet_points ? '\n• ' + slide.bullet_points.join('\n• ') : ''),
-                chart: slide.chart,
-                image: slide.image,
-            };
+            slidesByType[type] = slide;
         });
 
-        return sectionsMap;
+        // Safely get content as string
+        const getContentAsString = (slide: Slide | undefined): string => {
+            if (!slide) return '';
+            if (typeof slide.content === 'string') return slide.content;
+            // Content is always a string in our interface, this is just for safety
+            return String(slide.content || '');
+        };
+
+        return {
+            overview: getContentAsString(slidesByType.title),
+            problem: slidesByType.problem?.bullet_points || [],
+            solution: slidesByType.solution?.bullet_points || [],
+            traction: slidesByType.traction?.bullet_points || [],
+            team: slidesByType.team?.bullet_points || [],
+            askAmount: slidesByType.ask?.headline || slidesByType.financials?.headline || 'Contact Us',
+            useOfFunds: slidesByType.ask?.chart?.data || [],
+            businessModel: slidesByType.business_model?.chart?.data || [],
+            competition: slidesByType.competition?.bullet_points?.slice(0, 4) || [],
+        };
     }
 
-    const updateSection = (key: string, field: 'title' | 'content', value: string) => {
-        setSections(prev => ({
-            ...prev,
-            [key]: { ...prev[key], [field]: value }
-        }));
-    };
-
-    const handleExportPDF = async () => {
-        // Prevent multiple clicks
-        if (isExporting || !contentRef.current) return;
-
-        setIsExporting(true);
-
-        try {
-            // Capture charts as images
-            const chartImages: Record<string, string> = {};
-
-            for (const [key, ref] of Object.entries(chartRefs.current)) {
-                if (ref) {
-                    try {
-                        const canvas = await html2canvas(ref, {
-                            backgroundColor: '#FFFFFF',
-                            scale: 2,
-                            logging: false,
-                        });
-                        chartImages[key] = canvas.toDataURL('image/png');
-                    } catch (e) {
-                        console.error('Failed to capture chart:', key, e);
-                    }
-                }
+    const handleExportPDF = () => {
+        exportOnePager(
+            {
+                templateId: selectedTemplate,
+                websiteUrl: websiteUrl.trim() || undefined,
+                slides: slides,
+                logoBase64: logoPreview || undefined, // Pass uploaded logo as base64
+            },
+            {
+                onSuccess: (data) => {
+                    setExportJobId(data.jobId);
+                },
             }
-
-            // Generate PDF with chart images
-            const printWindow = window.open('', '_blank');
-            if (printWindow) {
-                printWindow.document.write(`
-                    <html>
-                        <head>
-                            <title>${companyName} - One Pager</title>
-                            <style>
-                                * { box-sizing: border-box; margin: 0; padding: 0; }
-                                body { font-family: system-ui, -apple-system, sans-serif; margin: 15px; font-size: 9px; }
-                                .header { text-align: center; margin-bottom: 10px; border-bottom: 2px solid #3B82F6; padding-bottom: 8px; }
-                                .header h1 { color: #1F2937; font-size: 20px; }
-                                .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-                                .section { background: #F9FAFB; padding: 8px; border-radius: 4px; break-inside: avoid; }
-                                .section h3 { margin: 0 0 4px 0; color: #3B82F6; font-size: 9px; text-transform: uppercase; font-weight: 600; }
-                                .section p { margin: 0; color: #374151; font-size: 8px; line-height: 1.3; white-space: pre-line; }
-                                .full-width { grid-column: span 2; }
-                                img { max-width: 100%; height: auto; border-radius: 2px; margin-top: 4px; }
-                                .chart-img { max-width: 250px; max-height: 120px; }
-                                @media print { 
-                                    body { margin: 10px; } 
-                                    @page { size: A4; margin: 10mm; }
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="header">
-                                <h1>${companyName}</h1>
-                            </div>
-                            <div class="grid">
-                                ${Object.entries(sections).map(([key, section]) => `
-                                    <div class="section ${['market', 'financials'].includes(key) ? 'full-width' : ''}">
-                                        <h3>${section.title}</h3>
-                                        <p>${section.content.substring(0, 300)}${section.content.length > 300 ? '...' : ''}</p>
-                                        ${chartImages[key] ? `<img class="chart-img" src="${chartImages[key]}" alt="Chart"/>` : ''}
-                                        ${section.image ? `<img src="${section.image}" alt="${section.title}"/>` : ''}
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </body>
-                    </html>
-                `);
-                printWindow.document.close();
-                setTimeout(() => printWindow.print(), 500);
-            }
-        } catch (e) {
-            console.error('Export failed:', e);
-        } finally {
-            setIsExporting(false);
-        }
-    };
-
-    const EditableText = ({
-        value,
-        onChange,
-        isTitle = false,
-        sectionKey
-    }: {
-        value: string;
-        onChange: (v: string) => void;
-        isTitle?: boolean;
-        sectionKey: string;
-    }) => {
-        const isEditing = editingSection === `${sectionKey}-${isTitle ? 'title' : 'content'}`;
-        const [tempValue, setTempValue] = useState(value);
-
-        if (isEditing) {
-            return (
-                <div className="flex items-start gap-2">
-                    {isTitle ? (
-                        <input
-                            type="text"
-                            value={tempValue}
-                            onChange={(e) => setTempValue(e.target.value)}
-                            className="flex-1 px-2 py-1 border rounded text-sm font-semibold"
-                            autoFocus
-                        />
-                    ) : (
-                        <textarea
-                            value={tempValue}
-                            onChange={(e) => setTempValue(e.target.value)}
-                            className="flex-1 px-2 py-1 border rounded text-sm resize-none"
-                            rows={4}
-                            autoFocus
-                        />
-                    )}
-                    <button
-                        onClick={() => {
-                            onChange(tempValue);
-                            setEditingSection(null);
-                        }}
-                        className="p-1 text-green-600 hover:bg-green-50 rounded"
-                    >
-                        <Check className="w-4 h-4" />
-                    </button>
-                    <button
-                        onClick={() => {
-                            setTempValue(value);
-                            setEditingSection(null);
-                        }}
-                        className="p-1 text-red-500 hover:bg-red-50 rounded"
-                    >
-                        <X className="w-4 h-4" />
-                    </button>
-                </div>
-            );
-        }
-
-        return (
-            <div
-                className="group cursor-pointer flex items-start gap-2"
-                onClick={() => {
-                    setTempValue(value);
-                    setEditingSection(`${sectionKey}-${isTitle ? 'title' : 'content'}`);
-                }}
-            >
-                {isTitle ? (
-                    <h3 className="flex-1 font-semibold text-blue-600 text-sm uppercase tracking-wide">
-                        {value}
-                    </h3>
-                ) : (
-                    <p className="flex-1 text-sm text-gray-600 whitespace-pre-line">
-                        {value}
-                    </p>
-                )}
-                <Edit2 className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity mt-1" />
-            </div>
         );
     };
 
-    const sectionOrder = ['title', 'problem', 'solution', 'market', 'product', 'business_model', 'traction', 'competition', 'team', 'financials', 'ask', 'closing'];
+    // Generate pie chart gradient CSS
+    const getPieGradient = (data: Array<{ name: string; value: number }>) => {
+        if (!data || data.length === 0) return 'transparent';
+        let total = 0;
+        const gradientParts = data.map((item, idx) => {
+            const color = CHART_COLORS[idx % CHART_COLORS.length];
+            const start = total;
+            total += item.value;
+            return `${color} ${start}% ${total}%`;
+        });
+        return `conic-gradient(${gradientParts.join(', ')})`;
+    };
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden bg-white flex flex-col">
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b">
-                    <h2 className="text-xl font-bold">One Pager - {companyName}</h2>
-                    <div className="flex items-center gap-2">
-                        <Button size="sm" variant="secondary" onClick={handleExportPDF} disabled={isExporting} leftIcon={isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}>
-                            <span className="flex items-center gap-2">
-                                <span>{isExporting ? 'Exporting...' : 'Export PDF'}</span>
-                            </span>
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={onClose}>
-                            <X className="w-4 h-4" />
-                        </Button>
+            <div className="w-full max-w-5xl max-h-[95vh] flex flex-col bg-gray-100 rounded-lg overflow-hidden">
+                {/* Header Controls */}
+                <div className="flex flex-wrap items-center gap-3 p-3 bg-white border-b">
+                    <h2 className="text-lg font-bold flex-1">One Pager Preview</h2>
+
+                    {/* Template Selection */}
+                    <select
+                        value={selectedTemplate}
+                        onChange={(e) => setSelectedTemplate(e.target.value)}
+                        className="px-3 py-1.5 text-sm border border-gray-300 rounded-md"
+                    >
+                        {TEMPLATES.map((t) => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                    </select>
+
+                    {/* Website URL */}
+                    <div className="flex items-center gap-2 min-w-[180px]">
+                        <Globe className="w-4 h-4 text-gray-500" />
+                        <input
+                            type="url"
+                            value={websiteUrl}
+                            onChange={(e) => setWebsiteUrl(e.target.value)}
+                            placeholder="Website for QR code"
+                            className="flex-1 px-2 py-1.5 text-sm border border-gray-300 rounded-md"
+                        />
                     </div>
+
+                    {/* Logo Upload */}
+                    <label className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50">
+                        <Upload className="w-4 h-4 text-gray-500" />
+                        <span className="text-gray-600">{logoFile ? logoFile.name : 'Logo'}</span>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                    setLogoFile(file);
+                                    const reader = new FileReader();
+                                    reader.onload = (e) => setLogoPreview(e.target?.result as string);
+                                    reader.readAsDataURL(file);
+                                }
+                            }}
+                        />
+                    </label>
+
+                    {/* Export Button */}
+                    <Button
+                        size="sm"
+                        onClick={handleExportPDF}
+                        disabled={isExporting || !!exportJobId}
+                        leftIcon={isExporting || exportJobId ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                    >
+                        {exportJobId ? 'Processing...' : isExporting ? 'Starting...' : 'Export PDF (3 credits)'}
+                    </Button>
+
+                    <Button size="sm" variant="ghost" onClick={onClose}>
+                        <X className="w-4 h-4" />
+                    </Button>
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 overflow-y-auto p-6" ref={contentRef}>
-                    {/* Company Header */}
-                    <div className="text-center mb-6 pb-4 border-b-2 border-blue-500">
-                        <h1 className="text-3xl font-bold text-gray-900">{companyName}</h1>
+                {/* Export Status */}
+                {exportJobId && exportStatus && (
+                    <div className="bg-blue-50 text-blue-700 text-sm px-4 py-2 flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>
+                            {exportStatus.state === 'active' && 'Generating PDF...'}
+                            {exportStatus.state === 'waiting' && 'Waiting in queue...'}
+                            {exportStatus.state === 'completed' && 'Opening download...'}
+                        </span>
                     </div>
+                )}
 
-                    {/* Grid Layout */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {sectionOrder.map((key) => {
-                            const section = sections[key];
-                            if (!section) return null;
+                {/* A4 Preview - scaled to fit */}
+                <div className="flex-1 overflow-auto p-4 flex justify-center items-start bg-gray-200">
+                    <div
+                        className="bg-white shadow-xl origin-top"
+                        style={{
+                            width: '420px', // A4 width scaled down for preview
+                            height: '595px', // A4 height maintaining 1:1.414 aspect ratio
+                            fontSize: '7px', // Scaled font size
+                            overflow: 'hidden',
+                            position: 'relative',
+                        }}
+                    >
+                        {/* Purple Header */}
+                        <div
+                            className="text-white px-5 py-3 flex justify-between items-center"
+                            style={{ background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)' }}
+                        >
+                            <div className="flex items-center gap-2 text-lg font-bold">
+                                <span>{companyName}</span>
+                            </div>
+                            {logoPreview && (
+                                <img src={logoPreview} alt="Logo" className="h-6 object-contain" />
+                            )}
+                        </div>
 
-                            const isFullWidth = ['market', 'financials', 'ask', 'title'].includes(key);
+                        {/* Overview */}
+                        <div className="px-5 py-3">
+                            <div className="text-indigo-600 font-bold text-sm uppercase tracking-wide border-b-2 border-amber-500 inline-block pb-1 mb-2">
+                                OVERVIEW...
+                            </div>
+                            <p className="text-gray-600 text-[9px] leading-relaxed">
+                                {extractedData.overview.substring(0, 400)}
+                                {extractedData.overview.length > 400 && '...'}
+                            </p>
+                        </div>
 
-                            return (
-                                <div
-                                    key={key}
-                                    className={`bg-gray-50 rounded-lg p-4 ${isFullWidth ? 'md:col-span-2' : ''}`}
-                                >
-                                    <EditableText
-                                        value={section.title}
-                                        onChange={(v) => updateSection(key, 'title', v)}
-                                        isTitle
-                                        sectionKey={key}
-                                    />
-                                    <div className="mt-2">
-                                        <EditableText
-                                            value={section.content}
-                                            onChange={(v) => updateSection(key, 'content', v)}
-                                            sectionKey={key}
-                                        />
+                        {/* Two Column Layout */}
+                        <div className="grid grid-cols-2 gap-3 px-5">
+                            {/* Left Column */}
+                            <div className="space-y-3">
+                                {/* Problem */}
+                                <div>
+                                    <div
+                                        className="text-white text-[9px] font-bold uppercase px-2 py-1 rounded-sm"
+                                        style={{ background: 'linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%)' }}
+                                    >
+                                        Problem
                                     </div>
-
-                                    {/* Chart */}
-                                    {section.chart && section.chart.type !== 'none' && section.chart.data?.length > 0 && (
-                                        <div
-                                            className="mt-3 bg-white rounded-lg p-3"
-                                            ref={(el) => { chartRefs.current[key] = el; }}
-                                        >
-                                            <SlideChart
-                                                type={section.chart.type}
-                                                title={section.chart.title}
-                                                data={section.chart.data}
-                                                theme={{ textColor: '#374151', accentColor: '#3B82F6' }}
-                                            />
-                                        </div>
-                                    )}
-
-                                    {/* Image */}
-                                    {section.image && (
-                                        <img
-                                            src={section.image}
-                                            alt={section.title}
-                                            className="mt-3 w-full max-h-40 object-contain rounded-lg"
-                                        />
-                                    )}
+                                    <ul className="mt-1 space-y-0.5 text-[8px]">
+                                        {extractedData.problem.slice(0, 4).map((item, idx) => (
+                                            <li key={idx} className="flex items-start gap-1">
+                                                <span className="text-indigo-600 font-bold">•</span>
+                                                <span className="text-gray-700">{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </div>
-                            );
-                        })}
+
+                                {/* Solution */}
+                                <div>
+                                    <div
+                                        className="text-white text-[9px] font-bold uppercase px-2 py-1 rounded-sm"
+                                        style={{ background: 'linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%)' }}
+                                    >
+                                        Solution
+                                    </div>
+                                    <ul className="mt-1 space-y-0.5 text-[8px]">
+                                        {extractedData.solution.slice(0, 4).map((item, idx) => (
+                                            <li key={idx} className="flex items-start gap-1">
+                                                <span className="text-indigo-600 font-bold">•</span>
+                                                <span className="text-gray-700">{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                {/* Traction */}
+                                <div>
+                                    <div
+                                        className="text-white text-[9px] font-bold uppercase px-2 py-1 rounded-sm"
+                                        style={{ background: 'linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%)' }}
+                                    >
+                                        Traction
+                                    </div>
+                                    <ul className="mt-1 space-y-0.5 text-[8px]">
+                                        {extractedData.traction.slice(0, 4).map((item, idx) => (
+                                            <li key={idx} className="flex items-start gap-1">
+                                                <span className="text-indigo-600 font-bold">•</span>
+                                                <span className="text-gray-700">{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                {/* Team */}
+                                <div>
+                                    <div
+                                        className="text-white text-[9px] font-bold uppercase px-2 py-1 rounded-sm"
+                                        style={{ background: 'linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%)' }}
+                                    >
+                                        Team
+                                    </div>
+                                    <div className="mt-1 grid grid-cols-2 gap-1 text-[8px]">
+                                        {extractedData.team.slice(0, 4).map((member, idx) => (
+                                            <div key={idx} className="text-gray-700">{member}</div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right Column */}
+                            <div className="space-y-3">
+                                {/* Competitive Edge */}
+                                <div>
+                                    <div className="text-indigo-600 text-[9px] font-bold uppercase px-2 py-1 border-2 border-indigo-600 rounded-sm">
+                                        Competitive Edge
+                                    </div>
+                                    <div className="mt-1 grid grid-cols-2 gap-1">
+                                        {extractedData.competition.slice(0, 4).map((item, idx) => {
+                                            const IconComponent = [Target, Zap, Shield, Lightbulb][idx] || Target;
+                                            const title = item.split(':')[0] || item.substring(0, 20);
+                                            const subtitle = item.split(':')[1] || '';
+                                            return (
+                                                <div key={idx} className="bg-gray-50 p-1.5 text-center rounded">
+                                                    <IconComponent className="w-4 h-4 mx-auto mb-0.5 text-indigo-600" />
+                                                    <div className="text-[7px] font-bold text-gray-800 truncate">{title}</div>
+                                                    <div className="text-[6px] text-gray-500 truncate">{subtitle}</div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Ask */}
+                                <div className="text-center py-2 bg-white border rounded">
+                                    <div className="text-indigo-600 text-[8px] font-semibold uppercase">ASK</div>
+                                    <div className="text-sm font-bold text-gray-900">{extractedData.askAmount}</div>
+                                </div>
+
+                                {/* Use of Funds Pie Chart */}
+                                {extractedData.useOfFunds.length > 0 && (
+                                    <div className="flex items-center gap-2">
+                                        <div
+                                            className="w-16 h-16 rounded-full flex-shrink-0"
+                                            style={{ background: getPieGradient(extractedData.useOfFunds) }}
+                                        />
+                                        <div className="flex-1 space-y-0.5">
+                                            {extractedData.useOfFunds.map((item, idx) => (
+                                                <div key={idx} className="flex items-center gap-1 text-[7px]">
+                                                    <div
+                                                        className="w-2 h-2 rounded-sm flex-shrink-0"
+                                                        style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}
+                                                    />
+                                                    <span className="flex-1 text-gray-600 truncate">{item.name}</span>
+                                                    <span className="font-semibold">{item.value}%</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Business Model */}
+                                {extractedData.businessModel.length > 0 && (
+                                    <div>
+                                        <div
+                                            className="text-white text-[9px] font-bold uppercase px-2 py-1 rounded-sm"
+                                            style={{ background: 'linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%)' }}
+                                        >
+                                            Business Model
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <div
+                                                className="w-12 h-12 rounded-full flex-shrink-0"
+                                                style={{ background: getPieGradient(extractedData.businessModel) }}
+                                            />
+                                            <div className="flex-1 space-y-0.5">
+                                                {extractedData.businessModel.slice(0, 4).map((item, idx) => (
+                                                    <div key={idx} className="flex items-center gap-1 text-[7px]">
+                                                        <div
+                                                            className="w-2 h-2 rounded-sm flex-shrink-0"
+                                                            style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}
+                                                        />
+                                                        <span className="flex-1 text-gray-600 truncate">{item.name}</span>
+                                                        <span className="font-semibold">{item.value}%</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Website */}
+                                {websiteUrl && (
+                                    <div className="text-center bg-gray-50 rounded p-2">
+                                        <div className="text-indigo-600 text-[8px] font-bold uppercase">Website</div>
+                                        <div className="w-12 h-12 mx-auto my-1 bg-gray-300 rounded flex items-center justify-center text-[6px] text-gray-500">
+                                            QR Code
+                                        </div>
+                                        <Link to={websiteUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-600 text-[8px] flex items-center justify-center gap-0.5">
+                                            {websiteUrl} <ExternalLink className="w-2 h-2" />
+                                        </Link>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
                     </div>
                 </div>
-            </Card>
+
+                {/* Info Banner */}
+                <div className="bg-gray-50 text-gray-600 text-xs px-4 py-2 text-center border-t">
+                    This is a preview. The exported PDF will include proper formatting, charts, and QR code if URL is provided.
+                </div>
+            </div>
         </div>
     );
 }

@@ -349,6 +349,41 @@ export default function PitchDeck() {
     };
 
     /**
+     * Update slide bullet points
+     */
+    const updateSlideBulletPoints = (bulletPoints: string[]) => {
+        const baseSlides = editedSlides.length > 0 ? [...editedSlides] : slides.map(s => ({ ...s }));
+        baseSlides[currentSlide] = { ...baseSlides[currentSlide], bullet_points: bulletPoints };
+        setEditedSlides(baseSlides);
+    };
+
+    /**
+     * Add a new bullet point
+     */
+    const addBulletPoint = () => {
+        const currentBulletPoints = slides[currentSlide]?.bullet_points || [];
+        updateSlideBulletPoints([...currentBulletPoints, '']);
+    };
+
+    /**
+     * Update a specific bullet point
+     */
+    const updateBulletPoint = (index: number, value: string) => {
+        const currentBulletPoints = [...(slides[currentSlide]?.bullet_points || [])];
+        currentBulletPoints[index] = value;
+        updateSlideBulletPoints(currentBulletPoints);
+    };
+
+    /**
+     * Remove a bullet point
+     */
+    const removeBulletPoint = (index: number) => {
+        const currentBulletPoints = [...(slides[currentSlide]?.bullet_points || [])];
+        currentBulletPoints.splice(index, 1);
+        updateSlideBulletPoints(currentBulletPoints);
+    };
+
+    /**
      * Update custom theme color
      */
     const updateCustomTheme = (key: keyof Theme, value: string) => {
@@ -523,10 +558,11 @@ export default function PitchDeck() {
                         </div>
 
                         {/* One Pager Modal */}
-                        {showOnePager && (
+                        {showOnePager && activeIdeaId && (
                             <OnePager
                                 slides={slides}
                                 companyName={ideaData?.title || 'My Startup'}
+                                ideaId={activeIdeaId}
                                 onClose={() => setShowOnePager(false)}
                             />
                         )}
@@ -849,9 +885,58 @@ export default function PitchDeck() {
                                 <Textarea
                                     value={slides[currentSlide]?.content || ''}
                                     onChange={(e) => updateSlideContent(e.target.value)}
-                                    rows={4}
-                                    placeholder="Enter slide content..."
+                                    rows={3}
+                                    placeholder="Enter slide headline/content..."
                                 />
+
+                                {/* Bullet Points Editor */}
+                                {slides[currentSlide]?.bullet_points && slides[currentSlide].bullet_points.length > 0 && (
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                            Bullet Points
+                                        </label>
+                                        <div className="space-y-2">
+                                            {slides[currentSlide].bullet_points.map((point, idx) => (
+                                                <div key={idx} className="flex items-start gap-2">
+                                                    <span className="text-blue-500 mt-2">•</span>
+                                                    <input
+                                                        type="text"
+                                                        value={point}
+                                                        onChange={(e) => updateBulletPoint(idx, e.target.value)}
+                                                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        placeholder="Enter bullet point..."
+                                                    />
+                                                    <button
+                                                        onClick={() => removeBulletPoint(idx)}
+                                                        className="p-2 text-red-500 hover:bg-red-50 rounded transition-colors"
+                                                        title="Remove bullet point"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            onClick={addBulletPoint}
+                                            className="mt-2"
+                                        >
+                                            + Add Bullet Point
+                                        </Button>
+                                    </div>
+                                )}
+
+                                {/* Show "Add Bullet Points" button if none exist */}
+                                {(!slides[currentSlide]?.bullet_points || slides[currentSlide].bullet_points.length === 0) && (
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={addBulletPoint}
+                                    >
+                                        + Add Bullet Points
+                                    </Button>
+                                )}
 
                                 {/* Image Upload Section */}
                                 <div>

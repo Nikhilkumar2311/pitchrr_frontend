@@ -355,4 +355,47 @@ export function useExportStatus(jobId: string | null, options?: { enabled?: bool
     });
 }
 
+/**
+ * Hook to export one-pager as PDF (extracted from pitch deck slides)
+ * @param ideaId - The idea ID
+ */
+export function useExportOnePager(ideaId: string | undefined) {
+    const queryClient = useQueryClient();
 
+    return useMutation<ExportJobResponse & { newBalance?: number; creditCost?: number }, Error, { templateId?: string; websiteUrl?: string; slides?: any[]; logoBase64?: string }>({
+        mutationFn: async (data = {}) => {
+            if (!ideaId) throw new Error('No idea selected');
+            const response = await api.post(`/export/one-pager/${ideaId}`, data);
+            return response.data;
+        },
+        onSuccess: (data) => {
+            // Update credits cache directly with new balance from response
+            if (data.newBalance !== undefined) {
+                queryClient.setQueryData(['credits', 'stats'], (old: any) => ({
+                    ...old,
+                    balance: data.newBalance,
+                }));
+            }
+
+            // Track analytics event
+            if (ideaId) {
+                trackPitchDeckCreated(ideaId, 'one-pager');
+            }
+
+            toast.success('Exporting one-pager! Your file will be ready shortly.');
+        },
+        onError: (error: any) => {
+            const message = error.response?.data?.message || error.message || 'Export failed';
+
+            // Handle 402 Payment Required - insufficient credits
+            if (error?.response?.status === 402) {
+                toast.error('Insufficient credits. Redirecting to store...');
+                setTimeout(() => {
+                    window.location.href = '/dashboard/store/credits';
+                }, 1500);
+            } else {
+                toast.error(message);
+            }
+        },
+    });
+}
