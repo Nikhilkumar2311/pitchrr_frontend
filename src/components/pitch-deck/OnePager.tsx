@@ -33,6 +33,50 @@ const TEMPLATES = [
 // Chart colors matching the HBS template
 const CHART_COLORS = ['#6366F1', '#8B5CF6', '#F59E0B', '#10B981', '#EF4444', '#3B82F6'];
 
+// Currency formatting helper with auto-detection for INR/USD
+const formatCurrency = (amount: string | number): string => {
+    if (!amount) return 'Contact Us';
+
+    // If already formatted (contains ₹, $, Cr, Lakh, etc.), return as-is
+    const amountStr = String(amount);
+    if (/[₹$]|Cr|Lakh|Million|Billion|cr|lakh|M\b|K\b/i.test(amountStr)) {
+        return amountStr;
+    }
+
+    // Parse numeric value
+    const numericValue = parseFloat(amountStr.replace(/[^\d.]/g, ''));
+    if (isNaN(numericValue) || numericValue === 0) {
+        return amountStr; // Return original if not parseable
+    }
+
+    // Auto-detect: amounts >= 10000 are likely INR, smaller amounts are USD
+    const isINR = numericValue >= 10000;
+
+    if (isINR) {
+        // Format in Indian notation (Lakhs and Crores)
+        if (numericValue >= 10000000) { // >= 1 Crore
+            const crores = numericValue / 10000000;
+            return `₹${crores % 1 === 0 ? crores : crores.toFixed(1)} Cr`;
+        } else if (numericValue >= 100000) { // >= 1 Lakh
+            const lakhs = numericValue / 100000;
+            return `₹${lakhs % 1 === 0 ? lakhs : lakhs.toFixed(1)} Lakhs`;
+        } else {
+            return `₹${numericValue.toLocaleString('en-IN')}`;
+        }
+    } else {
+        // Format in USD notation (K, M, B)
+        if (numericValue >= 1000000000) {
+            return `$${(numericValue / 1000000000).toFixed(1)}B`;
+        } else if (numericValue >= 1000000) {
+            return `$${(numericValue / 1000000).toFixed(1)}M`;
+        } else if (numericValue >= 1000) {
+            return `$${(numericValue / 1000).toFixed(0)}K`;
+        } else {
+            return `$${numericValue.toLocaleString('en-US')}`;
+        }
+    }
+};
+
 export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose }: OnePagerProps) {
     const [exportJobId, setExportJobId] = useState<string | null>(null);
     const [selectedTemplate, setSelectedTemplate] = useState('one-pager-v1');
@@ -323,6 +367,21 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                                         ))}
                                     </div>
                                 </div>
+
+                                {/* Website - moved to left column */}
+                                {websiteUrl && (
+                                    <div className="flex items-center gap-2 bg-gray-50 rounded p-2">
+                                        <div className="w-10 h-10 bg-gray-300 rounded flex items-center justify-center text-[5px] text-gray-500 flex-shrink-0">
+                                            QR Code
+                                        </div>
+                                        <div>
+                                            <div className="text-indigo-600 text-[7px] font-bold uppercase">Website</div>
+                                            <Link to={websiteUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-600 text-[7px] flex items-center gap-0.5">
+                                                {websiteUrl} <ExternalLink className="w-2 h-2" />
+                                            </Link>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Right Column */}
@@ -351,7 +410,7 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                                 {/* Ask */}
                                 <div className="text-center py-2 bg-white border rounded">
                                     <div className="text-indigo-600 text-[8px] font-semibold uppercase">ASK</div>
-                                    <div className="text-sm font-bold text-gray-900">{extractedData.askAmount}</div>
+                                    <div className="text-sm font-bold text-gray-900">{formatCurrency(extractedData.askAmount)}</div>
                                 </div>
 
                                 {/* Use of Funds Pie Chart */}
@@ -403,19 +462,6 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                                                 ))}
                                             </div>
                                         </div>
-                                    </div>
-                                )}
-
-                                {/* Website */}
-                                {websiteUrl && (
-                                    <div className="text-center bg-gray-50 rounded p-2">
-                                        <div className="text-indigo-600 text-[8px] font-bold uppercase">Website</div>
-                                        <div className="w-12 h-12 mx-auto my-1 bg-gray-300 rounded flex items-center justify-center text-[6px] text-gray-500">
-                                            QR Code
-                                        </div>
-                                        <Link to={websiteUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-600 text-[8px] flex items-center justify-center gap-0.5">
-                                            {websiteUrl} <ExternalLink className="w-2 h-2" />
-                                        </Link>
                                     </div>
                                 )}
                             </div>
