@@ -59,6 +59,7 @@ const PitchDeck = lazy(() => import('@/pages/modules/PitchDeck'));
 const GTMStrategy = lazy(() => import('@/pages/modules/GTMStrategy'));
 const CompetitorAnalysis = lazy(() => import('@/pages/modules/CompetitorAnalysis'));
 const StartupChatbot = lazy(() => import('@/pages/modules/StartupChatbot'));
+const Services = lazy(() => import('@/pages/modules/Services'));
 
 // Lazy load store pages
 const CreditsStore = lazy(() => import('@/pages/store/CreditsStore'));
@@ -258,6 +259,11 @@ const router = createBrowserRouter([
                     {
                         path: 'store/credits',
                         element: <LazyPage><CreditsStore /></LazyPage>,
+                    },
+                    // Our Services
+                    {
+                        path: 'services',
+                        element: <LazyPage><Services /></LazyPage>,
                     },
                 ],
             },
