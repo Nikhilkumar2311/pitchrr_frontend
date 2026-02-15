@@ -83,6 +83,8 @@ export default function IdeaValidation() {
     // Form state
     const [ideaSummary, setIdeaSummary] = useState('');
     const [ideaTitle, setIdeaTitle] = useState('');
+    const [industry, setIndustry] = useState('');
+    const [targetAudience, setTargetAudience] = useState('');
 
     // Get global idea from store (for backward compatibility with Generate Idea flow)
     const { currentIdea, setIdea, updateIdea: updateStoreIdea, activeIdeaId: storedActiveIdeaId } = useIdeaStore();
@@ -143,6 +145,8 @@ export default function IdeaValidation() {
         if (idea && currentIdeaKey !== lastIdeaKey) {
             setIdeaTitle(idea.title);
             setIdeaSummary(idea.description);
+            setIndustry(idea.industry || '');
+            setTargetAudience(idea.targetAudience || '');
             setLastIdeaKey(currentIdeaKey);
             // Also update the store for cross-module compatibility
             setIdea({
@@ -161,6 +165,8 @@ export default function IdeaValidation() {
         if (!idea && currentIdea && !lastIdeaKey) {
             setIdeaTitle(currentIdea.title || '');
             setIdeaSummary(currentIdea.description || '');
+            setIndustry(currentIdea.industry || '');
+            setTargetAudience(currentIdea.targetMarket || '');
             setLastIdeaKey('store-initialized');
         }
     }, [idea, currentIdea, lastIdeaKey]);
@@ -183,12 +189,16 @@ export default function IdeaValidation() {
             updateIdea({
                 title: ideaTitle || 'Untitled Idea',
                 description: ideaSummary,
+                industry: industry || undefined,
+                targetAudience: targetAudience || undefined,
             });
         } else {
             // Create new idea
             createIdea({
                 title: ideaTitle || 'Untitled Idea',
                 description: ideaSummary,
+                industry: industry || undefined,
+                targetAudience: targetAudience || undefined,
             }, {
                 onSuccess: (newIdea) => {
                     // Navigate to the new idea URL
@@ -200,7 +210,9 @@ export default function IdeaValidation() {
         // Also update local store for cross-module compatibility
         updateStoreIdea({
             title: ideaTitle || 'Untitled Idea',
-            description: ideaSummary
+            description: ideaSummary,
+            industry: industry || undefined,
+            targetMarket: targetAudience || undefined,
         });
     };
 
@@ -218,6 +230,8 @@ export default function IdeaValidation() {
             createIdea({
                 title: ideaTitle || 'Untitled Idea',
                 description: ideaSummary,
+                industry: industry || undefined,
+                targetAudience: targetAudience || undefined,
             }, {
                 onSuccess: async (newIdea) => {
                     // Navigate to the new idea
@@ -244,6 +258,8 @@ export default function IdeaValidation() {
             updateIdea({
                 title: ideaTitle || idea.title,
                 description: ideaSummary,
+                industry: industry || undefined,
+                targetAudience: targetAudience || undefined,
             }, {
                 onSuccess: () => {
                     // Trigger AI generation after update
@@ -362,12 +378,28 @@ export default function IdeaValidation() {
                             onChange={(e) => setIdeaTitle(e.target.value)}
                             className="w-full px-4 py-2 mt-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
+                        <div className="grid grid-cols-2 gap-3 mt-3">
+                            <input
+                                type="text"
+                                placeholder="Sector / Industry  (e.g. FinTech, HealthTech)"
+                                value={industry}
+                                onChange={(e) => setIndustry(e.target.value)}
+                                className="w-full px-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                            <input
+                                type="text"
+                                placeholder="Target Audience  (e.g. College students, SMBs)"
+                                value={targetAudience}
+                                onChange={(e) => setTargetAudience(e.target.value)}
+                                className="w-full px-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
                         <Textarea
-                            placeholder="Example: An AI-powered tool that helps first-time founders validate their startup ideas and create investor-ready pitch decks in days instead of months..."
+                            placeholder="Describe your startup idea. What problem does it solve? Who is it for? Example: An AI-powered tool that helps first-time founders validate their startup ideas and create investor-ready pitch decks in days instead of months..."
                             rows={6}
                             value={ideaSummary}
                             onChange={(e) => setIdeaSummary(e.target.value)}
-                            className="mt-4"
+                            className="mt-3"
                         />
                         <div className="mt-4 flex items-center gap-3">
                             <Button
