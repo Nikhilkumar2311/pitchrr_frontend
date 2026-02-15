@@ -274,6 +274,7 @@ export default function Dashboard() {
     problem?: string;
     solution?: string;
     targetMarket?: string;
+    industry?: string;
   }) => {
     // Create idea in database first
     createIdea(
@@ -282,6 +283,7 @@ export default function Dashboard() {
         description: idea.description,
         problemSolved: idea.problem,
         targetAudience: idea.targetMarket,
+        industry: idea.industry,
       },
       {
         onSuccess: (newIdea) => {
@@ -292,6 +294,7 @@ export default function Dashboard() {
             description: newIdea.description,
             problem: newIdea.problemSolved || undefined,
             targetMarket: newIdea.targetAudience || undefined,
+            industry: newIdea.industry || idea.industry || undefined,
           });
           // Set as active idea
           setActiveIdeaId(newIdea.id);

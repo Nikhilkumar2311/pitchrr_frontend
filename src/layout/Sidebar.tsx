@@ -14,7 +14,6 @@ import {
   Rocket,
   Users,
   MessageSquare,
-  Briefcase,
   LogOut,
   X,
   ChevronLeft,
@@ -37,7 +36,6 @@ const navItems = [
   { icon: Rocket, label: "GTM Strategy", path: "/dashboard/gtm" },
   { icon: Users, label: "Competitor Analysis", path: "/dashboard/competitors" },
   { icon: MessageSquare, label: "AI Chatbot", path: "/dashboard/chat" },
-  { icon: Briefcase, label: "Our Services", path: "/dashboard/services" },
 ];
 
 export function Sidebar() {

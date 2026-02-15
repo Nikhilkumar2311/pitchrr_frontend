@@ -3,8 +3,8 @@
  * Uses standard Tailwind classes.
  */
 
-import { Outlet } from 'react-router-dom';
-import { Menu } from 'lucide-react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, Briefcase } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { Breadcrumbs } from '@/components/common/Breadcrumbs';
 import { AIFloatingButton } from '@/components/common/AIFloatingButton';
@@ -13,8 +13,12 @@ import { useUIStore } from '@/store';
 
 export function DashboardLayout() {
     const { isSidebarCollapsed, setSidebarOpen } = useUIStore();
+    const location = useLocation();
+    const navigate = useNavigate();
 
     const mainMargin = isSidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[280px]';
+    const isChatbotPage = location.pathname.includes('/chat');
+    const isServicesPage = location.pathname.includes('/services');
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -40,6 +44,18 @@ export function DashboardLayout() {
                         {/* Spacer */}
                         <div className="flex-1" />
 
+                        {/* Our Services Button */}
+                        <button
+                            onClick={() => navigate('/dashboard/services')}
+                            className={`flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold transition-all duration-200 ${isServicesPage
+                                ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md shadow-blue-200'
+                                : 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 text-blue-700 hover:from-blue-100 hover:to-indigo-100 hover:shadow-sm hover:border-blue-300'
+                                }`}
+                        >
+                            <Briefcase className="w-4 h-4" />
+                            <span className="hidden sm:inline">Our Services</span>
+                        </button>
+
                         {/* Credits Display */}
                         <CreditsDisplay />
                     </div>
@@ -51,8 +67,9 @@ export function DashboardLayout() {
                 </div>
             </main>
 
-            {/* Floating AI Button */}
-            <AIFloatingButton />
+            {/* Floating AI Button — hidden on chatbot page */}
+            {!isChatbotPage && <AIFloatingButton />}
         </div>
     );
 }
+

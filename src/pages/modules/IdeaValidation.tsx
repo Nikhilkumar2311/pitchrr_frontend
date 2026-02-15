@@ -498,6 +498,31 @@ export default function IdeaValidation() {
                             </Card>
                         </motion.div>
                     )}
+
+                    {/* Recommendations */}
+                    {hasAnalysis && analysis.recommendations && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.4 }}
+                        >
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Recommendations</CardTitle>
+                                </CardHeader>
+                                <ul className="mt-4 space-y-2">
+                                    {analysis.recommendations.map((rec: string, i: number) => (
+                                        <li key={i} className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                                            <span className="shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                                                {i + 1}
+                                            </span>
+                                            <p className="text-sm text-blue-800">{rec}</p>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </Card>
+                        </motion.div>
+                    )}
                 </div>
 
                 {/* Right Column: Analysis Results */}
@@ -654,30 +679,6 @@ export default function IdeaValidation() {
                         </motion.div>
                     )}
 
-                    {/* Recommendations */}
-                    {hasAnalysis && analysis.recommendations && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.4 }}
-                        >
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Recommendations</CardTitle>
-                                </CardHeader>
-                                <ul className="mt-4 space-y-2">
-                                    {analysis.recommendations.map((rec: string, i: number) => (
-                                        <li key={i} className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
-                                            <span className="shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                                                {i + 1}
-                                            </span>
-                                            <p className="text-sm text-blue-800">{rec}</p>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </Card>
-                        </motion.div>
-                    )}
 
                     {/* Placeholder when not analyzed */}
                     {!hasAnalysis && !isAnalyzing && (

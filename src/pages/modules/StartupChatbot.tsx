@@ -373,7 +373,7 @@ export default function StartupChatbot() {
     }
 
     return (
-        <div className="h-[calc(100vh-12rem)] flex flex-col">
+        <div className="h-[calc(100vh-7rem)] flex flex-col">
             <SEO
                 title="AI Mentor"
                 description="Get personalized startup guidance from your AI mentor. Context-aware advice based on your idea, progress, and module data."

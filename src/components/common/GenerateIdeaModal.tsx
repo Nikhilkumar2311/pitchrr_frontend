@@ -1,13 +1,16 @@
 /**
  * Generate Idea Modal
  * A popup that asks questions to help users without an idea
- * get AI-suggested startup ideas based on their interests
+ * get AI-suggested startup ideas based on their interests.
+ *
+ * Generates 3 ideas and lets the user pick their favourite.
  */
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, ArrowRight, ArrowLeft } from 'lucide-react';
+import { X, Sparkles, ArrowRight, ArrowLeft, Check } from 'lucide-react';
 import { Button, Textarea } from '@/components/ui';
+import { CreditCost } from '@/components/common';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 
@@ -23,6 +26,7 @@ interface GeneratedIdea {
     problem: string;
     solution: string;
     targetMarket: string;
+    industry?: string;
 }
 
 // Questions to gather user preferences
@@ -74,7 +78,8 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
     const [currentStep, setCurrentStep] = useState(0);
     const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
     const [isGenerating, setIsGenerating] = useState(false);
-    const [generatedIdea, setGeneratedIdea] = useState<GeneratedIdea | null>(null);
+    const [generatedIdeas, setGeneratedIdeas] = useState<GeneratedIdea[]>([]);
+    const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
     const currentQuestion = questions[currentStep];
     const isLastStep = currentStep === questions.length - 1;
@@ -109,7 +114,7 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
 
     const handleNext = () => {
         if (isLastStep) {
-            generateIdea();
+            generateIdeas();
         } else {
             setCurrentStep(currentStep + 1);
         }
@@ -121,14 +126,14 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
         }
     };
 
-    const generateIdea = async () => {
+    const generateIdeas = async () => {
         setIsGenerating(true);
 
         try {
             // Import API service
             const { default: api } = await import('@/services/api');
 
-            // Call Core Service to generate idea using AI
+            // Call Core Service to generate ideas using AI
             const { data } = await api.post('/ideas/generate', {
                 interests: answers.interests || [],
                 skills: answers.skills || [],
@@ -139,19 +144,38 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
             // Invalidate credits cache to refresh balance after deduction
             queryClient.invalidateQueries({ queryKey: ['credits', 'stats'] });
 
-            // Map API response to GeneratedIdea format
-            const generatedIdea: GeneratedIdea = {
-                title: data.title || 'AI-Generated Startup Idea',
-                description: data.description || '',
-                problem: data.problem || '',
-                solution: data.solution || '',
-                targetMarket: data.target_market || data.targetMarket || '',
-            };
+            // Parse response — data may be { ideas: [...] } or a single idea object
+            let ideasArray: any[] = [];
+            if (data?.ideas && Array.isArray(data.ideas)) {
+                ideasArray = data.ideas;
+            } else if (Array.isArray(data)) {
+                ideasArray = data;
+            } else if (data && typeof data === 'object') {
+                // Single idea (backward compat)
+                ideasArray = [data];
+            }
 
-            setGeneratedIdea(generatedIdea);
-            toast.success('Idea generated successfully!');
+            // Derive industry from user's selected interests
+            const industryFromInterests = Array.isArray(answers.interests)
+                ? (answers.interests as string[]).join(', ')
+                : '';
+
+            // Map to GeneratedIdea format
+            const mapped: GeneratedIdea[] = ideasArray.map((item: any) => ({
+                title: item.title || 'AI-Generated Idea',
+                description: item.description || '',
+                problem: item.problem || '',
+                solution: item.solution || '',
+                targetMarket: item.target_market || item.targetMarket || '',
+                industry: industryFromInterests,
+            }));
+
+            setGeneratedIdeas(mapped);
+            // Auto-select the first idea
+            setSelectedIndex(0);
+            toast.success(`${mapped.length} idea${mapped.length > 1 ? 's' : ''} generated!`);
         } catch (error: any) {
-            console.error('Failed to generate idea:', error);
+            console.error('Failed to generate ideas:', error);
 
             // Handle insufficient credits (402 Payment Required)
             if (error.response?.status === 402) {
@@ -164,15 +188,15 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
             }
 
             // Handle other errors
-            toast.error('Failed to generate idea. Please try again.');
+            toast.error('Failed to generate ideas. Please try again.');
         } finally {
             setIsGenerating(false);
         }
     };
 
     const handleUseIdea = () => {
-        if (generatedIdea && onIdeaGenerated) {
-            onIdeaGenerated(generatedIdea);
+        if (selectedIndex !== null && generatedIdeas[selectedIndex] && onIdeaGenerated) {
+            onIdeaGenerated(generatedIdeas[selectedIndex]);
         }
         onClose();
     };
@@ -180,7 +204,8 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
     const resetAndClose = () => {
         setCurrentStep(0);
         setAnswers({});
-        setGeneratedIdea(null);
+        setGeneratedIdeas([]);
+        setSelectedIndex(null);
         setIsGenerating(false);
         onClose();
     };
@@ -223,7 +248,7 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                     </div>
 
                     {/* Progress bar */}
-                    {!generatedIdea && !isGenerating && (
+                    {generatedIdeas.length === 0 && !isGenerating && (
                         <div className="px-6 pt-4 shrink-0">
                             <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
                                 <span>Step {currentStep + 1} of {questions.length}</span>
@@ -253,41 +278,91 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                                     <Sparkles className="w-8 h-8 text-white" />
                                 </motion.div>
                                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                                    Generating your perfect idea...
+                                    Generating ideas for you...
                                 </h3>
                                 <p className="text-gray-600">
                                     Our AI is analyzing market trends and your preferences
                                 </p>
                             </div>
-                        ) : generatedIdea ? (
-                            // Generated idea display
-                            <div className="space-y-6">
-                                <div className="text-center mb-6">
-                                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-50 text-green-700 text-sm font-medium mb-4">
+                        ) : generatedIdeas.length > 0 ? (
+                            // ── Generated Ideas Selection ──
+                            <div className="space-y-4">
+                                <div className="text-center mb-4">
+                                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-50 text-green-700 text-sm font-medium mb-3">
                                         <Sparkles className="w-4 h-4" />
-                                        Idea Generated!
+                                        Ideas Generated!
                                     </div>
-                                    <h3 className="text-2xl font-bold text-gray-900">{generatedIdea.title}</h3>
+                                    <p className="text-sm text-gray-600">
+                                        Click on an idea to see details, then choose one to get started.
+                                    </p>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <div className="p-4 bg-gray-50 rounded-xl">
-                                        <h4 className="font-semibold text-gray-900 mb-2">Description</h4>
-                                        <p className="text-gray-600">{generatedIdea.description}</p>
-                                    </div>
-                                    <div className="p-4 bg-red-50 rounded-xl">
-                                        <h4 className="font-semibold text-red-900 mb-2">Problem</h4>
-                                        <p className="text-red-700">{generatedIdea.problem}</p>
-                                    </div>
-                                    <div className="p-4 bg-green-50 rounded-xl">
-                                        <h4 className="font-semibold text-green-900 mb-2">Solution</h4>
-                                        <p className="text-green-700">{generatedIdea.solution}</p>
-                                    </div>
-                                    <div className="p-4 bg-blue-50 rounded-xl">
-                                        <h4 className="font-semibold text-blue-900 mb-2">Target Market</h4>
-                                        <p className="text-blue-700">{generatedIdea.targetMarket}</p>
-                                    </div>
-                                </div>
+                                {generatedIdeas.map((idea, index) => {
+                                    const isSelected = selectedIndex === index;
+                                    return (
+                                        <motion.button
+                                            key={index}
+                                            type="button"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: index * 0.1 }}
+                                            onClick={() => setSelectedIndex(index)}
+                                            className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${isSelected
+                                                ? 'border-blue-500 bg-blue-50/50 shadow-md'
+                                                : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-gray-50'
+                                                }`}
+                                        >
+                                            {/* Card Header */}
+                                            <div className="flex items-start gap-3">
+                                                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-colors ${isSelected
+                                                    ? 'bg-blue-500 text-white'
+                                                    : 'bg-gray-100 text-gray-400'
+                                                    }`}>
+                                                    {isSelected
+                                                        ? <Check className="w-4 h-4" />
+                                                        : <span className="text-xs font-bold">{index + 1}</span>
+                                                    }
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="font-semibold text-gray-900 text-base">
+                                                        {idea.title}
+                                                    </h4>
+                                                    <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                                                        {idea.description}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Expanded Details (only for selected) */}
+                                            <AnimatePresence>
+                                                {isSelected && (
+                                                    <motion.div
+                                                        initial={{ height: 0, opacity: 0 }}
+                                                        animate={{ height: 'auto', opacity: 1 }}
+                                                        exit={{ height: 0, opacity: 0 }}
+                                                        transition={{ duration: 0.25 }}
+                                                        className="overflow-hidden"
+                                                    >
+                                                        <div className="mt-4 ml-10 space-y-3">
+                                                            <div className="p-3 bg-red-50 rounded-lg">
+                                                                <h5 className="text-xs font-semibold text-red-800 uppercase tracking-wider mb-1">Problem</h5>
+                                                                <p className="text-sm text-red-700">{idea.problem}</p>
+                                                            </div>
+                                                            <div className="p-3 bg-green-50 rounded-lg">
+                                                                <h5 className="text-xs font-semibold text-green-800 uppercase tracking-wider mb-1">Solution</h5>
+                                                                <p className="text-sm text-green-700">{idea.solution}</p>
+                                                            </div>
+                                                            <div className="p-3 bg-blue-50 rounded-lg">
+                                                                <h5 className="text-xs font-semibold text-blue-800 uppercase tracking-wider mb-1">Target Market</h5>
+                                                                <p className="text-sm text-blue-700">{idea.targetMarket}</p>
+                                                            </div>
+                                                        </div>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </motion.button>
+                                    );
+                                })}
                             </div>
                         ) : (
                             // Question display
@@ -336,15 +411,21 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
 
                     {/* Footer - fixed at bottom */}
                     <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50 shrink-0">
-                        {generatedIdea ? (
+                        {generatedIdeas.length > 0 ? (
                             <>
                                 <Button variant="secondary" onClick={() => {
-                                    setGeneratedIdea(null);
-                                    setCurrentStep(0);
+                                    setGeneratedIdeas([]);
+                                    setSelectedIndex(null);
+                                    generateIdeas();
                                 }}>
-                                    Generate Another
+                                    Generate Again
+                                    <CreditCost cost={2} />
                                 </Button>
-                                <Button onClick={handleUseIdea} rightIcon={<ArrowRight className="w-4 h-4" />}>
+                                <Button
+                                    onClick={handleUseIdea}
+                                    disabled={selectedIndex === null}
+                                    rightIcon={<ArrowRight className="w-4 h-4" />}
+                                >
                                     Use This Idea
                                 </Button>
                             </>
@@ -363,7 +444,8 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                                     disabled={isGenerating}
                                     rightIcon={isLastStep ? <Sparkles className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
                                 >
-                                    {isLastStep ? 'Generate Idea' : 'Next'}
+                                    {isLastStep ? 'Generate Ideas' : 'Next'}
+                                    {isLastStep && <CreditCost cost={2} />}
                                 </Button>
                             </>
                         )}
