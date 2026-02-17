@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, X, Loader2, Globe, Target, Zap, Shield, Lightbulb, Upload, ExternalLink } from 'lucide-react';
+import { Download, X, Loader2, Globe, Target, Zap, Shield, Lightbulb, Upload, ExternalLink, Palette } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { useExportOnePager, useExportStatus } from '@/hooks';
 import { Link } from 'react-router-dom';
@@ -27,11 +27,32 @@ interface OnePagerProps {
 
 // Available templates
 const TEMPLATES = [
-    { id: 'one-pager-v1', name: 'Professional (Purple)', description: 'Modern professional template with purple accent' },
+    { id: 'one-pager-v1', name: 'Professional', description: 'Modern professional template' },
 ];
 
 // Chart colors matching the HBS template
 const CHART_COLORS = ['#6366F1', '#8B5CF6', '#F59E0B', '#10B981', '#EF4444', '#3B82F6'];
+
+// Preset accent colors
+const COLOR_PRESETS = [
+    { name: 'Purple', hex: '#6366F1' },
+    { name: 'Blue', hex: '#3B82F6' },
+    { name: 'Teal', hex: '#14B8A6' },
+    { name: 'Green', hex: '#22C55E' },
+    { name: 'Orange', hex: '#F97316' },
+    { name: 'Red', hex: '#EF4444' },
+    { name: 'Pink', hex: '#EC4899' },
+    { name: 'Slate', hex: '#475569' },
+];
+
+// Lighten a hex color by a given amount (0-100)
+function lightenColor(hex: string, amount: number = 25): string {
+    const num = parseInt(hex.replace('#', ''), 16);
+    const r = Math.min(255, ((num >> 16) & 0xFF) + Math.round(255 * amount / 100));
+    const g = Math.min(255, ((num >> 8) & 0xFF) + Math.round(255 * amount / 100));
+    const b = Math.min(255, (num & 0xFF) + Math.round(255 * amount / 100));
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
+}
 
 // Currency formatting helper with auto-detection for INR/USD
 const formatCurrency = (amount: string | number): string => {
@@ -83,6 +104,9 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
     const [websiteUrl, setWebsiteUrl] = useState('');
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
+    const [selectedColor, setSelectedColor] = useState('#6366F1');
+    const [hexInput, setHexInput] = useState('#6366F1');
+    const [showColorPicker, setShowColorPicker] = useState(false);
 
     // Use the new export hook
     const { mutate: exportOnePager, isPending: isExporting } = useExportOnePager(ideaId);
@@ -159,7 +183,8 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                 templateId: selectedTemplate,
                 websiteUrl: websiteUrl.trim() || undefined,
                 slides: slides,
-                logoBase64: logoPreview || undefined, // Pass uploaded logo as base64
+                logoBase64: logoPreview || undefined,
+                accentColor: selectedColor,
             },
             {
                 onSuccess: (data) => {
@@ -232,6 +257,15 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                         />
                     </label>
 
+                    {/* Color Picker Toggle */}
+                    <button
+                        onClick={() => setShowColorPicker(!showColorPicker)}
+                        className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+                    >
+                        <div className="w-4 h-4 rounded-full border border-gray-300" style={{ backgroundColor: selectedColor }} />
+                        <Palette className="w-4 h-4 text-gray-500" />
+                    </button>
+
                     {/* Export Button */}
                     <Button
                         size="sm"
@@ -246,6 +280,76 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                         <X className="w-4 h-4" />
                     </Button>
                 </div>
+
+                {/* Color Picker Panel */}
+                {showColorPicker && (
+                    <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 bg-gray-50 border-b">
+                        {/* Preset swatches */}
+                        {COLOR_PRESETS.map((preset) => (
+                            <button
+                                key={preset.hex}
+                                onClick={() => {
+                                    setSelectedColor(preset.hex);
+                                    setHexInput(preset.hex);
+                                }}
+                                title={preset.name}
+                                className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-110 ${selectedColor === preset.hex
+                                    ? 'border-gray-800 ring-2 ring-offset-1 ring-gray-400 scale-110'
+                                    : 'border-gray-200'
+                                    }`}
+                                style={{ backgroundColor: preset.hex }}
+                            />
+                        ))}
+
+                        {/* Divider */}
+                        <div className="w-px h-7 bg-gray-300" />
+
+                        {/* Native color picker */}
+                        <label className="relative cursor-pointer" title="Pick any color">
+                            <div
+                                className={`w-7 h-7 rounded-full border-2 overflow-hidden ${!COLOR_PRESETS.some(p => p.hex === selectedColor)
+                                    ? 'border-gray-800 ring-2 ring-offset-1 ring-gray-400 scale-110'
+                                    : 'border-gray-200'
+                                    }`}
+                                style={{
+                                    background: 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)',
+                                }}
+                            />
+                            <input
+                                type="color"
+                                value={selectedColor}
+                                onChange={(e) => {
+                                    setSelectedColor(e.target.value.toUpperCase());
+                                    setHexInput(e.target.value.toUpperCase());
+                                }}
+                                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                            />
+                        </label>
+
+                        {/* Hex Input */}
+                        <div className="flex items-center gap-1">
+                            <span className="text-xs text-gray-500 font-mono">#</span>
+                            <input
+                                type="text"
+                                value={hexInput.replace('#', '')}
+                                onChange={(e) => {
+                                    const raw = e.target.value.replace('#', '').slice(0, 6);
+                                    setHexInput(`#${raw}`);
+                                    if (/^[0-9A-Fa-f]{6}$/.test(raw)) {
+                                        setSelectedColor(`#${raw.toUpperCase()}`);
+                                    }
+                                }}
+                                onBlur={() => {
+                                    // On blur, sync hex input back to selectedColor
+                                    setHexInput(selectedColor);
+                                }}
+                                placeholder="6366F1"
+                                className="w-20 px-2 py-1 text-xs font-mono border border-gray-300 rounded-md"
+                                maxLength={6}
+                            />
+                        </div>
+                    </div>
+                )}
 
                 {/* Export Status */}
                 {exportJobId && exportStatus && (
@@ -274,7 +378,7 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                         {/* Purple Header */}
                         <div
                             className="text-white px-5 py-3 flex justify-between items-center"
-                            style={{ background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)' }}
+                            style={{ background: `linear-gradient(135deg, ${selectedColor} 0%, ${lightenColor(selectedColor, 15)} 100%)` }}
                         >
                             <div className="flex items-center gap-2 text-lg font-bold">
                                 <span>{companyName}</span>
@@ -286,7 +390,7 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
 
                         {/* Overview */}
                         <div className="px-5 py-3">
-                            <div className="text-indigo-600 font-bold text-sm uppercase tracking-wide border-b-2 border-amber-500 inline-block pb-1 mb-2">
+                            <div className="font-bold text-sm uppercase tracking-wide border-b-2 border-amber-500 inline-block pb-1 mb-2" style={{ color: selectedColor }}>
                                 OVERVIEW...
                             </div>
                             <p className="text-gray-600 text-[9px] leading-relaxed">
@@ -303,14 +407,14 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                                 <div>
                                     <div
                                         className="text-white text-[9px] font-bold uppercase px-2 py-1 rounded-sm"
-                                        style={{ background: 'linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%)' }}
+                                        style={{ background: `linear-gradient(90deg, ${selectedColor} 0%, ${lightenColor(selectedColor, 15)} 100%)` }}
                                     >
                                         Problem
                                     </div>
                                     <ul className="mt-1 space-y-0.5 text-[8px]">
                                         {extractedData.problem.slice(0, 4).map((item, idx) => (
                                             <li key={idx} className="flex items-start gap-1">
-                                                <span className="text-indigo-600 font-bold">•</span>
+                                                <span className="font-bold" style={{ color: selectedColor }}>•</span>
                                                 <span className="text-gray-700">{item}</span>
                                             </li>
                                         ))}
@@ -321,14 +425,14 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                                 <div>
                                     <div
                                         className="text-white text-[9px] font-bold uppercase px-2 py-1 rounded-sm"
-                                        style={{ background: 'linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%)' }}
+                                        style={{ background: `linear-gradient(90deg, ${selectedColor} 0%, ${lightenColor(selectedColor, 15)} 100%)` }}
                                     >
                                         Solution
                                     </div>
                                     <ul className="mt-1 space-y-0.5 text-[8px]">
                                         {extractedData.solution.slice(0, 4).map((item, idx) => (
                                             <li key={idx} className="flex items-start gap-1">
-                                                <span className="text-indigo-600 font-bold">•</span>
+                                                <span className="font-bold" style={{ color: selectedColor }}>•</span>
                                                 <span className="text-gray-700">{item}</span>
                                             </li>
                                         ))}
@@ -339,14 +443,14 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                                 <div>
                                     <div
                                         className="text-white text-[9px] font-bold uppercase px-2 py-1 rounded-sm"
-                                        style={{ background: 'linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%)' }}
+                                        style={{ background: `linear-gradient(90deg, ${selectedColor} 0%, ${lightenColor(selectedColor, 15)} 100%)` }}
                                     >
                                         Traction
                                     </div>
                                     <ul className="mt-1 space-y-0.5 text-[8px]">
                                         {extractedData.traction.slice(0, 4).map((item, idx) => (
                                             <li key={idx} className="flex items-start gap-1">
-                                                <span className="text-indigo-600 font-bold">•</span>
+                                                <span className="font-bold" style={{ color: selectedColor }}>•</span>
                                                 <span className="text-gray-700">{item}</span>
                                             </li>
                                         ))}
@@ -357,7 +461,7 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                                 <div>
                                     <div
                                         className="text-white text-[9px] font-bold uppercase px-2 py-1 rounded-sm"
-                                        style={{ background: 'linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%)' }}
+                                        style={{ background: `linear-gradient(90deg, ${selectedColor} 0%, ${lightenColor(selectedColor, 15)} 100%)` }}
                                     >
                                         Team
                                     </div>
@@ -375,8 +479,8 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                                             QR Code
                                         </div>
                                         <div>
-                                            <div className="text-indigo-600 text-[7px] font-bold uppercase">Website</div>
-                                            <Link to={websiteUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-600 text-[7px] flex items-center gap-0.5">
+                                            <div className="text-[7px] font-bold uppercase" style={{ color: selectedColor }}>Website</div>
+                                            <Link to={websiteUrl} target="_blank" rel="noopener noreferrer" className="text-[7px] flex items-center gap-0.5" style={{ color: selectedColor }}>
                                                 {websiteUrl} <ExternalLink className="w-2 h-2" />
                                             </Link>
                                         </div>
@@ -388,7 +492,7 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                             <div className="space-y-3">
                                 {/* Competitive Edge */}
                                 <div>
-                                    <div className="text-indigo-600 text-[9px] font-bold uppercase px-2 py-1 border-2 border-indigo-600 rounded-sm">
+                                    <div className="text-[9px] font-bold uppercase px-2 py-1 rounded-sm" style={{ color: selectedColor, border: `2px solid ${selectedColor}` }}>
                                         Competitive Edge
                                     </div>
                                     <div className="mt-1 grid grid-cols-2 gap-1">
@@ -398,7 +502,7 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                                             const subtitle = item.split(':')[1] || '';
                                             return (
                                                 <div key={idx} className="bg-gray-50 p-1.5 text-center rounded">
-                                                    <IconComponent className="w-4 h-4 mx-auto mb-0.5 text-indigo-600" />
+                                                    <IconComponent className="w-4 h-4 mx-auto mb-0.5" style={{ color: selectedColor }} />
                                                     <div className="text-[7px] font-bold text-gray-800 truncate">{title}</div>
                                                     <div className="text-[6px] text-gray-500 truncate">{subtitle}</div>
                                                 </div>
@@ -409,7 +513,7 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
 
                                 {/* Ask */}
                                 <div className="text-center py-2 bg-white border rounded">
-                                    <div className="text-indigo-600 text-[8px] font-semibold uppercase">ASK</div>
+                                    <div className="text-[8px] font-semibold uppercase" style={{ color: selectedColor }}>ASK</div>
                                     <div className="text-sm font-bold text-gray-900">{formatCurrency(extractedData.askAmount)}</div>
                                 </div>
 
@@ -440,7 +544,7 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                                     <div>
                                         <div
                                             className="text-white text-[9px] font-bold uppercase px-2 py-1 rounded-sm"
-                                            style={{ background: 'linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%)' }}
+                                            style={{ background: `linear-gradient(90deg, ${selectedColor} 0%, ${lightenColor(selectedColor, 15)} 100%)` }}
                                         >
                                             Business Model
                                         </div>

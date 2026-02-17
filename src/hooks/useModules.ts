@@ -362,7 +362,7 @@ export function useExportStatus(jobId: string | null, options?: { enabled?: bool
 export function useExportOnePager(ideaId: string | undefined) {
     const queryClient = useQueryClient();
 
-    return useMutation<ExportJobResponse & { newBalance?: number; creditCost?: number }, Error, { templateId?: string; websiteUrl?: string; slides?: any[]; logoBase64?: string }>({
+    return useMutation<ExportJobResponse & { newBalance?: number; creditCost?: number }, Error, { templateId?: string; websiteUrl?: string; slides?: any[]; logoBase64?: string; accentColor?: string }>({
         mutationFn: async (data = {}) => {
             if (!ideaId) throw new Error('No idea selected');
             const response = await api.post(`/export/one-pager/${ideaId}`, data);
