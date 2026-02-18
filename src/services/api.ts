@@ -154,4 +154,9 @@ api.interceptors.response.use(
     }
 );
 
+export const createFeedback = async (data: { message: string; type: string }) => {
+    const response = await api.post('/feedback', data);
+    return response.data;
+};
+
 export default api;

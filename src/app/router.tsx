@@ -70,6 +70,7 @@ const TermsOfService = lazy(() => import('@/pages/legal/TermsOfService'));
 const RefundPolicy = lazy(() => import('@/pages/legal/RefundPolicy'));
 const ContactUs = lazy(() => import('@/pages/legal/ContactUs'));
 const AboutUs = lazy(() => import('@/pages/legal/AboutUs'));
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
 // Layouts - named export needs different lazy import
 const DashboardLayout = lazy(() =>
@@ -266,6 +267,10 @@ const router = createBrowserRouter([
                         element: <LazyPage><Services /></LazyPage>,
                     },
                 ],
+            },
+            {
+                path: '*',
+                element: <LazyPage><NotFoundPage /></LazyPage>,
             },
         ]
     }
