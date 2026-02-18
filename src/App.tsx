@@ -11,7 +11,8 @@
 import { Providers } from '@/app/providers';
 import { AppRouter } from '@/app/router';
 import { useDBUser } from '@/hooks/useUser';
-import FeedbackWidget from '@/components/FeedbackWidget';
+import { FeedbackWidget } from '@/components/FeedbackWidget';
+import { FeedbackProvider } from '@/context/FeedbackContext';
 
 // Helper to sync Clerk user to DB
 function AuthSync() {
@@ -22,9 +23,11 @@ function AuthSync() {
 function App() {
   return (
     <Providers>
-      <AuthSync />
-      <AppRouter />
-      <FeedbackWidget />
+      <FeedbackProvider>
+        <AuthSync />
+        <AppRouter />
+        <FeedbackWidget />
+      </FeedbackProvider>
     </Providers>
   );
 }

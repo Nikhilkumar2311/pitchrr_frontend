@@ -4,15 +4,17 @@
  */
 
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, Briefcase } from 'lucide-react';
+import { Menu, Briefcase, MessageSquare } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { Breadcrumbs } from '@/components/common/Breadcrumbs';
 import { AIFloatingButton } from '@/components/common/AIFloatingButton';
 import { CreditsDisplay } from '@/components/common/CreditsDisplay';
 import { useUIStore } from '@/store';
+import { useFeedback } from '@/context/FeedbackContext';
 
 export function DashboardLayout() {
     const { isSidebarCollapsed, setSidebarOpen } = useUIStore();
+    const { openFeedback } = useFeedback();
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -43,6 +45,15 @@ export function DashboardLayout() {
 
                         {/* Spacer */}
                         <div className="flex-1" />
+
+                        {/* Feedback Button */}
+                        <button
+                            onClick={openFeedback}
+                            className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors mr-2"
+                        >
+                            <MessageSquare className="w-4 h-4" />
+                            <span className="hidden sm:inline">Feedback</span>
+                        </button>
 
                         {/* Our Services Button */}
                         <button

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui";
 import { useUIStore } from "@/store";
 import { useUser, useClerk } from "@clerk/clerk-react";
 import { UserAvatar } from "@/components/common/UserAvatar";
+import { useFeedback } from "@/context/FeedbackContext";
 
 const navLinks = [
     { label: "Features", href: "#features" },
@@ -19,6 +20,7 @@ export function Header() {
     const { setAuthModalOpen } = useUIStore();
     const { user, isLoaded } = useUser();
     const { signOut } = useClerk();
+    const { openFeedback } = useFeedback();
     const location = useLocation();
 
     // Don't render header on dashboard routes
@@ -53,6 +55,13 @@ export function Header() {
                                 <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-linear-to-r from-blue-600 to-indigo-600 group-hover:w-3/4 transition-all duration-300" />
                             </a>
                         ))}
+                        <button
+                            onClick={openFeedback}
+                            className="relative px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors group"
+                        >
+                            Feedback
+                            <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-linear-to-r from-blue-600 to-indigo-600 group-hover:w-3/4 transition-all duration-300" />
+                        </button>
                     </div>
 
                     {/* Auth Buttons */}

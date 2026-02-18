@@ -1,6 +1,6 @@
 
 import { Link } from 'react-router-dom';
-import { Home, MoveLeft } from 'lucide-react';
+import { Home } from 'lucide-react';
 
 export default function NotFoundPage() {
     return (
@@ -17,9 +17,6 @@ export default function NotFoundPage() {
                     >
                         <Home className="w-4 h-4" /> Go back home
                     </Link>
-                    <a href="#" onClick={() => window.history.back()} className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                        <MoveLeft className="w-4 h-4" /> Go back
-                    </a>
                 </div>
             </div>
         </div>
