@@ -31,7 +31,8 @@ export type ModuleType =
     | 'pitch_deck'
     | 'gtm_strategy'
     | 'competitor_analysis'
-    | 'startup_chatbot';
+    | 'startup_chatbot'
+    | 'grants';
 
 /** Module generation response from Core Service */
 export interface GenerateModuleResponse {
@@ -265,6 +266,7 @@ function formatModuleName(moduleType: ModuleType): string {
         gtm_strategy: 'GTM Strategy',
         competitor_analysis: 'Competitor Analysis',
         startup_chatbot: 'AI Chatbot',
+        grants: 'Grants & Funding',
     };
     return names[moduleType] || moduleType;
 }

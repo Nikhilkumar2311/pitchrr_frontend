@@ -14,6 +14,7 @@ import {
   Rocket,
   Users,
   MessageSquare,
+  HandCoins,
   LogOut,
   X,
   ChevronLeft,
@@ -35,6 +36,7 @@ const navItems = [
   { icon: Presentation, label: "Pitch Deck", path: "/dashboard/pitch" },
   { icon: Rocket, label: "GTM Strategy", path: "/dashboard/gtm" },
   { icon: Users, label: "Competitor Analysis", path: "/dashboard/competitors" },
+  { icon: HandCoins, label: "Grants & Funding", path: "/dashboard/grants" },
   { icon: MessageSquare, label: "AI Chatbot", path: "/dashboard/chat" },
 ];
 

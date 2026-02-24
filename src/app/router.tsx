@@ -58,6 +58,7 @@ const Branding = lazy(() => import('@/pages/modules/Branding'));
 const PitchDeck = lazy(() => import('@/pages/modules/PitchDeck'));
 const GTMStrategy = lazy(() => import('@/pages/modules/GTMStrategy'));
 const CompetitorAnalysis = lazy(() => import('@/pages/modules/CompetitorAnalysis'));
+const Grants = lazy(() => import('@/pages/modules/Grants'));
 const StartupChatbot = lazy(() => import('@/pages/modules/StartupChatbot'));
 const Services = lazy(() => import('@/pages/modules/Services'));
 
@@ -246,6 +247,15 @@ const router = createBrowserRouter([
                     {
                         path: 'competitors/:ideaId',
                         element: <LazyPage><CompetitorAnalysis /></LazyPage>,
+                    },
+                    // Module 8: Grants & Funding
+                    {
+                        path: 'grants',
+                        element: <LazyPage><Grants /></LazyPage>,
+                    },
+                    {
+                        path: 'grants/:ideaId',
+                        element: <LazyPage><Grants /></LazyPage>,
                     },
                     // Module 7: Startup AI Chatbot
                     {
