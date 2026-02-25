@@ -17,8 +17,6 @@ import {
   Presentation,
   Rocket,
   Users,
-  MessageSquare,
-  HandCoins,
   ArrowRight,
   Download,
   Play,
@@ -122,29 +120,7 @@ const modules: {
       progress: 0,
       status: "not-started",
       exportCost: 2,
-    },
-    {
-      id: "grants",
-      icon: HandCoins,
-      title: "Grants & Funding",
-      description: "Discover grants, schemes, and funding for your startup",
-      path: "/dashboard/grants",
-      color: "#059669",
-      progress: 0,
-      status: "not-started",
-      exportCost: 0,
-    },
-    {
-      id: "chat",
-      icon: MessageSquare,
-      title: "AI Chatbot",
-      description: "Get personalized guidance from your AI mentor",
-      path: "/dashboard/chat",
-      color: "#EC4899",
-      progress: 0,
-      status: "not-started",
-      exportCost: 0,
-    },
+    }
   ];
 
 const getStatusBadge = (status: ModuleStatus) => {
