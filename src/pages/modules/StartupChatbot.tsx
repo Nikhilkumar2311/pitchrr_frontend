@@ -105,9 +105,9 @@ interface Message {
 }
 
 /**
- * Predefined prompts for quick actions
+ * Default prompts shown before any AI response
  */
-const predefinedPrompts = [
+const defaultPrompts = [
     'Improve my startup idea',
     'Help me refine my pitch',
     'Suggest marketing strategies',
@@ -123,6 +123,7 @@ export default function StartupChatbot() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [followUpQuestions, setFollowUpQuestions] = useState<string[]>(defaultPrompts);
 
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -270,16 +271,26 @@ export default function StartupChatbot() {
             // Add AI response
             // Response structure: { success: true, response: { message, context_used, follow_up_questions } }
             let responseText = "I'm having trouble responding right now. Please try again.";
+            let newFollowUps: string[] = [];
 
             if (data.response) {
                 // Handle nested object response
                 if (typeof data.response === 'object' && data.response.message) {
                     responseText = data.response.message;
+                    // Extract follow-up questions from AI response
+                    if (Array.isArray(data.response.follow_up_questions) && data.response.follow_up_questions.length > 0) {
+                        newFollowUps = data.response.follow_up_questions;
+                    }
                 } else if (typeof data.response === 'string') {
                     responseText = data.response;
                 }
             } else if (data.message) {
                 responseText = typeof data.message === 'string' ? data.message : JSON.stringify(data.message);
+            }
+
+            // Update follow-up questions (fall back to defaults if AI didn't provide any)
+            if (newFollowUps.length > 0) {
+                setFollowUpQuestions(newFollowUps);
             }
 
             const aiResponse: Message = {
@@ -477,9 +488,9 @@ export default function StartupChatbot() {
                 {/* Predefined Prompts */}
                 <div className="px-4 py-3 border-t border-gray-200">
                     <div className="flex flex-wrap gap-2">
-                        {predefinedPrompts.map((prompt) => (
+                        {followUpQuestions.map((prompt, idx) => (
                             <button
-                                key={prompt}
+                                key={`${prompt}-${idx}`}
                                 onClick={() => sendMessage(prompt)}
                                 disabled={isTyping}
                                 className="px-3 py-1.5 text-xs font-medium rounded-full bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors disabled:opacity-50"
