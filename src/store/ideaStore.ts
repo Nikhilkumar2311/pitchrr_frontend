@@ -15,6 +15,8 @@ export interface StartupIdea {
     solution?: string;
     targetMarket?: string;
     industry?: string;
+    startupStage?: string;
+    amount?: string;
 }
 
 interface IdeaState {

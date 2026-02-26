@@ -80,11 +80,26 @@ export default function IdeaValidation() {
     // If no ideaId, we'll use the first idea from the list or create a new one
     const { ideaId: urlIdeaId } = useParams<{ ideaId?: string }>();
 
+    // Startup stage options (from grantsData.ts startup_stage values)
+    const STARTUP_STAGES = [
+        'Idea',
+        'Pre-Seed',
+        'Proof of Concept',
+        'Prototype',
+        'Seed',
+        'Early Stage',
+        'Growth',
+        'Scale-up',
+        'Established',
+    ];
+
     // Form state
     const [ideaSummary, setIdeaSummary] = useState('');
     const [ideaTitle, setIdeaTitle] = useState('');
     const [industry, setIndustry] = useState('');
     const [targetAudience, setTargetAudience] = useState('');
+    const [startupStage, setStartupStage] = useState('');
+    const [amount, setAmount] = useState('');
 
     // Get global idea from store (for backward compatibility with Generate Idea flow)
     const { currentIdea, setIdea, updateIdea: updateStoreIdea, activeIdeaId: storedActiveIdeaId } = useIdeaStore();
@@ -147,6 +162,8 @@ export default function IdeaValidation() {
             setIdeaSummary(idea.description);
             setIndustry(idea.industry || '');
             setTargetAudience(idea.targetAudience || '');
+            setStartupStage(idea.startupStage || '');
+            setAmount(idea.amount || '');
             setLastIdeaKey(currentIdeaKey);
             // Also update the store for cross-module compatibility
             setIdea({
@@ -156,6 +173,8 @@ export default function IdeaValidation() {
                 problem: idea.problemSolved || undefined,
                 targetMarket: idea.targetAudience || undefined,
                 industry: idea.industry || undefined,
+                startupStage: idea.startupStage || undefined,
+                amount: idea.amount || undefined,
             });
         }
     }, [idea, lastIdeaKey, setIdea]);
@@ -167,6 +186,8 @@ export default function IdeaValidation() {
             setIdeaSummary(currentIdea.description || '');
             setIndustry(currentIdea.industry || '');
             setTargetAudience(currentIdea.targetMarket || '');
+            setStartupStage(currentIdea.startupStage || '');
+            setAmount(currentIdea.amount || '');
             setLastIdeaKey('store-initialized');
         }
     }, [idea, currentIdea, lastIdeaKey]);
@@ -183,6 +204,10 @@ export default function IdeaValidation() {
             toast.error('Please describe your idea first');
             return;
         }
+        if (!startupStage) {
+            toast.error('Please select a startup stage');
+            return;
+        }
 
         if (activeIdeaId) {
             // Update existing idea
@@ -191,6 +216,8 @@ export default function IdeaValidation() {
                 description: ideaSummary,
                 industry: industry || undefined,
                 targetAudience: targetAudience || undefined,
+                startupStage: startupStage || undefined,
+                amount: amount || undefined,
             });
         } else {
             // Create new idea
@@ -199,6 +226,8 @@ export default function IdeaValidation() {
                 description: ideaSummary,
                 industry: industry || undefined,
                 targetAudience: targetAudience || undefined,
+                startupStage: startupStage || undefined,
+                amount: amount || undefined,
             }, {
                 onSuccess: (newIdea) => {
                     // Navigate to the new idea URL
@@ -213,6 +242,8 @@ export default function IdeaValidation() {
             description: ideaSummary,
             industry: industry || undefined,
             targetMarket: targetAudience || undefined,
+            startupStage: startupStage || undefined,
+            amount: amount || undefined,
         });
     };
 
@@ -224,6 +255,10 @@ export default function IdeaValidation() {
             toast.error('Please describe your idea first');
             return;
         }
+        if (!startupStage) {
+            toast.error('Please select a startup stage');
+            return;
+        }
 
         // If no idea exists yet, create one first and then trigger generation
         if (!activeIdeaId) {
@@ -232,6 +267,8 @@ export default function IdeaValidation() {
                 description: ideaSummary,
                 industry: industry || undefined,
                 targetAudience: targetAudience || undefined,
+                startupStage: startupStage || undefined,
+                amount: amount || undefined,
             }, {
                 onSuccess: async (newIdea) => {
                     // Navigate to the new idea
@@ -260,6 +297,8 @@ export default function IdeaValidation() {
                 description: ideaSummary,
                 industry: industry || undefined,
                 targetAudience: targetAudience || undefined,
+                startupStage: startupStage || undefined,
+                amount: amount || undefined,
             }, {
                 onSuccess: () => {
                     // Trigger AI generation after update
@@ -391,6 +430,33 @@ export default function IdeaValidation() {
                                 placeholder="Target Audience  (e.g. College students, SMBs)"
                                 value={targetAudience}
                                 onChange={(e) => setTargetAudience(e.target.value)}
+                                className="w-full px-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 mt-3">
+                            <div className="relative">
+                                <select
+                                    value={startupStage}
+                                    onChange={(e) => setStartupStage(e.target.value)}
+                                    className={`w-full px-4 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white ${startupStage ? 'border-gray-200 text-gray-900' : 'border-red-300 text-gray-400'
+                                        }`}
+                                >
+                                    <option value="" disabled>Startup Stage *</option>
+                                    {STARTUP_STAGES.map((stage) => (
+                                        <option key={stage} value={stage}>{stage}</option>
+                                    ))}
+                                </select>
+                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Funding needed (optional, e.g. ₹10,00,000)"
+                                value={amount}
+                                onChange={(e) => setAmount(e.target.value)}
                                 className="w-full px-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
                         </div>

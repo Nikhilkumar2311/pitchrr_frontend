@@ -26,6 +26,8 @@ export interface CreateIdeaInput {
     industry?: string;
     targetAudience?: string;
     problemSolved?: string;
+    startupStage?: string;
+    amount?: string;
 }
 
 /** Input for updating an existing idea */
@@ -35,6 +37,8 @@ export interface UpdateIdeaInput {
     industry?: string;
     targetAudience?: string;
     problemSolved?: string;
+    startupStage?: string;
+    amount?: string;
 }
 
 /** Startup idea returned from API */
@@ -45,6 +49,8 @@ export interface Idea {
     industry: string | null;
     targetAudience: string | null;
     problemSolved: string | null;
+    startupStage: string | null;
+    amount: string | null;
     userId: string;
     isArchived: boolean;
     createdAt: string;
