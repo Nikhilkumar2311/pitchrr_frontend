@@ -16,12 +16,11 @@
  * - React Query polls for results → displays when ready
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     Lightbulb,
-    Save,
     Download,
     Sparkles,
     AlertTriangle,
@@ -120,10 +119,10 @@ export default function IdeaValidation() {
     const { data: idea, isLoading: isLoadingIdea } = useIdea(activeIdeaId);
 
     // Create new idea
-    const { mutate: createIdea, isPending: isCreating } = useCreateIdea();
+    const { mutate: createIdea } = useCreateIdea();
 
     // Update existing idea
-    const { mutate: updateIdea, isPending: isUpdating } = useUpdateIdea(activeIdeaId || '');
+    const { mutate: updateIdea } = useUpdateIdea(activeIdeaId || '');
 
     // Fetch module data (with automatic polling while generating)
     const {
@@ -139,7 +138,6 @@ export default function IdeaValidation() {
 
     const hasAnalysis = moduleData?.exists && moduleData.data;
     const analysis = moduleData?.data || null;
-    const isSaving = isCreating || isUpdating;
     const isLoading = isLoadingIdeas || isLoadingIdea;
     // Use status from backend to detect pending state (survives page refresh)
     const isAnalyzing = isTriggering || moduleData?.status === 'IN_PROGRESS';
@@ -193,59 +191,62 @@ export default function IdeaValidation() {
     }, [idea, currentIdea, lastIdeaKey]);
 
     // ==========================================================================
-    // HANDLERS
+    // DEBOUNCED AUTO-SAVE
     // ==========================================================================
 
-    /**
-     * Save idea to Core Service
-     */
-    const handleSave = () => {
-        if (!ideaSummary.trim()) {
-            toast.error('Please describe your idea first');
-            return;
-        }
-        if (!startupStage) {
-            toast.error('Please select a startup stage');
-            return;
-        }
+    const formInitializedRef = useRef(false);
+    const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-        if (activeIdeaId) {
-            // Update existing idea
-            updateIdea({
-                title: ideaTitle || 'Untitled Idea',
-                description: ideaSummary,
-                industry: industry || undefined,
-                targetAudience: targetAudience || undefined,
-                startupStage: startupStage || undefined,
-                amount: amount || undefined,
-            });
-        } else {
-            // Create new idea
-            createIdea({
-                title: ideaTitle || 'Untitled Idea',
-                description: ideaSummary,
-                industry: industry || undefined,
-                targetAudience: targetAudience || undefined,
-                startupStage: startupStage || undefined,
-                amount: amount || undefined,
-            }, {
-                onSuccess: (newIdea) => {
-                    // Navigate to the new idea URL
-                    navigate(`/dashboard/idea/${newIdea.id}`, { replace: true });
-                }
-            });
+    // Mark form as initialized after first load from API/store
+    useEffect(() => {
+        if (lastIdeaKey && !formInitializedRef.current) {
+            // Delay slightly to skip the initial field-set from API
+            const t = setTimeout(() => { formInitializedRef.current = true; }, 500);
+            return () => clearTimeout(t);
         }
+    }, [lastIdeaKey]);
 
-        // Also update local store for cross-module compatibility
-        updateStoreIdea({
-            title: ideaTitle || 'Untitled Idea',
-            description: ideaSummary,
-            industry: industry || undefined,
-            targetMarket: targetAudience || undefined,
-            startupStage: startupStage || undefined,
-            amount: amount || undefined,
-        });
-    };
+    // Auto-save on field changes (debounced 1.5s) — silent, no toast
+    useEffect(() => {
+        if (!formInitializedRef.current || !activeIdeaId) return;
+        if (!ideaSummary.trim()) return; // Don't save empty
+
+        if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+
+        autoSaveTimerRef.current = setTimeout(async () => {
+            try {
+                await api.put(`/ideas/${activeIdeaId}`, {
+                    title: ideaTitle || 'Untitled Idea',
+                    description: ideaSummary,
+                    industry: industry || undefined,
+                    targetAudience: targetAudience || undefined,
+                    startupStage: startupStage || undefined,
+                    amount: amount || undefined,
+                });
+
+                // Also update store for cross-module compatibility
+                updateStoreIdea({
+                    title: ideaTitle || 'Untitled Idea',
+                    description: ideaSummary,
+                    industry: industry || undefined,
+                    targetMarket: targetAudience || undefined,
+                    startupStage: startupStage || undefined,
+                    amount: amount || undefined,
+                });
+            } catch (e) {
+                // Silent fail — don't bother user with save errors during typing
+                console.error('Auto-save failed:', e);
+            }
+        }, 1500);
+
+        return () => {
+            if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+        };
+    }, [ideaTitle, ideaSummary, industry, targetAudience, startupStage, amount]);
+
+    // ==========================================================================
+    // HANDLERS
+    // ==========================================================================
 
     /**
      * Trigger AI analysis
@@ -260,6 +261,9 @@ export default function IdeaValidation() {
             return;
         }
 
+        // Cancel any pending auto-save
+        if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+
         // If no idea exists yet, create one first and then trigger generation
         if (!activeIdeaId) {
             createIdea({
@@ -271,10 +275,7 @@ export default function IdeaValidation() {
                 amount: amount || undefined,
             }, {
                 onSuccess: async (newIdea) => {
-                    // Navigate to the new idea
                     navigate(`/dashboard/idea/${newIdea.id}`, { replace: true });
-
-                    // Immediately trigger AI generation
                     try {
                         toast.success('Idea saved! Starting AI analysis...');
                         await api.post(`/ideas/${newIdea.id}/modules/idea_validation/generate`);
@@ -290,25 +291,19 @@ export default function IdeaValidation() {
             return;
         }
 
-        // Ensure idea is up-to-date before generating
-        if (idea && idea.description !== ideaSummary) {
-            updateIdea({
-                title: ideaTitle || idea.title,
-                description: ideaSummary,
-                industry: industry || undefined,
-                targetAudience: targetAudience || undefined,
-                startupStage: startupStage || undefined,
-                amount: amount || undefined,
-            }, {
-                onSuccess: () => {
-                    // Trigger AI generation after update
-                    generateModule('idea_validation');
-                }
-            });
-        } else {
-            // Idea is up-to-date, trigger generation
-            generateModule('idea_validation');
-        }
+        // Always save all current fields before generating
+        updateIdea({
+            title: ideaTitle || 'Untitled Idea',
+            description: ideaSummary,
+            industry: industry || undefined,
+            targetAudience: targetAudience || undefined,
+            startupStage: startupStage || undefined,
+            amount: amount || undefined,
+        }, {
+            onSuccess: () => {
+                generateModule('idea_validation');
+            }
+        });
     };
 
     /**
@@ -374,14 +369,6 @@ export default function IdeaValidation() {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Button
-                        variant="secondary"
-                        leftIcon={<Save className="w-4 h-4" />}
-                        onClick={handleSave}
-                        isLoading={isSaving}
-                    >
-                        Save
-                    </Button>
                     <Button
                         variant="secondary"
                         leftIcon={<Download className="w-4 h-4" />}
