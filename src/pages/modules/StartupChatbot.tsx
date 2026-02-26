@@ -16,7 +16,7 @@
  * - Displays AI responses
  */
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -26,8 +26,16 @@ import {
     Bot,
     RefreshCw,
     Lightbulb,
+    ArrowDown,
 } from 'lucide-react';
 import React from 'react';
+
+/**
+ * Strip follow-up questions section from message body (they appear as chips instead)
+ */
+const stripFollowUpSection = (content: string): string => {
+    return content.replace(/\n*#{0,3}\s*(?:Follow[- ]?Up|Suggested|Next)\s*Questions?\s*:?\s*\n[\s\S]*$/i, '').trim();
+};
 
 /**
  * Format message content with markdown-like styling
@@ -37,6 +45,20 @@ const formatMessage = (content: string): React.ReactNode => {
     const lines = content.split('\n');
 
     return lines.map((line, lineIndex) => {
+        // Check for headings (### before ## before #)
+        const headingMatch = line.match(/^(#{1,3})\s+(.*)/);
+        if (headingMatch) {
+            const level = headingMatch[1].length;
+            const text = headingMatch[2];
+            if (level === 1) {
+                return <h3 key={lineIndex} className="text-base font-bold text-gray-900 mt-3 mb-1">{formatInlineText(text)}</h3>;
+            } else if (level === 2) {
+                return <h4 key={lineIndex} className="text-sm font-bold text-gray-800 mt-3 mb-1">{formatInlineText(text)}</h4>;
+            } else {
+                return <h5 key={lineIndex} className="text-sm font-semibold text-gray-700 mt-2 mb-0.5">{formatInlineText(text)}</h5>;
+            }
+        }
+
         // Check for numbered lists (1. 2. 3. etc.)
         const numberedMatch = line.match(/^(\d+)[.)]\s*(.*)/);
         if (numberedMatch) {
@@ -125,6 +147,12 @@ export default function StartupChatbot() {
     const [isTyping, setIsTyping] = useState(false);
     const [followUpQuestions, setFollowUpQuestions] = useState<string[]>(defaultPrompts);
 
+    // Typewriter animation state
+    const [animatingMessageId, setAnimatingMessageId] = useState<string | null>(null);
+    const [displayedCharCount, setDisplayedCharCount] = useState(0);
+    const animatingContentRef = useRef<string>('');
+    const animationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
     // ==========================================================================
@@ -199,13 +227,92 @@ export default function StartupChatbot() {
     }, [messages, activeIdeaId]);
 
     /**
-     * Scroll to bottom when new messages arrive
+     * Track whether user has manually scrolled up (state for UI rendering)
+     */
+    const [showScrollButton, setShowScrollButton] = useState(false);
+    const userScrolledRef = useRef(false);
+
+    const handleChatScroll = useCallback(() => {
+        if (!chatContainerRef.current) return;
+        const el = chatContainerRef.current;
+        const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
+        userScrolledRef.current = !isNearBottom;
+        setShowScrollButton(!isNearBottom);
+    }, []);
+
+    const scrollToBottom = useCallback(() => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' });
+            userScrolledRef.current = false;
+            setShowScrollButton(false);
+        }
+    }, []);
+
+    /**
+     * Auto-scroll: only when user hasn't scrolled up, or on new messages
      */
     useEffect(() => {
-        if (chatContainerRef.current) {
+        if (chatContainerRef.current && !userScrolledRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
-    }, [messages, isTyping]);
+    }, [displayedCharCount]);
+
+    // Always scroll to bottom on new user/assistant messages
+    useEffect(() => {
+        if (chatContainerRef.current) {
+            userScrolledRef.current = false;
+            setShowScrollButton(false);
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+    }, [messages.length, isTyping]);
+
+    /**
+     * Typewriter animation effect
+     * Speed starts slow (~30ms/char) and accelerates to fast (~1ms/char)
+     */
+    const startTypewriter = useCallback((messageId: string, fullContent: string) => {
+        // Clean up any previous animation
+        if (animationTimerRef.current) {
+            clearTimeout(animationTimerRef.current);
+        }
+        animatingContentRef.current = fullContent;
+        setAnimatingMessageId(messageId);
+        setDisplayedCharCount(0);
+    }, []);
+
+    useEffect(() => {
+        if (!animatingMessageId) return;
+
+        const fullLength = animatingContentRef.current.length;
+        if (displayedCharCount >= fullLength) {
+            // Animation complete
+            setAnimatingMessageId(null);
+            setDisplayedCharCount(0);
+            animatingContentRef.current = '';
+            return;
+        }
+
+        // Gradually increasing speed: starts at ~30ms, decays to ~1ms
+        // Using exponential decay: delay = maxDelay * e^(-progress * rate) + minDelay
+        const progress = displayedCharCount / fullLength;
+        const maxDelay = 25;  // Starting delay (ms)
+        const minDelay = 1;   // Fastest delay (ms)
+        const rate = 5;       // How fast it accelerates
+        const delay = Math.max(minDelay, maxDelay * Math.exp(-progress * rate));
+
+        // Reveal multiple chars at once when going fast
+        const charsPerTick = delay <= 2 ? 3 : delay <= 5 ? 2 : 1;
+
+        animationTimerRef.current = setTimeout(() => {
+            setDisplayedCharCount(prev => Math.min(prev + charsPerTick, fullLength));
+        }, delay);
+
+        return () => {
+            if (animationTimerRef.current) {
+                clearTimeout(animationTimerRef.current);
+            }
+        };
+    }, [animatingMessageId, displayedCharCount]);
 
     // ==========================================================================
     // HANDLERS
@@ -214,25 +321,32 @@ export default function StartupChatbot() {
     /**
      * Build context string from idea and modules
      */
-    const buildContext = (): string => {
-        if (!idea) return '';
+    const buildContext = (): Record<string, any> => {
+        if (!idea) return {};
 
-        let context = `Startup Context:\n`;
-        context += `- Title: ${idea.title}\n`;
-        context += `- Description: ${idea.description}\n`;
+        const context: Record<string, any> = {
+            ideaTitle: idea.title,
+            ideaDescription: idea.description,
+            industry: idea.industry || undefined,
+            targetAudience: idea.targetAudience || undefined,
+            problemSolved: idea.problemSolved || undefined,
+            startupStage: (idea as any).startupStage || undefined,
+            amount: (idea as any).amount || undefined,
+        };
 
-        if (idea.industry) context += `- Industry: ${idea.industry}\n`;
-        if (idea.targetAudience) context += `- Target Audience: ${idea.targetAudience}\n`;
-        if (idea.problemSolved) context += `- Problem Solved: ${idea.problemSolved}\n`;
-
-        // Add module summaries if available
+        // Add module data summaries if available
         if (allModules && Object.keys(allModules).length > 0) {
-            context += `\nCompleted Analyses:\n`;
+            const moduleSummaries: Record<string, any> = {};
             for (const [moduleType, moduleData] of Object.entries(allModules)) {
                 if (moduleData && typeof moduleData === 'object') {
-                    context += `- ${moduleType}: Available\n`;
+                    // Send a truncated version of module data to keep context manageable
+                    const dataStr = JSON.stringify(moduleData);
+                    moduleSummaries[moduleType] = dataStr.length > 2000
+                        ? dataStr.slice(0, 2000) + '...'
+                        : moduleData;
                 }
             }
+            context.moduleData = moduleSummaries;
         }
 
         return context;
@@ -293,13 +407,16 @@ export default function StartupChatbot() {
                 setFollowUpQuestions(newFollowUps);
             }
 
+            const aiMessageId = (Date.now() + 1).toString();
             const aiResponse: Message = {
-                id: (Date.now() + 1).toString(),
+                id: aiMessageId,
                 role: 'assistant',
                 content: responseText,
                 timestamp: new Date(),
             };
             setMessages((prev) => [...prev, aiResponse]);
+            // Start typewriter animation for the new message
+            startTypewriter(aiMessageId, responseText);
         } catch (error: any) {
             console.error('Chat error:', error);
 
@@ -419,10 +536,11 @@ export default function StartupChatbot() {
             </div>
 
             {/* Chat Container */}
-            <Card className="flex-1 flex flex-col overflow-hidden">
+            <Card className="flex-1 flex flex-col overflow-hidden relative">
                 {/* Messages */}
                 <div
                     ref={chatContainerRef}
+                    onScroll={handleChatScroll}
                     className="flex-1 overflow-y-auto p-4 space-y-4"
                 >
                     <AnimatePresence>
@@ -446,9 +564,16 @@ export default function StartupChatbot() {
                                 >
                                     <div className="text-sm leading-relaxed">
                                         {message.role === 'assistant'
-                                            ? formatMessage(message.content)
+                                            ? formatMessage(stripFollowUpSection(
+                                                message.id === animatingMessageId
+                                                    ? animatingContentRef.current.slice(0, displayedCharCount)
+                                                    : message.content
+                                            ))
                                             : message.content
                                         }
+                                        {message.id === animatingMessageId && (
+                                            <span className="inline-block w-0.5 h-4 bg-gray-500 animate-pulse ml-0.5 align-text-bottom" />
+                                        )}
                                     </div>
                                     <div className={`text-xs mt-1 ${message.role === 'user' ? 'text-white/70' : 'text-gray-400'
                                         }`}>
@@ -485,7 +610,18 @@ export default function StartupChatbot() {
                     )}
                 </div>
 
-                {/* Predefined Prompts */}
+                {/* Floating scroll-to-bottom button */}
+                {showScrollButton && (
+                    <button
+                        onClick={scrollToBottom}
+                        className="absolute bottom-36 right-6 w-9 h-9 flex items-center justify-center rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-all hover:scale-110 z-10"
+                        title="Scroll to bottom"
+                    >
+                        <ArrowDown className="w-4 h-4" />
+                    </button>
+                )}
+
+                {/* Follow-up Prompts */}
                 <div className="px-4 py-3 border-t border-gray-200">
                     <div className="flex flex-wrap gap-2">
                         {followUpQuestions.map((prompt, idx) => (
