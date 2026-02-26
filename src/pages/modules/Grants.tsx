@@ -187,31 +187,128 @@ export default function Grants() {
         badgeBg: string;
         textColor: string;
     }> = {
+        // --- Idea / Pre-Seed (warm slate-blue) ---
+        'Idea': {
+            icon: <Lightbulb className="w-5 h-5 text-white" />,
+            gradient: 'from-sky-500 to-blue-600',
+            dotColor: 'bg-sky-600',
+            lineColor: 'from-sky-500 to-teal-500',
+            badgeBg: 'bg-sky-50 text-sky-700 border-sky-200',
+            textColor: 'text-sky-700',
+        },
         'Idea Stage': {
             icon: <Lightbulb className="w-5 h-5 text-white" />,
-            gradient: 'from-amber-400 to-orange-500',
-            dotColor: 'bg-amber-500',
-            lineColor: 'from-amber-400 to-emerald-400',
-            badgeBg: 'bg-amber-50 text-amber-700 border-amber-200',
-            textColor: 'text-amber-700',
+            gradient: 'from-sky-500 to-blue-600',
+            dotColor: 'bg-sky-600',
+            lineColor: 'from-sky-500 to-teal-500',
+            badgeBg: 'bg-sky-50 text-sky-700 border-sky-200',
+            textColor: 'text-sky-700',
         },
-        'Seed Stage': {
-            icon: <Sprout className="w-5 h-5 text-white" />,
-            gradient: 'from-emerald-400 to-teal-500',
-            dotColor: 'bg-emerald-500',
-            lineColor: 'from-emerald-400 to-blue-400',
-            badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-            textColor: 'text-emerald-700',
-        },
-        'Growth Stage': {
-            icon: <Rocket className="w-5 h-5 text-white" />,
-            gradient: 'from-blue-400 to-indigo-500',
-            dotColor: 'bg-blue-500',
-            lineColor: 'from-blue-400 to-blue-400',
+        'Pre-Seed': {
+            icon: <Lightbulb className="w-5 h-5 text-white" />,
+            gradient: 'from-blue-500 to-cyan-600',
+            dotColor: 'bg-blue-600',
+            lineColor: 'from-blue-500 to-teal-500',
             badgeBg: 'bg-blue-50 text-blue-700 border-blue-200',
             textColor: 'text-blue-700',
         },
+        // --- Proof of Concept / Prototype (teal) ---
+        'Proof of Concept': {
+            icon: <Star className="w-5 h-5 text-white" />,
+            gradient: 'from-teal-500 to-emerald-600',
+            dotColor: 'bg-teal-600',
+            lineColor: 'from-teal-500 to-emerald-500',
+            badgeBg: 'bg-teal-50 text-teal-700 border-teal-200',
+            textColor: 'text-teal-700',
+        },
+        'Prototype': {
+            icon: <Star className="w-5 h-5 text-white" />,
+            gradient: 'from-emerald-500 to-teal-600',
+            dotColor: 'bg-emerald-600',
+            lineColor: 'from-emerald-500 to-cyan-500',
+            badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            textColor: 'text-emerald-700',
+        },
+        // --- Seed / Early Stage (green) ---
+        'Seed': {
+            icon: <Sprout className="w-5 h-5 text-white" />,
+            gradient: 'from-emerald-500 to-green-600',
+            dotColor: 'bg-emerald-600',
+            lineColor: 'from-emerald-500 to-indigo-500',
+            badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            textColor: 'text-emerald-700',
+        },
+        'Seed Stage': {
+            icon: <Sprout className="w-5 h-5 text-white" />,
+            gradient: 'from-emerald-500 to-green-600',
+            dotColor: 'bg-emerald-600',
+            lineColor: 'from-emerald-500 to-indigo-500',
+            badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            textColor: 'text-emerald-700',
+        },
+        'Early Stage': {
+            icon: <Sprout className="w-5 h-5 text-white" />,
+            gradient: 'from-cyan-500 to-teal-600',
+            dotColor: 'bg-cyan-600',
+            lineColor: 'from-cyan-500 to-indigo-500',
+            badgeBg: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+            textColor: 'text-cyan-700',
+        },
+        // --- Growth (indigo) ---
+        'Growth': {
+            icon: <Rocket className="w-5 h-5 text-white" />,
+            gradient: 'from-indigo-500 to-blue-700',
+            dotColor: 'bg-indigo-600',
+            lineColor: 'from-indigo-500 to-slate-500',
+            badgeBg: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+            textColor: 'text-indigo-700',
+        },
+        'Growth Stage': {
+            icon: <Rocket className="w-5 h-5 text-white" />,
+            gradient: 'from-indigo-500 to-blue-700',
+            dotColor: 'bg-indigo-600',
+            lineColor: 'from-indigo-500 to-slate-500',
+            badgeBg: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+            textColor: 'text-indigo-700',
+        },
+        // --- Scale-up (deep violet) ---
+        'Scale-up': {
+            icon: <Rocket className="w-5 h-5 text-white" />,
+            gradient: 'from-violet-600 to-indigo-700',
+            dotColor: 'bg-violet-600',
+            lineColor: 'from-violet-600 to-slate-600',
+            badgeBg: 'bg-violet-50 text-violet-700 border-violet-200',
+            textColor: 'text-violet-700',
+        },
+        // --- Established (slate/charcoal — mature, premium feel) ---
+        'Established': {
+            icon: <Star className="w-5 h-5 text-white" />,
+            gradient: 'from-slate-600 to-gray-800',
+            dotColor: 'bg-slate-700',
+            lineColor: 'from-slate-600 to-gray-600',
+            badgeBg: 'bg-slate-50 text-slate-700 border-slate-200',
+            textColor: 'text-slate-700',
+        },
     };
+
+    // Fallback colors by index for any unrecognized stage names
+    const fallbackConfigs = [
+        {
+            icon: <Lightbulb className="w-5 h-5 text-white" />,
+            gradient: 'from-sky-500 to-blue-600', dotColor: 'bg-sky-600', lineColor: 'from-sky-500 to-teal-500',
+            badgeBg: 'bg-sky-50 text-sky-700 border-sky-200', textColor: 'text-sky-700',
+        },
+        {
+            icon: <Sprout className="w-5 h-5 text-white" />,
+            gradient: 'from-emerald-500 to-green-600', dotColor: 'bg-emerald-600', lineColor: 'from-emerald-500 to-indigo-500',
+            badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200', textColor: 'text-emerald-700',
+        },
+        {
+            icon: <Rocket className="w-5 h-5 text-white" />,
+            gradient: 'from-indigo-500 to-blue-700', dotColor: 'bg-indigo-600', lineColor: 'from-indigo-500 to-slate-500',
+            badgeBg: 'bg-indigo-50 text-indigo-700 border-indigo-200', textColor: 'text-indigo-700',
+        },
+    ];
 
     // =========================================================================
     // RENDER
@@ -370,7 +467,7 @@ export default function Grants() {
 
                     <div className="relative">
                         {roadmap.map((stage, stageIdx) => {
-                            const config = stageConfig[stage.stage] || stageConfig['Idea Stage'];
+                            const config = stageConfig[stage.stage] || fallbackConfigs[stageIdx % fallbackConfigs.length];
                             const isLast = stageIdx === roadmap.length - 1;
 
                             return (
