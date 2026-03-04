@@ -4,6 +4,7 @@
  * get AI-suggested startup ideas based on their interests.
  *
  * Generates 3 ideas and lets the user pick their favourite.
+ * Redesigned to match dashboard design system.
  */
 
 import { useState, useEffect } from 'react';
@@ -212,6 +213,13 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
 
     if (!isOpen) return null;
 
+    // Detail sections config for selected idea
+    const detailSections = [
+        { key: 'problem', label: 'Problem', emoji: '⚡', color: '#EF4444' },
+        { key: 'solution', label: 'Solution', emoji: '✅', color: '#10B981' },
+        { key: 'targetMarket', label: 'Target Market', emoji: '🎯', color: '#4F7DF3' },
+    ] as const;
+
     return (
         <AnimatePresence>
             <motion.div
@@ -230,40 +238,43 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                     initial={{ opacity: 0, scale: 0.95, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                    className="rounded-[12px] w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
+                    className="rounded-[14px] w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
                     style={{
                         background: 'white',
                         boxShadow: '0 24px 48px rgba(0,0,0,0.12), 0 8px 16px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)',
                     }}
                     onClick={e => e.stopPropagation()}
                 >
+                    {/* Header */}
                     <div
-                        className="flex items-center justify-between p-6 shrink-0"
-                        style={{ boxShadow: '0 1px 0 rgba(0,0,0,0.05)' }}
+                        className="flex items-center justify-between p-5 shrink-0"
+                        style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}
                     >
                         <div className="flex items-center gap-3">
                             <div
-                                className="w-10 h-10 rounded-[10px] flex items-center justify-center"
+                                className="w-9 h-9 rounded-[10px] flex items-center justify-center"
                                 style={{
                                     background: 'linear-gradient(135deg, #4F7DF3, #7A5CFF)',
                                     boxShadow: '0 4px 12px rgba(79,125,243,0.25)',
                                 }}
                             >
-                                <Sparkles className="w-5 h-5 text-white" />
+                                <Sparkles className="w-4.5 h-4.5 text-white" style={{ width: 18, height: 18 }} />
                             </div>
                             <div>
                                 <h2
-                                    className="text-lg font-bold"
+                                    className="text-[16px] font-bold"
                                     style={{ color: 'var(--dash-text, #0F172A)', fontFamily: 'var(--dash-font-heading, Sora, sans-serif)' }}
                                 >
                                     Generate Startup Idea
                                 </h2>
-                                <p className="text-[13px]" style={{ color: 'var(--dash-text-muted, #64748B)' }}>Let AI help you find your next big thing</p>
+                                <p className="text-[12px]" style={{ color: 'var(--dash-text-muted, #64748B)' }}>
+                                    Let AI help you find your next big thing
+                                </p>
                             </div>
                         </div>
                         <button
                             onClick={resetAndClose}
-                            className="p-1.5 rounded-lg transition-colors"
+                            className="p-1.5 rounded-[8px] transition-all duration-150 cursor-pointer"
                             style={{ color: '#94A3B8' }}
                             onMouseEnter={(e) => {
                                 e.currentTarget.style.color = '#64748B';
@@ -274,21 +285,31 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                                 e.currentTarget.style.background = 'transparent';
                             }}
                         >
-                            <X className="w-5 h-5" />
+                            <X className="w-4.5 h-4.5" style={{ width: 18, height: 18 }} />
                         </button>
                     </div>
 
-                    {/* Progress bar */}
+                    {/* Progress strip (questions phase only) */}
                     {generatedIdeas.length === 0 && !isGenerating && (
-                        <div className="px-6 pt-4 shrink-0">
-                            <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
-                                <span>Step {currentStep + 1} of {questions.length}</span>
-                                <span>{Math.round(progress)}% complete</span>
+                        <div className="px-5 pt-4 shrink-0">
+                            <div className="flex items-center justify-between mb-2">
+                                <span
+                                    className="text-[12px] font-medium"
+                                    style={{ color: 'var(--dash-text-muted)' }}
+                                >
+                                    Step {currentStep + 1} of {questions.length}
+                                </span>
+                                <span
+                                    className="text-[12px] font-semibold"
+                                    style={{ color: '#4F7DF3' }}
+                                >
+                                    {Math.round(progress)}%
+                                </span>
                             </div>
-                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,0.04)' }}>
                                 <motion.div
                                     className="h-full rounded-full"
-                                    style={{ background: 'linear-gradient(135deg, #4F7DF3, #7A5CFF)' }}
+                                    style={{ background: 'linear-gradient(90deg, #4F7DF3, #7A5CFF)' }}
                                     initial={{ width: 0 }}
                                     animate={{ width: `${progress}%` }}
                                     transition={{ duration: 0.3 }}
@@ -298,37 +319,47 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                     )}
 
                     {/* Content - scrollable */}
-                    <div className="p-6 overflow-y-auto flex-1">
+                    <div className="p-5 overflow-y-auto flex-1">
                         {isGenerating ? (
-                            // Generating state
+                            /* Generating state */
                             <div className="text-center py-12">
                                 <motion.div
                                     animate={{ rotate: 360 }}
                                     transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                                    className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center"
+                                    className="w-14 h-14 mx-auto mb-5 rounded-[12px] flex items-center justify-center"
                                     style={{
                                         background: 'linear-gradient(135deg, #4F7DF3, #7A5CFF)',
                                         boxShadow: '0 8px 24px rgba(79,125,243,0.3)',
                                     }}
                                 >
-                                    <Sparkles className="w-8 h-8 text-white" />
+                                    <Sparkles className="w-7 h-7 text-white" />
                                 </motion.div>
-                                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                                <h3
+                                    className="text-[16px] font-semibold mb-1.5"
+                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                >
                                     Generating ideas for you...
                                 </h3>
-                                <p className="text-gray-600">
+                                <p className="text-[13px]" style={{ color: 'var(--dash-text-muted)' }}>
                                     Our AI is analyzing market trends and your preferences
                                 </p>
                             </div>
                         ) : generatedIdeas.length > 0 ? (
-                            // ── Generated Ideas Selection ──
-                            <div className="space-y-4">
+                            /* Generated Ideas Selection */
+                            <div className="space-y-2">
                                 <div className="text-center mb-4">
-                                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-50 text-green-700 text-sm font-medium mb-3">
-                                        <Sparkles className="w-4 h-4" />
+                                    <span
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-semibold mb-2"
+                                        style={{
+                                            background: 'rgba(16,185,129,0.06)',
+                                            color: '#059669',
+                                            border: '1px solid rgba(16,185,129,0.1)',
+                                        }}
+                                    >
+                                        <Sparkles style={{ width: 14, height: 14 }} />
                                         Ideas Generated!
-                                    </div>
-                                    <p className="text-sm text-gray-600">
+                                    </span>
+                                    <p className="text-[12px] mt-2" style={{ color: 'var(--dash-text-muted)' }}>
                                         Click on an idea to see details, then choose one to get started.
                                     </p>
                                 </div>
@@ -339,43 +370,66 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                                         <motion.button
                                             key={index}
                                             type="button"
-                                            initial={{ opacity: 0, y: 10 }}
+                                            initial={{ opacity: 0, y: 8 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: index * 0.1 }}
+                                            transition={{ delay: index * 0.08 }}
                                             onClick={() => setSelectedIndex(index)}
-                                            className={`w-full text-left p-4 rounded-[10px] transition-all duration-200 ${isSelected
-                                                ? 'shadow-md'
-                                                : ''
-                                                }`}
+                                            className="group w-full text-left rounded-[12px] transition-all duration-200"
                                             style={{
-                                                background: isSelected ? 'rgba(79,125,243,0.04)' : 'white',
+                                                padding: '14px 16px',
+                                                background: isSelected ? 'rgba(79,125,243,0.03)' : 'rgba(0,0,0,0.015)',
                                                 border: isSelected
-                                                    ? '1.5px solid rgba(79,125,243,0.25)'
-                                                    : '1.5px solid var(--dash-border-solid, #E8ECF4)',
+                                                    ? '1.5px solid rgba(79,125,243,0.2)'
+                                                    : '1.5px solid transparent',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                if (!isSelected) {
+                                                    e.currentTarget.style.background = 'rgba(0,0,0,0.025)';
+                                                }
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                if (!isSelected) {
+                                                    e.currentTarget.style.background = 'rgba(0,0,0,0.015)';
+                                                }
                                             }}
                                         >
-                                            {/* Card Header */}
                                             <div className="flex items-start gap-3">
-                                                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-colors ${isSelected
-                                                    ? 'bg-blue-500 text-white'
-                                                    : 'bg-gray-100 text-gray-400'
-                                                    }`}>
+                                                {/* Number / check */}
+                                                <div
+                                                    className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 mt-0.5 transition-all duration-200"
+                                                    style={{
+                                                        background: isSelected
+                                                            ? 'linear-gradient(135deg, #4F7DF3, #7A5CFF)'
+                                                            : 'rgba(0,0,0,0.04)',
+                                                    }}
+                                                >
                                                     {isSelected
-                                                        ? <Check className="w-4 h-4" />
-                                                        : <span className="text-xs font-bold">{index + 1}</span>
+                                                        ? <Check className="text-white" style={{ width: 14, height: 14 }} />
+                                                        : <span
+                                                            className="text-[12px] font-bold"
+                                                            style={{ color: 'var(--dash-text-muted)' }}
+                                                        >
+                                                            {index + 1}
+                                                        </span>
                                                     }
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <h4 className="font-semibold text-gray-900 text-base">
+                                                    <h4
+                                                        className="font-semibold text-[14px]"
+                                                        style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                                    >
                                                         {idea.title}
                                                     </h4>
-                                                    <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                                                    <p
+                                                        className="text-[12px] mt-1 leading-relaxed"
+                                                        style={{ color: 'var(--dash-text-muted)' }}
+                                                    >
                                                         {idea.description}
                                                     </p>
                                                 </div>
                                             </div>
 
-                                            {/* Expanded Details (only for selected) */}
+                                            {/* Expanded Details */}
                                             <AnimatePresence>
                                                 {isSelected && (
                                                     <motion.div
@@ -385,19 +439,34 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                                                         transition={{ duration: 0.25 }}
                                                         className="overflow-hidden"
                                                     >
-                                                        <div className="mt-4 ml-10 space-y-3">
-                                                            <div className="p-3 bg-red-50 rounded-lg">
-                                                                <h5 className="text-xs font-semibold text-red-800 uppercase tracking-wider mb-1">Problem</h5>
-                                                                <p className="text-sm text-red-700">{idea.problem}</p>
-                                                            </div>
-                                                            <div className="p-3 bg-green-50 rounded-lg">
-                                                                <h5 className="text-xs font-semibold text-green-800 uppercase tracking-wider mb-1">Solution</h5>
-                                                                <p className="text-sm text-green-700">{idea.solution}</p>
-                                                            </div>
-                                                            <div className="p-3 bg-blue-50 rounded-lg">
-                                                                <h5 className="text-xs font-semibold text-blue-800 uppercase tracking-wider mb-1">Target Market</h5>
-                                                                <p className="text-sm text-blue-700">{idea.targetMarket}</p>
-                                                            </div>
+                                                        <div className="mt-3 ml-11 space-y-2">
+                                                            {detailSections.map(({ key, label, emoji, color }) => {
+                                                                const value = idea[key];
+                                                                if (!value) return null;
+                                                                return (
+                                                                    <div
+                                                                        key={key}
+                                                                        className="rounded-[8px] p-3"
+                                                                        style={{
+                                                                            background: `${color}06`,
+                                                                            border: `1px solid ${color}10`,
+                                                                        }}
+                                                                    >
+                                                                        <span
+                                                                            className="text-[10px] font-bold uppercase tracking-wider"
+                                                                            style={{ color }}
+                                                                        >
+                                                                            {emoji} {label}
+                                                                        </span>
+                                                                        <p
+                                                                            className="text-[12px] mt-1 leading-relaxed"
+                                                                            style={{ color: 'var(--dash-text-secondary)' }}
+                                                                        >
+                                                                            {value}
+                                                                        </p>
+                                                                    </div>
+                                                                );
+                                                            })}
                                                         </div>
                                                     </motion.div>
                                                 )}
@@ -407,30 +476,64 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                                 })}
                             </div>
                         ) : (
-                            // Question display
+                            /* Question display */
                             <motion.div
                                 key={currentStep}
                                 initial={{ opacity: 0, x: 20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: -20 }}
                             >
-                                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                                <h3
+                                    className="text-[18px] font-semibold mb-1.5"
+                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                >
                                     {currentQuestion.title}
                                 </h3>
-                                <p className="text-gray-600 mb-6">{currentQuestion.description}</p>
+                                <p
+                                    className="text-[13px] mb-5"
+                                    style={{ color: 'var(--dash-text-muted)' }}
+                                >
+                                    {currentQuestion.description}
+                                </p>
 
                                 {currentQuestion.type === 'multiselect' && (
                                     <div className="flex flex-wrap gap-2">
                                         {currentQuestion.options?.map(option => {
-                                            const isSelected = ((answers[currentQuestion.id] as string[]) || []).includes(option);
+                                            const isOptionSelected = ((answers[currentQuestion.id] as string[]) || []).includes(option);
                                             return (
                                                 <button
                                                     key={option}
                                                     onClick={() => handleOptionToggle(option)}
-                                                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${isSelected
-                                                        ? 'bg-blue-600 text-white shadow-md'
-                                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                                        }`}
+                                                    className="transition-all duration-150 cursor-pointer"
+                                                    style={{
+                                                        padding: '7px 14px',
+                                                        borderRadius: 8,
+                                                        fontSize: 13,
+                                                        fontWeight: 500,
+                                                        fontFamily: "var(--dash-font-body, 'Inter', sans-serif)",
+                                                        background: isOptionSelected
+                                                            ? 'linear-gradient(135deg, #4F7DF3, #7A5CFF)'
+                                                            : 'rgba(0,0,0,0.03)',
+                                                        color: isOptionSelected ? '#fff' : 'var(--dash-text-secondary, #475569)',
+                                                        border: isOptionSelected
+                                                            ? '1.5px solid transparent'
+                                                            : '1.5px solid var(--dash-border-solid, #E8ECF4)',
+                                                        boxShadow: isOptionSelected
+                                                            ? '0 2px 8px rgba(79,125,243,0.25)'
+                                                            : 'none',
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        if (!isOptionSelected) {
+                                                            e.currentTarget.style.background = 'rgba(0,0,0,0.05)';
+                                                            e.currentTarget.style.borderColor = '#D1D5DB';
+                                                        }
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        if (!isOptionSelected) {
+                                                            e.currentTarget.style.background = 'rgba(0,0,0,0.03)';
+                                                            e.currentTarget.style.borderColor = 'var(--dash-border-solid, #E8ECF4)';
+                                                        }
+                                                    }}
                                                 >
                                                     {option}
                                                 </button>
@@ -451,11 +554,11 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                         )}
                     </div>
 
-                    {/* Footer - fixed at bottom */}
+                    {/* Footer */}
                     <div
-                        className="flex items-center justify-between p-6 shrink-0"
+                        className="flex items-center justify-between p-5 shrink-0"
                         style={{
-                            boxShadow: '0 -1px 0 rgba(0,0,0,0.04)',
+                            borderTop: '1px solid rgba(0,0,0,0.05)',
                             background: 'var(--dash-bg, #F8FAFF)',
                         }}
                     >

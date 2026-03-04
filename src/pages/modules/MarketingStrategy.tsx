@@ -22,7 +22,6 @@ import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     Megaphone,
-    Save,
     Download,
     Sparkles,
     Calendar,
@@ -30,12 +29,10 @@ import {
     Target,
     Zap,
     Loader2,
+    BarChart3,
 } from 'lucide-react';
 import {
     Card,
-    CardHeader,
-    CardTitle,
-    CardDescription,
     Button,
     Textarea,
     Badge,
@@ -53,6 +50,12 @@ import {
     useExportStatus,
 } from '@/hooks';
 import { downloadFile } from '@/utils';
+
+/** Animation variants */
+const fadeUp = {
+    initial: { opacity: 0, y: 16 },
+    animate: { opacity: 1, y: 0 },
+};
 
 export default function MarketingStrategy() {
     const { ideaId: urlIdeaId } = useParams<{ ideaId?: string }>();
@@ -160,10 +163,6 @@ export default function MarketingStrategy() {
         });
     };
 
-    const handleSave = () => {
-        toast.success('Marketing strategy saved!');
-    };
-
     // ==========================================================================
     // RENDER
     // ==========================================================================
@@ -173,38 +172,53 @@ export default function MarketingStrategy() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="max-w-5xl mx-auto">
             <SEO
                 title="Marketing Strategy"
                 description="Create a comprehensive AI-powered marketing plan with 30-day timeline, target segments, channel strategies, and messaging frameworks."
                 canonical="/dashboard/marketing"
             />
 
-            {/* Page Header */}
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <Megaphone className="w-7 h-7 text-[#10B981]" />
-                        Marketing Strategy
-                    </h1>
-                    <p className="mt-1 text-gray-600">
-                        How will users find and adopt this product?
-                    </p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="secondary"
-                        leftIcon={<Save className="w-4 h-4" />}
-                        onClick={handleSave}
-                    >
-                        Save
-                    </Button>
+            <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="space-y-6"
+            >
+                {/* ═══════════════════════════════════════════════
+                    PAGE HEADER
+                 ═══════════════════════════════════════════════ */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h1
+                            className="text-2xl font-bold flex items-center gap-2.5"
+                            style={{
+                                color: 'var(--dash-text)',
+                                fontFamily: 'var(--dash-font-heading)',
+                            }}
+                        >
+                            <div
+                                className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
+                                style={{ background: 'rgba(16,185,129,0.08)' }}
+                            >
+                                <Megaphone className="w-5 h-5" style={{ color: '#10B981' }} />
+                            </div>
+                            Marketing Strategy
+                        </h1>
+                        <p
+                            className="mt-1 text-[14px]"
+                            style={{ color: 'var(--dash-text-muted)' }}
+                        >
+                            How will users find and adopt this product?
+                        </p>
+                    </div>
                     <Button
                         variant="secondary"
                         leftIcon={<Download className="w-4 h-4" />}
+                        onClick={exportToPDF}
                         disabled={!hasGenerated || isExporting || !!exportJobId}
                         isLoading={isExporting || !!exportJobId}
-                        onClick={exportToPDF}
+                        className="shrink-0"
                     >
                         <span className="flex items-center gap-2">
                             {exportJobId ? 'Exporting...' : 'Export PDF'}
@@ -212,149 +226,224 @@ export default function MarketingStrategy() {
                         </span>
                     </Button>
                 </div>
-            </div>
 
-            {/* Input Section */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Who is your target audience?</CardTitle>
-                    <CardDescription>
-                        Describe your ideal customer to generate a personalized marketing strategy
-                    </CardDescription>
-                </CardHeader>
-                <Textarea
-                    placeholder="Example: First-time founders aged 25-40 who have a startup idea but don't know how to validate it or create a pitch deck..."
-                    rows={3}
-                    value={targetAudience}
-                    onChange={(e) => setTargetAudience(e.target.value)}
-                    className="mt-4"
-                />
-                <div className="mt-4">
-                    <Button
-                        onClick={handleGenerate}
-                        isLoading={isGenerating}
-                        leftIcon={<Sparkles className="w-4 h-4" />}
-                        disabled={!activeIdeaId}
-                    >
-                        <span className="flex items-center gap-2">
-                            Generate Marketing Strategy
-                            <CreditCost cost={15} />
-                        </span>
-                    </Button>
-                    {!activeIdeaId && (
-                        <p className="text-sm text-gray-500 mt-2">
-                            Please create an idea in Idea Validation first
+                {/* ═══════════════════════════════════════════════
+                    INPUT SECTION
+                 ═══════════════════════════════════════════════ */}
+                <Card>
+                    <div className="mb-4">
+                        <h2
+                            className="text-[15px] font-semibold"
+                            style={{
+                                color: 'var(--dash-text)',
+                                fontFamily: 'var(--dash-font-heading)',
+                            }}
+                        >
+                            Who is your target audience?
+                        </h2>
+                        <p className="text-[13px] mt-0.5" style={{ color: 'var(--dash-text-muted)' }}>
+                            Describe your ideal customer to generate a personalized marketing strategy
                         </p>
-                    )}
-                </div>
-            </Card>
-
-            {/* Generating State */}
-            {isGenerating && (
-                <Card className="bg-green-50 border-green-200">
-                    <div className="flex items-center gap-4">
-                        <Loader2 className="w-6 h-6 animate-spin text-green-500" />
-                        <div>
-                            <h3 className="font-medium text-green-900">
-                                Generating Marketing Strategy...
-                            </h3>
-                            <p className="text-sm text-green-700">
-                                This usually takes 30-60 seconds
+                    </div>
+                    <Textarea
+                        placeholder="Example: First-time founders aged 25-40 who have a startup idea but don't know how to validate it or create a pitch deck..."
+                        rows={3}
+                        value={targetAudience}
+                        onChange={(e) => setTargetAudience(e.target.value)}
+                    />
+                    <div className="mt-5">
+                        <Button
+                            onClick={handleGenerate}
+                            isLoading={isGenerating}
+                            leftIcon={<Sparkles className="w-4 h-4" />}
+                            disabled={!activeIdeaId}
+                            className="w-full sm:w-auto"
+                            style={{
+                                background: 'linear-gradient(135deg, #10B981, #059669)',
+                            }}
+                        >
+                            <span className="flex items-center gap-2">
+                                Generate Marketing Strategy
+                                <CreditCost cost={15} />
+                            </span>
+                        </Button>
+                        {!activeIdeaId && (
+                            <p className="text-[12px] mt-2" style={{ color: 'var(--dash-text-muted)' }}>
+                                Please create an idea in Idea Validation first
                             </p>
-                        </div>
+                        )}
                     </div>
                 </Card>
-            )}
 
-            {hasGenerated && strategy && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* 30-Day Plan */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                    >
+                {/* ═══════════════════════════════════════════════
+                    GENERATING STATE
+                 ═══════════════════════════════════════════════ */}
+                {isGenerating && (
+                    <motion.div {...fadeUp}>
+                        <Card
+                            style={{
+                                background: 'linear-gradient(135deg, rgba(16,185,129,0.04), rgba(5,150,105,0.04))',
+                                border: '1px solid rgba(16,185,129,0.12)',
+                            }}
+                        >
+                            <div className="flex items-center gap-4">
+                                <div
+                                    className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
+                                    style={{
+                                        background: 'linear-gradient(135deg, #10B981, #059669)',
+                                    }}
+                                >
+                                    <Loader2 className="w-5 h-5 text-white animate-spin" />
+                                </div>
+                                <div>
+                                    <h3
+                                        className="font-semibold text-[14px]"
+                                        style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                    >
+                                        Generating Marketing Strategy...
+                                    </h3>
+                                    <p className="text-[13px]" style={{ color: 'var(--dash-text-muted)' }}>
+                                        This usually takes 30-60 seconds
+                                    </p>
+                                </div>
+                            </div>
+                        </Card>
+                    </motion.div>
+                )}
+
+                {/* ═══════════════════════════════════════════════
+                    RESULTS — STACKED VERTICALLY
+                 ═══════════════════════════════════════════════ */}
+
+                {/* 30-Day Marketing Plan */}
+                {hasGenerated && strategy?.timeline && (
+                    <motion.div {...fadeUp} transition={{ delay: 0.05 }}>
                         <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Calendar className="w-5 h-5 text-[#10B981]" />
+                            <div className="mb-4">
+                                <h2
+                                    className="text-[15px] font-semibold flex items-center gap-2"
+                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                >
+                                    <Calendar className="w-4 h-4" style={{ color: '#10B981' }} />
                                     30-Day Marketing Plan
-                                </CardTitle>
-                            </CardHeader>
-                            <div className="mt-4 space-y-4">
-                                {strategy.timeline?.map((phase: { phase: string; activities: string[] }, i: number) => (
-                                    <div key={i} className="p-4 rounded-lg bg-gray-50">
-                                        <div className="font-medium text-gray-900 mb-2">
+                                </h2>
+                            </div>
+                            <div className="space-y-3">
+                                {strategy.timeline.map((phase: { phase: string; activities: string[] }, i: number) => (
+                                    <motion.div
+                                        key={i}
+                                        initial={{ opacity: 0, x: -8 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.1 + i * 0.05 }}
+                                        className="p-4 rounded-[10px]"
+                                        style={{ background: 'rgba(0,0,0,0.02)' }}
+                                    >
+                                        <div
+                                            className="font-semibold text-[13px] mb-2"
+                                            style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                        >
                                             {phase.phase}
                                         </div>
                                         <ul className="space-y-1.5">
                                             {phase.activities?.map((task: string, j: number) => (
-                                                <li key={j} className="text-sm text-gray-600 flex items-center gap-2">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
+                                                <li key={j} className="text-[13px] flex items-start gap-2" style={{ color: 'var(--dash-text-secondary)' }}>
+                                                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#10B981' }} />
                                                     {task}
                                                 </li>
                                             ))}
                                         </ul>
-                                    </div>
+                                    </motion.div>
                                 ))}
                             </div>
                         </Card>
                     </motion.div>
+                )}
 
-                    {/* Target Segments */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                    >
+                {/* Target Segments */}
+                {hasGenerated && strategy?.target_segments && (
+                    <motion.div {...fadeUp} transition={{ delay: 0.1 }}>
                         <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Target className="w-5 h-5 text-[#10B981]" />
+                            <div className="mb-4">
+                                <h2
+                                    className="text-[15px] font-semibold flex items-center gap-2"
+                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                >
+                                    <Target className="w-4 h-4" style={{ color: '#10B981' }} />
                                     Target Segments
-                                </CardTitle>
-                            </CardHeader>
-                            <div className="mt-4 space-y-4">
-                                {strategy.target_segments?.map((segment: { name: string; description: string; size: string }, i: number) => (
+                                </h2>
+                            </div>
+                            <div className="space-y-3">
+                                {strategy.target_segments.map((segment: { name: string; description: string; size: string }, i: number) => (
                                     <div
                                         key={i}
-                                        className="p-4 rounded-lg bg-gray-50"
+                                        className="p-4 rounded-[10px]"
+                                        style={{ background: 'rgba(0,0,0,0.02)' }}
                                     >
-                                        <div className="font-medium text-gray-900">{segment.name}</div>
-                                        <p className="text-sm text-gray-600 mt-1">{segment.description}</p>
-                                        {segment.size && (
-                                            <Badge variant="primary" className="mt-2">{segment.size}</Badge>
-                                        )}
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span
+                                                className="font-semibold text-[13px]"
+                                                style={{ color: 'var(--dash-text)' }}
+                                            >
+                                                {segment.name}
+                                            </span>
+                                            {segment.size && (
+                                                <Badge variant="primary">{segment.size}</Badge>
+                                            )}
+                                        </div>
+                                        <p className="text-[13px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+                                            {segment.description}
+                                        </p>
                                     </div>
                                 ))}
                             </div>
                         </Card>
                     </motion.div>
+                )}
 
-                    {/* Channels */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                    >
+                {/* Marketing Channels */}
+                {hasGenerated && strategy?.channels && (
+                    <motion.div {...fadeUp} transition={{ delay: 0.15 }}>
                         <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Zap className="w-5 h-5 text-[#10B981]" />
+                            <div className="mb-4">
+                                <h2
+                                    className="text-[15px] font-semibold flex items-center gap-2"
+                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                >
+                                    <Zap className="w-4 h-4" style={{ color: '#10B981' }} />
                                     Marketing Channels
-                                </CardTitle>
-                            </CardHeader>
-                            <div className="mt-4 space-y-3">
-                                {strategy.channels?.map((channel: { name: string; priority: string; tactics: string[] }, i: number) => (
-                                    <div key={i} className="p-4 rounded-lg bg-gray-50">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="font-medium text-gray-900">{channel.name}</span>
+                                </h2>
+                            </div>
+                            <div className="space-y-3">
+                                {strategy.channels.map((channel: { name: string; priority: string; tactics: string[] }, i: number) => (
+                                    <div
+                                        key={i}
+                                        className="p-4 rounded-[10px]"
+                                        style={{ background: 'rgba(0,0,0,0.02)' }}
+                                    >
+                                        <div className="flex items-center justify-between mb-2.5">
+                                            <span
+                                                className="font-semibold text-[13px]"
+                                                style={{ color: 'var(--dash-text)' }}
+                                            >
+                                                {channel.name}
+                                            </span>
                                             <Badge variant={channel.priority === 'high' ? 'success' : 'default'}>
                                                 {channel.priority}
                                             </Badge>
                                         </div>
-                                        <div className="flex flex-wrap gap-2">
+                                        <div className="flex flex-wrap gap-1.5">
                                             {channel.tactics?.map((tactic: string, j: number) => (
-                                                <Badge key={j} variant="default">{tactic}</Badge>
+                                                <span
+                                                    key={j}
+                                                    className="px-2.5 py-1 text-[11px] font-medium rounded-full"
+                                                    style={{
+                                                        background: 'rgba(16,185,129,0.06)',
+                                                        color: '#059669',
+                                                        border: '1px solid rgba(16,185,129,0.12)',
+                                                    }}
+                                                >
+                                                    {tactic}
+                                                </span>
                                             ))}
                                         </div>
                                     </div>
@@ -362,63 +451,124 @@ export default function MarketingStrategy() {
                             </div>
                         </Card>
                     </motion.div>
+                )}
 
-                    {/* Messaging Framework */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                    >
+                {/* Messaging Framework */}
+                {hasGenerated && strategy?.messaging_framework && (
+                    <motion.div {...fadeUp} transition={{ delay: 0.2 }}>
                         <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Users className="w-5 h-5 text-[#10B981]" />
+                            <div className="mb-4">
+                                <h2
+                                    className="text-[15px] font-semibold flex items-center gap-2"
+                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                >
+                                    <Users className="w-4 h-4" style={{ color: '#10B981' }} />
                                     Messaging Framework
-                                </CardTitle>
-                            </CardHeader>
-                            <div className="mt-4 space-y-4">
-                                {strategy.messaging_framework && (
-                                    <>
-                                        <div className="p-4 rounded-lg bg-green-50 border border-green-200">
-                                            <div className="text-sm font-medium text-green-800 mb-1">Value Proposition</div>
-                                            <p className="text-green-700">{strategy.messaging_framework.value_proposition}</p>
-                                        </div>
-                                        <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
-                                            <div className="text-sm font-medium text-blue-800 mb-1">Key Messages</div>
-                                            <ul className="space-y-1">
-                                                {strategy.messaging_framework.key_messages?.map((msg: string, i: number) => (
-                                                    <li key={i} className="text-sm text-blue-700">• {msg}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    </>
-                                )}
+                                </h2>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {/* Value Proposition */}
+                                <div
+                                    className="p-4 rounded-[10px]"
+                                    style={{
+                                        background: 'rgba(16,185,129,0.04)',
+                                        border: '1px solid rgba(16,185,129,0.12)',
+                                    }}
+                                >
+                                    <h4
+                                        className="font-semibold text-[13px] mb-2"
+                                        style={{ color: '#059669' }}
+                                    >
+                                        Value Proposition
+                                    </h4>
+                                    <p className="text-[13px] leading-relaxed" style={{ color: '#047857' }}>
+                                        {strategy.messaging_framework.value_proposition}
+                                    </p>
+                                </div>
+                                {/* Key Messages */}
+                                <div
+                                    className="p-4 rounded-[10px]"
+                                    style={{
+                                        background: 'rgba(79,125,243,0.04)',
+                                        border: '1px solid rgba(79,125,243,0.12)',
+                                    }}
+                                >
+                                    <h4
+                                        className="font-semibold text-[13px] mb-2"
+                                        style={{ color: '#4F7DF3' }}
+                                    >
+                                        Key Messages
+                                    </h4>
+                                    <ul className="space-y-1.5">
+                                        {strategy.messaging_framework.key_messages?.map((msg: string, i: number) => (
+                                            <li key={i} className="text-[13px] flex items-start gap-2" style={{ color: '#3B6CE7' }}>
+                                                <span className="mt-1.5 w-1 h-1 rounded-full shrink-0" style={{ background: '#4F7DF3' }} />
+                                                {msg}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
                             </div>
                         </Card>
                     </motion.div>
+                )}
 
-                    {/* KPIs */}
-                    {strategy.kpis && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.4 }}
-                            className="lg:col-span-2"
+                {/* KPIs */}
+                {hasGenerated && strategy?.kpis && (
+                    <motion.div {...fadeUp} transition={{ delay: 0.25 }}>
+                        <Card>
+                            <div className="mb-4">
+                                <h2
+                                    className="text-[15px] font-semibold flex items-center gap-2"
+                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                >
+                                    <BarChart3 className="w-4 h-4" style={{ color: '#10B981' }} />
+                                    Key Performance Indicators
+                                </h2>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {strategy.kpis.map((kpi: string, i: number) => (
+                                    <motion.span
+                                        key={i}
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ delay: 0.3 + i * 0.04 }}
+                                        className="px-3.5 py-2 text-[13px] font-medium rounded-[8px]"
+                                        style={{
+                                            background: 'rgba(0,0,0,0.02)',
+                                            color: 'var(--dash-text-secondary)',
+                                            border: '1px solid var(--dash-border-solid, #E8ECF4)',
+                                        }}
+                                    >
+                                        {kpi}
+                                    </motion.span>
+                                ))}
+                            </div>
+                        </Card>
+                    </motion.div>
+                )}
+
+                {/* Placeholder when not generated */}
+                {!hasGenerated && !isGenerating && (
+                    <Card className="flex flex-col items-center justify-center py-16 text-center">
+                        <div
+                            className="w-14 h-14 rounded-[12px] flex items-center justify-center mb-4"
+                            style={{ background: 'rgba(0,0,0,0.03)' }}
                         >
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Key Performance Indicators</CardTitle>
-                                </CardHeader>
-                                <div className="mt-4 flex flex-wrap gap-2">
-                                    {strategy.kpis.map((kpi: string, i: number) => (
-                                        <Badge key={i} variant="default" size="md">{kpi}</Badge>
-                                    ))}
-                                </div>
-                            </Card>
-                        </motion.div>
-                    )}
-                </div>
-            )}
+                            <Sparkles className="w-6 h-6" style={{ color: '#94A3B8' }} />
+                        </div>
+                        <h3
+                            className="text-[15px] font-semibold"
+                            style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                        >
+                            Results will appear here
+                        </h3>
+                        <p className="text-[13px] mt-1 max-w-xs" style={{ color: 'var(--dash-text-muted)' }}>
+                            Describe your target audience and click "Generate Marketing Strategy" to get started
+                        </p>
+                    </Card>
+                )}
+            </motion.div>
         </div>
     );
 }
