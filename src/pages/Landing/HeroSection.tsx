@@ -49,8 +49,31 @@ export const HeroSection = forwardRef<HTMLElement>((_, ref) => {
     <section
       ref={ref}
       className="relative min-h-[90vh] flex flex-col items-center justify-center overflow-hidden"
-      style={{ paddingTop: "100px", paddingBottom: "40px" }}
+      style={{
+        paddingTop: "100px",
+        paddingBottom: "40px",
+        background: "linear-gradient(135deg, #EEF2FF 0%, #F0F4FF 25%, #F8FAFF 50%, #F3EEFF 75%, #EEF2FF 100%)",
+      }}
     >
+      {/* Subtle mesh/grid overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `radial-gradient(circle at 20% 30%, rgba(79,125,243,0.07) 0%, transparent 50%),
+                           radial-gradient(circle at 80% 20%, rgba(122,92,255,0.06) 0%, transparent 50%),
+                           radial-gradient(circle at 50% 80%, rgba(79,125,243,0.04) 0%, transparent 40%)`,
+        }}
+      />
+
+      {/* Fine dot pattern */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.25]"
+        style={{
+          backgroundImage: "radial-gradient(circle, var(--color-border) 1px, transparent 1px)",
+          backgroundSize: "32px 32px",
+        }}
+      />
+
       {/* Ambient gradient blobs */}
       <div
         className="hero-gradient-blob absolute top-[-20%] left-[10%] w-[600px] h-[600px] rounded-full opacity-30 blur-[120px] pointer-events-none"
@@ -59,6 +82,12 @@ export const HeroSection = forwardRef<HTMLElement>((_, ref) => {
       <div
         className="hero-gradient-blob absolute bottom-[-10%] right-[5%] w-[500px] h-[500px] rounded-full opacity-25 blur-[100px] pointer-events-none"
         style={{ background: "radial-gradient(circle, rgba(122,92,255,0.3) 0%, transparent 70%)" }}
+      />
+
+      {/* Bottom fade to blend into page bg */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+        style={{ background: "linear-gradient(to bottom, transparent, var(--color-bg-light))" }}
       />
 
       {/* Content */}
@@ -143,7 +172,7 @@ export const HeroSection = forwardRef<HTMLElement>((_, ref) => {
       </div>
 
       {/* Velocity Scroll Marquee */}
-      <div className="relative z-10 w-full mt-20 opacity-40">
+      <div className="relative z-10 w-full mt-20">
         <VelocityScroll baseVelocity={-1.5}>
           {"Validate · Brand · Pitch · Launch · Strategy · Compete · "}
         </VelocityScroll>

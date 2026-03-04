@@ -21,7 +21,7 @@ export const ProductPreviewSection = forwardRef<HTMLElement>((_, ref) => {
             className="relative py-24 lg:py-32"
             style={{ background: "var(--color-bg-light)" }}
         >
-            <div className="max-w-[1100px] mx-auto px-6 lg:px-8">
+            <div className="max-w-275 mx-auto px-6 lg:px-8">
                 {/* Section header */}
                 <div className="text-center mb-16">
                     <p
@@ -45,7 +45,7 @@ export const ProductPreviewSection = forwardRef<HTMLElement>((_, ref) => {
                         <span className="gradient-text">workspace</span>
                     </h2>
                     <p
-                        className="gsap-reveal mt-4 mx-auto max-w-[480px]"
+                        className="gsap-reveal mt-4 mx-auto max-w-120"
                         style={{
                             fontFamily: "var(--font-body)",
                             fontSize: "1.05rem",
@@ -58,22 +58,22 @@ export const ProductPreviewSection = forwardRef<HTMLElement>((_, ref) => {
                 </div>
 
                 {/* Mock Browser */}
-                <div className="product-preview gsap-reveal mock-browser max-w-[960px] mx-auto">
+                <div className="product-preview gsap-reveal mock-browser max-w-240 mx-auto">
                     {/* Browser bar */}
                     <div className="mock-browser-bar">
                         <div className="mock-browser-dot" style={{ background: "#FF5F57" }} />
                         <div className="mock-browser-dot" style={{ background: "#FEBC2E" }} />
                         <div className="mock-browser-dot" style={{ background: "#28C840" }} />
                         <div className="mock-browser-url">
-                            app.pitchrr.in/dashboard
+                            pitchrr.in/dashboard
                         </div>
                     </div>
 
                     {/* Dashboard content */}
-                    <div className="flex min-h-[420px]">
+                    <div className="flex min-h-105">
                         {/* Sidebar */}
                         <div
-                            className="hidden md:flex flex-col w-[200px] shrink-0 py-5 px-4 border-r"
+                            className="hidden md:flex flex-col w-50 shrink-0 py-5 px-4 border-r"
                             style={{ borderColor: "var(--color-border)", background: "var(--color-bg-light)" }}
                         >
                             {/* Logo placeholder */}
@@ -170,7 +170,7 @@ export const ProductPreviewSection = forwardRef<HTMLElement>((_, ref) => {
                                         style={{ background: "var(--color-bg-accent)" }}
                                     />
                                     {/* Fake chart bars */}
-                                    <div className="flex items-end gap-3 h-[100px]">
+                                    <div className="flex items-end gap-3 h-25">
                                         {[65, 80, 45, 90, 70, 55, 85].map((h, i) => (
                                             <div
                                                 key={i}

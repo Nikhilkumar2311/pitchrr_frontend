@@ -1,5 +1,5 @@
 /**
- * Footer Component - Updated for redesigned landing page
+ * Footer Component - Seamless design that blends with the landing page
  */
 
 import { Twitter, Linkedin, Mail } from "lucide-react";
@@ -33,22 +33,18 @@ const socialLinks = [
 
 export function Footer() {
     return (
-        <footer
-            className="relative border-t"
-            style={{
-                borderColor: "var(--color-border)",
-                background: "var(--color-bg-light)",
-            }}
-        >
-            {/* Gradient top line */}
+        <footer className="relative" style={{ background: "var(--color-bg-light)" }}>
+            {/* Subtle top fade — slightly darker shade blending in */}
             <div
-                className="absolute top-0 left-0 right-0 h-[2px]"
-                style={{ background: "var(--color-gradient)" }}
+                className="h-24 w-full"
+                style={{
+                    background: "linear-gradient(to bottom, transparent, rgba(79,125,243,0.02))",
+                }}
             />
 
             <div className="max-w-[1100px] mx-auto px-6 lg:px-8">
                 {/* Main footer content */}
-                <div className="py-14 lg:py-16">
+                <div className="pb-14 lg:pb-16">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-12">
                         {/* Brand column */}
                         <div className="lg:col-span-2">
@@ -77,11 +73,10 @@ export function Footer() {
                                             key={social.label}
                                             to={social.href}
                                             aria-label={social.label}
-                                            className="w-9 h-9 rounded-lg border flex items-center justify-center transition-all duration-200 hover:scale-110"
+                                            className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
                                             style={{
-                                                borderColor: "var(--color-border)",
                                                 color: "var(--color-text-muted)",
-                                                background: "white",
+                                                background: "rgba(79,125,243,0.05)",
                                             }}
                                         >
                                             <Icon className="w-4 h-4" />
@@ -189,10 +184,12 @@ export function Footer() {
                     </div>
                 </div>
 
-                {/* Bottom bar */}
+                {/* Bottom bar — thin subtle divider instead of hard border */}
                 <div
-                    className="border-t py-6"
-                    style={{ borderColor: "var(--color-border)" }}
+                    className="py-6"
+                    style={{
+                        borderTop: "1px solid rgba(79,125,243,0.08)",
+                    }}
                 >
                     <p
                         className="text-center"

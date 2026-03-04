@@ -257,7 +257,7 @@ export default function Landing() {
     }
 
     return (
-        <div ref={pageRef} className="landing-page bg-white w-full mx-auto overflow-x-hidden">
+        <div ref={pageRef} className="landing-page w-full mx-auto overflow-x-hidden" style={{ background: "var(--color-bg-light)" }}>
             <SEO
                 title="AI-Powered Startup Tools"
                 description="Build investor-ready pitch decks, validate startup ideas, and create winning strategies with AI. Transform your vision into a fundable startup in minutes."
