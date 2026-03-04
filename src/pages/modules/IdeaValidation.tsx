@@ -29,15 +29,15 @@ import {
     TrendingDown,
     Minus,
     Loader2,
+    Shield,
 } from 'lucide-react';
 import {
     Card,
-    CardHeader,
-    CardTitle,
-    CardDescription,
     Button,
+    Input,
     Textarea,
     Badge,
+    Select,
 } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { useIdeaStore, getStoredActiveIdeaId } from '@/store';
@@ -70,6 +70,12 @@ const getRiskBadge = (level: RiskLevel) => {
         case 'medium': return 'warning' as const;
         case 'high': return 'danger' as const;
     }
+};
+
+/** Animation variants */
+const fadeUp = {
+    initial: { opacity: 0, y: 16 },
+    animate: { opacity: 1, y: 0 },
 };
 
 export default function IdeaValidation() {
@@ -341,6 +347,12 @@ export default function IdeaValidation() {
         });
     };
 
+    // Score helpers
+    const getScoreColor = (score: number) =>
+        score >= 70 ? '#22C55E' : score >= 50 ? '#F59E0B' : '#EF4444';
+    const getScoreLabel = (score: number) =>
+        score >= 70 ? 'Strong Potential' : score >= 50 ? 'Promising' : 'Needs Work';
+
     // ==========================================================================
     // RENDER
     // ==========================================================================
@@ -350,31 +362,55 @@ export default function IdeaValidation() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="max-w-5xl mx-auto">
             <SEO
                 title="Idea Validation"
                 description="Validate your startup idea with AI-powered analysis. Get viability scores, risk assessments, SWOT analysis, and market demand insights."
                 canonical="/dashboard/idea"
             />
 
-            {/* Page Header */}
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <Lightbulb className="w-7 h-7 text-[#376EF9]" />
-                        Idea Validation
-                    </h1>
-                    <p className="mt-1 text-gray-600">
-                        Answer one question: "Is this idea worth pursuing?"
-                    </p>
-                </div>
-                <div className="flex items-center gap-3">
+            <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="space-y-6"
+            >
+                {/* ═══════════════════════════════════════════════
+                    PAGE HEADER
+                 ═══════════════════════════════════════════════ */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h1
+                            className="text-2xl font-bold flex items-center gap-2.5"
+                            style={{
+                                color: 'var(--dash-text)',
+                                fontFamily: 'var(--dash-font-heading)',
+                            }}
+                        >
+                            <div
+                                className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
+                                style={{
+                                    background: 'rgba(79,125,243,0.08)',
+                                }}
+                            >
+                                <Lightbulb className="w-5 h-5" style={{ color: '#4F7DF3' }} />
+                            </div>
+                            Idea Validation
+                        </h1>
+                        <p
+                            className="mt-1 text-[14px]"
+                            style={{ color: 'var(--dash-text-muted)' }}
+                        >
+                            Answer one question: "Is this idea worth pursuing?"
+                        </p>
+                    </div>
                     <Button
                         variant="secondary"
                         leftIcon={<Download className="w-4 h-4" />}
                         onClick={exportToPDF}
                         disabled={!hasAnalysis || isExporting || !!exportJobId}
                         isLoading={isExporting || !!exportJobId}
+                        className="!rounded-[8px] !text-[13px] shrink-0"
                     >
                         <span className="flex items-center gap-2">
                             {exportJobId ? 'Exporting...' : 'Export PDF'}
@@ -382,371 +418,479 @@ export default function IdeaValidation() {
                         </span>
                     </Button>
                 </div>
-            </div>
 
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Left Column: Idea Input */}
-                <div className="space-y-6">
-                    {/* Idea Summary Card */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Describe Your Idea</CardTitle>
-                            <CardDescription>
-                                Explain your startup idea in a few sentences. What problem does it solve?
-                                Who is it for?
-                            </CardDescription>
-                        </CardHeader>
-                        <input
-                            type="text"
-                            placeholder="Idea Title (optional)"
-                            value={ideaTitle}
-                            onChange={(e) => setIdeaTitle(e.target.value)}
-                            className="w-full px-4 py-2 mt-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                        <div className="grid grid-cols-2 gap-3 mt-3">
-                            <input
-                                type="text"
-                                placeholder="Sector / Industry  (e.g. FinTech, HealthTech)"
-                                value={industry}
-                                onChange={(e) => setIndustry(e.target.value)}
-                                className="w-full px-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                            <input
-                                type="text"
-                                placeholder="Target Audience  (e.g. College students, SMBs)"
-                                value={targetAudience}
-                                onChange={(e) => setTargetAudience(e.target.value)}
-                                className="w-full px-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 mt-3">
-                            <div className="relative">
-                                <select
-                                    value={startupStage}
-                                    onChange={(e) => setStartupStage(e.target.value)}
-                                    className={`w-full px-4 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white ${startupStage ? 'border-gray-200 text-gray-900' : 'border-red-300 text-gray-400'
-                                        }`}
-                                >
-                                    <option value="" disabled>Startup Stage *</option>
-                                    {STARTUP_STAGES.map((stage) => (
-                                        <option key={stage} value={stage}>{stage}</option>
-                                    ))}
-                                </select>
-                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <input
-                                type="text"
-                                placeholder="Funding needed (optional, e.g. ₹10,00,000)"
-                                value={amount}
-                                onChange={(e) => setAmount(e.target.value)}
-                                className="w-full px-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
-                        <Textarea
-                            placeholder="Describe your startup idea. What problem does it solve? Who is it for? Example: An AI-powered tool that helps first-time founders validate their startup ideas and create investor-ready pitch decks in days instead of months..."
-                            rows={6}
-                            value={ideaSummary}
-                            onChange={(e) => setIdeaSummary(e.target.value)}
-                            className="mt-3"
-                        />
-                        <div className="mt-4 flex items-center gap-3">
-                            <Button
-                                onClick={handleAnalyze}
-                                isLoading={isAnalyzing}
-                                leftIcon={<Sparkles className="w-4 h-4" />}
-                                className="w-full sm:w-auto"
-                            >
-                                <span className="flex items-center gap-2">
-                                    {hasAnalysis ? 'Re-Analyze' : 'Analyze with AI'}
-                                    <CreditCost cost={10} />
-                                </span>
-                            </Button>
-                        </div>
-                    </Card>
+                {/* ═══════════════════════════════════════════════
+                    SECTION 1 — IDEA INPUT
+                 ═══════════════════════════════════════════════ */}
+                <Card>
+                    <div className="mb-4">
+                        <h2
+                            className="text-[15px] font-semibold"
+                            style={{
+                                color: 'var(--dash-text)',
+                                fontFamily: 'var(--dash-font-heading)',
+                            }}
+                        >
+                            Describe Your Idea
+                        </h2>
+                        <p className="text-[13px] mt-0.5" style={{ color: 'var(--dash-text-muted)' }}>
+                            Tell us about your startup idea. The more detail you provide, the better the analysis.
+                        </p>
+                    </div>
 
-                    {/* Generating State */}
-                    {isAnalyzing && (
-                        <Card className="bg-blue-50 border-blue-200">
+                    {/* Startup Name */}
+                    <Input
+                        placeholder="Startup Name"
+                        value={ideaTitle}
+                        onChange={(e) => setIdeaTitle(e.target.value)}
+                    />
+
+                    {/* Industry + Target Audience */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                        <Input
+                            placeholder="Industry (e.g. FinTech, HealthTech)"
+                            value={industry}
+                            onChange={(e) => setIndustry(e.target.value)}
+                        />
+                        <Input
+                            placeholder="Target Audience (e.g. College students)"
+                            value={targetAudience}
+                            onChange={(e) => setTargetAudience(e.target.value)}
+                        />
+                    </div>
+
+                    {/* Stage + Funding */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                        <Select
+                            value={startupStage}
+                            onChange={(val) => setStartupStage(val)}
+                            placeholder="Startup Stage *"
+                            required
+                            options={STARTUP_STAGES.map(stage => ({ value: stage, label: stage }))}
+                        />
+                        <Input
+                            placeholder="Funding needed (optional, e.g. ₹10,00,000)"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                        />
+                    </div>
+
+                    {/* Idea Description */}
+                    <Textarea
+                        placeholder="What problem does this startup solve? Who is the target user? What makes it unique? Example: An AI-powered tool that helps first-time founders validate their startup ideas and create investor-ready pitch decks in days instead of months..."
+                        rows={6}
+                        value={ideaSummary}
+                        onChange={(e) => setIdeaSummary(e.target.value)}
+                        className="mt-3"
+                    />
+
+                    {/* Analyze Button */}
+                    <div className="mt-5">
+                        <Button
+                            onClick={handleAnalyze}
+                            isLoading={isAnalyzing}
+                            leftIcon={<Sparkles className="w-4 h-4" />}
+                            className="!rounded-[10px] !text-[13px] w-full sm:w-auto"
+                            style={{
+                                background: 'linear-gradient(135deg, #4F7DF3, #7A5CFF)',
+                            }}
+                        >
+                            <span className="flex items-center gap-2">
+                                {hasAnalysis ? 'Re-Analyze' : 'Analyze Idea'}
+                                <CreditCost cost={10} />
+                            </span>
+                        </Button>
+                    </div>
+                </Card>
+
+                {/* ═══════════════════════════════════════════════
+                    GENERATING STATE
+                 ═══════════════════════════════════════════════ */}
+                {isAnalyzing && (
+                    <motion.div {...fadeUp}>
+                        <Card
+                            style={{
+                                background: 'linear-gradient(135deg, rgba(79,125,243,0.04), rgba(122,92,255,0.04))',
+                                border: '1px solid rgba(79,125,243,0.12)',
+                            }}
+                        >
                             <div className="flex items-center gap-4">
-                                <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                                <div
+                                    className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
+                                    style={{
+                                        background: 'linear-gradient(135deg, #4F7DF3, #7A5CFF)',
+                                    }}
+                                >
+                                    <Loader2 className="w-5 h-5 text-white animate-spin" />
+                                </div>
                                 <div>
-                                    <h3 className="font-medium text-blue-900">
+                                    <h3
+                                        className="font-semibold text-[14px]"
+                                        style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                    >
                                         Generating Analysis...
                                     </h3>
-                                    <p className="text-sm text-blue-700">
+                                    <p className="text-[13px]" style={{ color: 'var(--dash-text-muted)' }}>
                                         This usually takes 30-60 seconds
                                     </p>
                                 </div>
                             </div>
                         </Card>
-                    )}
+                    </motion.div>
+                )}
 
-                    {/* Idea Score Card */}
-                    {hasAnalysis && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                        >
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Idea Score</CardTitle>
-                                    <CardDescription>
-                                        AI-generated viability score based on your description
-                                    </CardDescription>
-                                </CardHeader>
-                                <div className="mt-4 flex items-center gap-6">
-                                    {/* Score circle */}
-                                    <div className="relative w-24 h-24">
-                                        <svg className="w-24 h-24 transform -rotate-90">
-                                            <circle
-                                                cx="48"
-                                                cy="48"
-                                                r="40"
-                                                stroke="currentColor"
-                                                strokeWidth="8"
-                                                fill="none"
-                                                className="text-gray-200"
-                                            />
-                                            <circle
-                                                cx="48"
-                                                cy="48"
-                                                r="40"
-                                                stroke="currentColor"
-                                                strokeWidth="8"
-                                                fill="none"
-                                                strokeLinecap="round"
-                                                strokeDasharray={`${(analysis.idea_score / 100) * 251} 251`}
-                                                className={
-                                                    analysis.idea_score >= 70
-                                                        ? 'text-green-500'
-                                                        : analysis.idea_score >= 50
-                                                            ? 'text-yellow-500'
-                                                            : 'text-red-500'
-                                                }
-                                            />
-                                        </svg>
-                                        <span className="absolute inset-0 flex items-center justify-center text-2xl font-bold">
-                                            {analysis.idea_score}
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <div className="text-lg font-semibold text-gray-900">
-                                            {analysis.idea_score >= 70 ? 'Strong Potential' :
-                                                analysis.idea_score >= 50 ? 'Promising' : 'Needs Work'}
-                                        </div>
-                                        <p className="text-sm text-gray-600 mt-1">
-                                            {analysis.summary || (analysis.idea_score >= 70
-                                                ? 'Your idea shows strong market potential'
-                                                : analysis.idea_score >= 50
-                                                    ? 'Good foundation, but needs refinement'
-                                                    : 'Consider pivoting or refining your approach')}
-                                        </p>
-                                    </div>
+                {/* ═══════════════════════════════════════════════
+                    SECTION 2 — AI ANALYSIS RESULTS
+                 ═══════════════════════════════════════════════ */}
+
+                {/* Idea Score */}
+                {hasAnalysis && (
+                    <motion.div
+                        {...fadeUp}
+                        transition={{ delay: 0.05 }}
+                    >
+                        <Card>
+                            <div className="mb-4">
+                                <h2
+                                    className="text-[15px] font-semibold"
+                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                >
+                                    Idea Score
+                                </h2>
+                                <p className="text-[13px] mt-0.5" style={{ color: 'var(--dash-text-muted)' }}>
+                                    AI-generated viability score based on your description
+                                </p>
+                            </div>
+
+                            {/* Score Display */}
+                            <div className="flex items-start justify-between mb-4">
+                                <div className="flex items-baseline gap-2">
+                                    <span
+                                        className="text-[36px] font-bold leading-none"
+                                        style={{
+                                            color: getScoreColor(analysis.idea_score),
+                                            fontFamily: 'var(--dash-font-heading)',
+                                        }}
+                                    >
+                                        {analysis.idea_score}
+                                    </span>
+                                    <span
+                                        className="text-[14px] font-medium"
+                                        style={{ color: 'var(--dash-text-muted)' }}
+                                    >
+                                        / 100
+                                    </span>
                                 </div>
-                            </Card>
-                        </motion.div>
-                    )}
+                                <Badge
+                                    variant={analysis.idea_score >= 70 ? 'success' : analysis.idea_score >= 50 ? 'warning' : 'danger'}
+                                    size="md"
+                                >
+                                    {getScoreLabel(analysis.idea_score)}
+                                </Badge>
+                            </div>
 
-                    {/* Recommendations */}
-                    {hasAnalysis && analysis.recommendations && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.4 }}
-                        >
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Recommendations</CardTitle>
-                                </CardHeader>
-                                <ul className="mt-4 space-y-2">
-                                    {analysis.recommendations.map((rec: string, i: number) => (
-                                        <li key={i} className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
-                                            <span className="shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                                                {i + 1}
-                                            </span>
-                                            <p className="text-sm text-blue-800">{rec}</p>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </Card>
-                        </motion.div>
-                    )}
-                </div>
+                            {/* Progress Bar */}
+                            <div className="w-full h-2.5 rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,0.04)' }}>
+                                <motion.div
+                                    className="h-full rounded-full"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${analysis.idea_score}%` }}
+                                    transition={{ duration: 0.8, ease: "easeOut" }}
+                                    style={{ background: `linear-gradient(90deg, ${getScoreColor(analysis.idea_score)}, ${getScoreColor(analysis.idea_score)}90)` }}
+                                />
+                            </div>
 
-                {/* Right Column: Analysis Results */}
-                <div className="space-y-6">
-                    {/* Risk Heat Map */}
-                    {hasAnalysis && analysis.risk_heat_map && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                        >
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Risk Heat Map</CardTitle>
-                                    <CardDescription>
-                                        Visual assessment of key risk areas
-                                    </CardDescription>
-                                </CardHeader>
-                                <div className="mt-4 grid grid-cols-2 gap-4">
-                                    {analysis.risk_heat_map.map((risk: { category: string; level: RiskLevel; description: string }) => (
-                                        <div
-                                            key={risk.category}
-                                            className="flex items-center justify-between p-3 rounded-lg bg-gray-50"
+                            {/* Summary */}
+                            {analysis.summary && (
+                                <p
+                                    className="mt-3 text-[13px] leading-relaxed"
+                                    style={{ color: 'var(--dash-text-muted)' }}
+                                >
+                                    {analysis.summary}
+                                </p>
+                            )}
+                        </Card>
+                    </motion.div>
+                )}
+
+                {/* Risk Assessment */}
+                {hasAnalysis && analysis.risk_heat_map && (
+                    <motion.div
+                        {...fadeUp}
+                        transition={{ delay: 0.1 }}
+                    >
+                        <Card>
+                            <div className="mb-4">
+                                <h2
+                                    className="text-[15px] font-semibold flex items-center gap-2"
+                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                >
+                                    <Shield className="w-4 h-4" style={{ color: '#4F7DF3' }} />
+                                    Risk Assessment
+                                </h2>
+                            </div>
+
+                            <div className="space-y-2">
+                                {analysis.risk_heat_map.map((risk: { category: string; level: RiskLevel; description: string }) => (
+                                    <div
+                                        key={risk.category}
+                                        className="flex items-center justify-between p-3 rounded-[10px]"
+                                        style={{ background: 'rgba(0,0,0,0.02)' }}
+                                    >
+                                        <span
+                                            className="text-[13px] font-medium capitalize"
+                                            style={{ color: 'var(--dash-text-secondary)' }}
                                         >
-                                            <span className="text-sm font-medium text-gray-700 capitalize">
-                                                {risk.category} Risk
-                                            </span>
-                                            <Badge variant={getRiskBadge(risk.level)}>
-                                                {risk.level}
-                                            </Badge>
-                                        </div>
-                                    ))}
-                                </div>
-                                {/* Feasibility */}
-                                <div className="mt-4 p-4 rounded-lg border border-gray-200">
-                                    <div className="flex items-center justify-between">
-                                        <span className="font-medium text-gray-900">
-                                            Overall Feasibility
+                                            {risk.category} Risk
                                         </span>
-                                        <Badge variant={getRiskBadge(analysis.feasibility)} size="md">
-                                            {analysis.feasibility?.toUpperCase() || 'MEDIUM'}
+                                        <Badge variant={getRiskBadge(risk.level)}>
+                                            {risk.level}
                                         </Badge>
                                     </div>
+                                ))}
+                            </div>
+
+                            {/* Feasibility */}
+                            <div
+                                className="mt-3 p-3 rounded-[10px] flex items-center justify-between"
+                                style={{
+                                    background: 'linear-gradient(135deg, rgba(79,125,243,0.04), rgba(122,92,255,0.04))',
+                                    border: '1px solid rgba(79,125,243,0.08)',
+                                }}
+                            >
+                                <span
+                                    className="text-[13px] font-semibold"
+                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                >
+                                    Overall Feasibility
+                                </span>
+                                <Badge variant={getRiskBadge(analysis.feasibility)} size="md">
+                                    {analysis.feasibility?.toUpperCase() || 'MEDIUM'}
+                                </Badge>
+                            </div>
+                        </Card>
+                    </motion.div>
+                )}
+
+                {/* SWOT Analysis */}
+                {hasAnalysis && analysis.swot && (
+                    <motion.div
+                        {...fadeUp}
+                        transition={{ delay: 0.15 }}
+                    >
+                        <Card>
+                            <div className="mb-4">
+                                <h2
+                                    className="text-[15px] font-semibold"
+                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                >
+                                    SWOT Analysis
+                                </h2>
+                                <p className="text-[13px] mt-0.5" style={{ color: 'var(--dash-text-muted)' }}>
+                                    Key strengths and weaknesses identified
+                                </p>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {/* Strengths */}
+                                <div
+                                    className="p-4 rounded-[10px]"
+                                    style={{
+                                        background: 'rgba(34,197,94,0.04)',
+                                        border: '1px solid rgba(34,197,94,0.12)',
+                                    }}
+                                >
+                                    <h4
+                                        className="font-semibold text-[13px] flex items-center gap-2 mb-3"
+                                        style={{ color: '#16A34A' }}
+                                    >
+                                        <CheckCircle className="w-4 h-4" />
+                                        Strengths
+                                    </h4>
+                                    <ul className="space-y-2">
+                                        {analysis.swot.strengths?.map((item: string, i: number) => (
+                                            <li key={i} className="text-[13px] flex items-start gap-2" style={{ color: '#15803D' }}>
+                                                <span className="mt-1.5 w-1 h-1 rounded-full shrink-0" style={{ background: '#22C55E' }} />
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </div>
-                            </Card>
-                        </motion.div>
-                    )}
-
-                    {/* SWOT Analysis */}
-                    {hasAnalysis && analysis.swot && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                        >
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>SWOT Analysis</CardTitle>
-                                    <CardDescription>
-                                        Key strengths and weaknesses identified
-                                    </CardDescription>
-                                </CardHeader>
-                                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {/* Strengths */}
-                                    <div className="p-4 rounded-lg bg-green-50 border border-green-200">
-                                        <h4 className="font-medium text-green-800 flex items-center gap-2 mb-3">
-                                            <CheckCircle className="w-4 h-4" />
-                                            Strengths
-                                        </h4>
-                                        <ul className="space-y-2">
-                                            {analysis.swot.strengths?.map((item: string, i: number) => (
-                                                <li key={i} className="text-sm text-green-700 flex items-start gap-2">
-                                                    <span className="mt-1.5 w-1 h-1 rounded-full bg-green-500 shrink-0" />
-                                                    {item}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                    {/* Weaknesses */}
-                                    <div className="p-4 rounded-lg bg-red-50 border border-red-200">
-                                        <h4 className="font-medium text-red-800 flex items-center gap-2 mb-3">
-                                            <AlertTriangle className="w-4 h-4" />
-                                            Weaknesses
-                                        </h4>
-                                        <ul className="space-y-2">
-                                            {analysis.swot.weaknesses?.map((item: string, i: number) => (
-                                                <li key={i} className="text-sm text-red-700 flex items-start gap-2">
-                                                    <span className="mt-1.5 w-1 h-1 rounded-full bg-red-500 shrink-0" />
-                                                    {item}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
+                                {/* Weaknesses */}
+                                <div
+                                    className="p-4 rounded-[10px]"
+                                    style={{
+                                        background: 'rgba(239,68,68,0.04)',
+                                        border: '1px solid rgba(239,68,68,0.12)',
+                                    }}
+                                >
+                                    <h4
+                                        className="font-semibold text-[13px] flex items-center gap-2 mb-3"
+                                        style={{ color: '#DC2626' }}
+                                    >
+                                        <AlertTriangle className="w-4 h-4" />
+                                        Weaknesses
+                                    </h4>
+                                    <ul className="space-y-2">
+                                        {analysis.swot.weaknesses?.map((item: string, i: number) => (
+                                            <li key={i} className="text-[13px] flex items-start gap-2" style={{ color: '#B91C1C' }}>
+                                                <span className="mt-1.5 w-1 h-1 rounded-full shrink-0" style={{ background: '#EF4444' }} />
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </div>
-                            </Card>
-                        </motion.div>
-                    )}
+                            </div>
+                        </Card>
+                    </motion.div>
+                )}
 
-                    {/* Market Demand */}
-                    {hasAnalysis && analysis.market_demand_snapshot && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 }}
-                        >
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Market Demand Snapshot</CardTitle>
-                                    <CardDescription>
-                                        Current market demand and trend analysis
-                                    </CardDescription>
-                                </CardHeader>
-                                <div className="mt-4 space-y-3">
-                                    {analysis.market_demand_snapshot.map((signal: { source: string; signal_type: string; interpretation: string; trend?: string }, i: number) => {
-                                        const interpretation = signal.interpretation?.toLowerCase() || '';
-                                        const isPositive = signal.trend === 'up' ||
-                                            interpretation.includes('growing') ||
-                                            interpretation.includes('high') ||
-                                            interpretation.includes('strong') ||
-                                            interpretation.includes('increasing');
-                                        const isNegative = signal.trend === 'down' ||
-                                            interpretation.includes('declining') ||
-                                            interpretation.includes('low') ||
-                                            interpretation.includes('weak') ||
-                                            interpretation.includes('decreasing') ||
-                                            interpretation.includes('saturated');
+                {/* Market Demand Snapshot */}
+                {hasAnalysis && analysis.market_demand_snapshot && (
+                    <motion.div
+                        {...fadeUp}
+                        transition={{ delay: 0.2 }}
+                    >
+                        <Card>
+                            <div className="mb-4">
+                                <h2
+                                    className="text-[15px] font-semibold"
+                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                >
+                                    Market Demand Snapshot
+                                </h2>
+                                <p className="text-[13px] mt-0.5" style={{ color: 'var(--dash-text-muted)' }}>
+                                    Current market demand and trend analysis
+                                </p>
+                            </div>
+                            <div className="space-y-2">
+                                {analysis.market_demand_snapshot.map((signal: { source: string; signal_type: string; interpretation: string; trend?: string }, i: number) => {
+                                    const interpretation = signal.interpretation?.toLowerCase() || '';
+                                    const isPositive = signal.trend === 'up' ||
+                                        interpretation.includes('growing') ||
+                                        interpretation.includes('high') ||
+                                        interpretation.includes('strong') ||
+                                        interpretation.includes('increasing');
+                                    const isNegative = signal.trend === 'down' ||
+                                        interpretation.includes('declining') ||
+                                        interpretation.includes('low') ||
+                                        interpretation.includes('weak') ||
+                                        interpretation.includes('decreasing') ||
+                                        interpretation.includes('saturated');
 
-                                        return (
-                                            <div key={i} className="flex items-center justify-between p-4 rounded-lg bg-gray-50">
-                                                <div>
-                                                    <div className="text-sm text-gray-600">{signal.source}</div>
-                                                    <div className="font-medium text-gray-900">{signal.signal_type}</div>
+                                    return (
+                                        <div
+                                            key={i}
+                                            className="flex items-center justify-between p-3 rounded-[10px]"
+                                            style={{ background: 'rgba(0,0,0,0.02)' }}
+                                        >
+                                            <div>
+                                                <div className="text-[11px] uppercase tracking-wider font-semibold" style={{ color: '#94A3B8' }}>
+                                                    {signal.source}
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    {isPositive ? (
-                                                        <TrendingUp className="w-5 h-5 text-green-500" />
-                                                    ) : isNegative ? (
-                                                        <TrendingDown className="w-5 h-5 text-red-500" />
-                                                    ) : (
-                                                        <Minus className="w-5 h-5 text-yellow-500" />
-                                                    )}
-                                                    <span className={`text-sm font-medium ${isPositive ? 'text-green-700' :
-                                                        isNegative ? 'text-red-700' :
-                                                            'text-yellow-700'
-                                                        }`}>
-                                                        {signal.interpretation}
-                                                    </span>
+                                                <div className="text-[13px] font-medium mt-0.5" style={{ color: 'var(--dash-text)' }}>
+                                                    {signal.signal_type}
                                                 </div>
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                            </Card>
-                        </motion.div>
-                    )}
-
-
-                    {/* Placeholder when not analyzed */}
-                    {!hasAnalysis && !isAnalyzing && (
-                        <Card className="flex flex-col items-center justify-center py-12 text-center">
-                            <Sparkles className="w-12 h-12 text-gray-300 mb-4" />
-                            <h3 className="text-lg font-medium text-gray-700">
-                                Results will appear here
-                            </h3>
-                            <p className="text-sm text-gray-500 mt-1 max-w-xs">
-                                Describe your idea and click "Analyze with AI" to get started
-                            </p>
+                                            <div className="flex items-center gap-2">
+                                                {isPositive ? (
+                                                    <TrendingUp className="w-4 h-4" style={{ color: '#22C55E' }} />
+                                                ) : isNegative ? (
+                                                    <TrendingDown className="w-4 h-4" style={{ color: '#EF4444' }} />
+                                                ) : (
+                                                    <Minus className="w-4 h-4" style={{ color: '#F59E0B' }} />
+                                                )}
+                                                <span
+                                                    className="text-[12px] font-medium"
+                                                    style={{
+                                                        color: isPositive ? '#16A34A' : isNegative ? '#DC2626' : '#D97706'
+                                                    }}
+                                                >
+                                                    {signal.interpretation}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </Card>
-                    )}
-                </div>
-            </div>
+                    </motion.div>
+                )}
+
+                {/* ═══════════════════════════════════════════════
+                    SECTION 3 — RECOMMENDATIONS
+                 ═══════════════════════════════════════════════ */}
+                {hasAnalysis && analysis.recommendations && (
+                    <motion.div
+                        {...fadeUp}
+                        transition={{ delay: 0.25 }}
+                    >
+                        <Card>
+                            <div className="mb-4">
+                                <h2
+                                    className="text-[15px] font-semibold"
+                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                >
+                                    Recommendations
+                                </h2>
+                                <p className="text-[13px] mt-0.5" style={{ color: 'var(--dash-text-muted)' }}>
+                                    Actionable next steps to strengthen your idea
+                                </p>
+                            </div>
+                            <div className="space-y-2">
+                                {analysis.recommendations.map((rec: string, i: number) => (
+                                    <motion.div
+                                        key={i}
+                                        initial={{ opacity: 0, x: -8 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.3 + i * 0.06 }}
+                                        className="flex items-start gap-3 p-3.5 rounded-[10px] transition-colors duration-200"
+                                        style={{ background: 'rgba(0,0,0,0.02)' }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'rgba(79,125,243,0.04)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'rgba(0,0,0,0.02)';
+                                        }}
+                                    >
+                                        <span
+                                            className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold text-white"
+                                            style={{
+                                                background: 'linear-gradient(135deg, #4F7DF3, #7A5CFF)',
+                                            }}
+                                        >
+                                            {i + 1}
+                                        </span>
+                                        <p className="text-[13px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+                                            {rec}
+                                        </p>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        </Card>
+                    </motion.div>
+                )}
+
+                {/* Placeholder when not analyzed */}
+                {!hasAnalysis && !isAnalyzing && (
+                    <Card className="flex flex-col items-center justify-center py-16 text-center">
+                        <div
+                            className="w-14 h-14 rounded-[12px] flex items-center justify-center mb-4"
+                            style={{ background: 'rgba(0,0,0,0.03)' }}
+                        >
+                            <Sparkles className="w-6 h-6" style={{ color: '#94A3B8' }} />
+                        </div>
+                        <h3
+                            className="text-[15px] font-semibold"
+                            style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                        >
+                            Results will appear here
+                        </h3>
+                        <p className="text-[13px] mt-1 max-w-xs" style={{ color: 'var(--dash-text-muted)' }}>
+                            Describe your idea and click "Analyze Idea" to get started
+                        </p>
+                    </Card>
+                )}
+            </motion.div>
         </div>
     );
 }

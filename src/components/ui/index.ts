@@ -13,5 +13,6 @@ export { Input } from './Input';
 export { Textarea } from './Textarea';
 export { Modal } from './Modal';
 export { Badge } from './Badge';
+export { Select } from './Select';
 export { ProgressBar } from './ProgressBar';
 export { PageLoader, ComponentLoader } from './PageLoader';

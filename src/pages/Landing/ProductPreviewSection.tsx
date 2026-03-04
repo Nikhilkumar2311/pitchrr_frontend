@@ -152,7 +152,7 @@ export const ProductPreviewSection = forwardRef<HTMLElement>((_, ref) => {
                                             color: "var(--color-primary-blue)",
                                         }}
                                     >
-                                        8.4
+                                        84
                                     </div>
                                     <div
                                         className="h-2 w-24 rounded mt-2"

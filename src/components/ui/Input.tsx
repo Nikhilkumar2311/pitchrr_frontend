@@ -1,8 +1,7 @@
 /**
  * Input Component
  * 
- * A styled text input with label and error handling.
- * Uses standard Tailwind classes for styling.
+ * Premium styled text input with label, error handling, and design system tokens.
  */
 
 import { forwardRef, type InputHTMLAttributes } from 'react';
@@ -34,35 +33,32 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
         const hasError = Boolean(error);
 
-        const wrapperClasses = `
-      ${fullWidth ? 'w-full' : ''}
-      ${className}
-    `.trim();
+        const wrapperClasses = `${fullWidth ? 'w-full' : ''} ${className}`.trim();
 
         const inputClasses = `
-      w-full
-      px-4 py-3
-      ${leftIcon ? 'pl-11' : ''}
-      ${rightIcon ? 'pr-11' : ''}
-      text-gray-900
-      placeholder:text-gray-400
-      bg-white
-      border rounded-lg
-      transition-all duration-200
-      focus:outline-none focus:ring-2 focus:ring-offset-0
-      disabled:bg-gray-100 disabled:cursor-not-allowed
-      ${hasError
-                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+            w-full px-4 py-2.5 text-[13px]
+            ${leftIcon ? 'pl-10' : ''}
+            ${rightIcon ? 'pr-10' : ''}
+            bg-white rounded-[10px]
+            transition-all duration-200
+            outline-none
+            disabled:opacity-50 disabled:cursor-not-allowed
+            ${hasError
+                ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/10'
+                : 'border-[var(--dash-border-solid,#E8ECF4)] focus:border-[#4F7DF3] focus:ring-2 focus:ring-[rgba(79,125,243,0.12)]'
             }
-    `.trim().replace(/\s+/g, ' ');
+        `.trim().replace(/\s+/g, ' ');
 
         return (
             <div className={wrapperClasses}>
                 {label && (
                     <label
                         htmlFor={inputId}
-                        className="block text-sm font-medium text-gray-700 mb-2"
+                        className="block text-[13px] font-medium mb-1.5"
+                        style={{
+                            color: 'var(--dash-text, #0F172A)',
+                            fontFamily: 'var(--dash-font-body, Inter, sans-serif)',
+                        }}
                     >
                         {label}
                     </label>
@@ -70,7 +66,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
                 <div className="relative flex items-center">
                     {leftIcon && (
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" style={{ color: '#94A3B8' }}>
                             {leftIcon}
                         </div>
                     )}
@@ -79,13 +75,19 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                         ref={ref}
                         id={inputId}
                         className={inputClasses}
+                        style={{
+                            fontFamily: 'var(--dash-font-body, Inter, sans-serif)',
+                            color: 'var(--dash-text, #0F172A)',
+                            border: '1.5px solid',
+                            borderColor: hasError ? '#F87171' : 'var(--dash-border-solid, #E8ECF4)',
+                        }}
                         aria-invalid={hasError}
                         aria-describedby={hasError ? `${inputId}-error` : undefined}
                         {...props}
                     />
 
                     {rightIcon && (
-                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400">
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center" style={{ color: '#94A3B8' }}>
                             {rightIcon}
                         </div>
                     )}
@@ -94,7 +96,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                 {error && (
                     <p
                         id={`${inputId}-error`}
-                        className="mt-2 text-sm text-red-500"
+                        className="mt-1.5 text-[12px] text-red-500"
                         role="alert"
                     >
                         {error}
@@ -102,7 +104,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                 )}
 
                 {helperText && !error && (
-                    <p className="mt-2 text-sm text-gray-500">
+                    <p className="mt-1.5 text-[12px]" style={{ color: 'var(--dash-text-muted, #64748B)' }}>
                         {helperText}
                     </p>
                 )}
