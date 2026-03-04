@@ -1,127 +1,128 @@
 /**
- * How It Works Section Component
- * Visual step-by-step guide with professional styling
+ * How It Works Section - Redesigned
+ * Horizontal 3-step layout with step numbers only (no icons), connecting line.
  */
-
-import { ArrowRight, Sparkles, Zap, Download } from 'lucide-react';
 
 const steps = [
     {
-        step: '01',
-        title: 'Describe Your Idea',
-        description: 'Tell us about your startup idea in plain English. Our AI understands the context and industry.',
-        icon: Sparkles,
-        color: 'from-blue-500 to-indigo-600',
-        bgColor: 'bg-blue-50',
+        number: "01",
+        title: "Describe Your Idea",
+        description:
+            "Tell us about your startup idea in plain English. Our AI understands context and industry nuances.",
     },
     {
-        step: '02',
-        title: 'Build with AI Guidance',
-        description: 'Work through each module with AI-powered suggestions, templates, and real-time feedback.',
-        icon: Zap,
-        color: 'from-purple-500 to-pink-600',
-        bgColor: 'bg-purple-50',
+        number: "02",
+        title: "Build with AI Guidance",
+        description:
+            "Work through each module with AI-powered suggestions, templates, and real-time feedback.",
     },
     {
-        step: '03',
-        title: 'Download & Launch',
-        description: 'Export your pitch deck, brand kit, strategy docs, and launch with confidence, stress-free',
-        icon: Download,
-        color: 'from-green-500 to-emerald-600',
-        bgColor: 'bg-green-50',
+        number: "03",
+        title: "Launch with Confidence",
+        description:
+            "Export your pitch deck, brand kit, and strategy docs. Launch knowing you're investor-ready.",
     },
 ];
 
 export function HowItWorksSection() {
     return (
-        <section id="how-it-works" className="relative py-16">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Section Header */}
-                <div className="text-center mb-16 lg:mb-24">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-sm font-medium mb-6">
-                        <Zap className="w-4 h-4" />
-                        <span>Simple Process</span>
-                    </div>
-
-                    <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
-                        How{' '}
-                        <span className="bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                            Pitchrr
-                        </span>
-                        {' '}Works
-                    </h2>
-
-                    <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                        Three simple steps to go from idea to investor-ready
+        <section id="how-it-works" className="relative py-24 lg:py-32">
+            <div className="max-w-[1100px] mx-auto px-6 lg:px-8">
+                {/* Section header */}
+                <div className="text-center mb-20">
+                    <p
+                        className="text-[13px] font-semibold uppercase tracking-[0.15em] mb-4"
+                        style={{ color: "var(--color-primary-violet)", fontFamily: "var(--font-body)" }}
+                    >
+                        How It Works
                     </p>
+                    <h2
+                        className="gsap-reveal"
+                        style={{
+                            fontFamily: "var(--font-heading)",
+                            fontSize: "clamp(2rem, 4vw, 3rem)",
+                            fontWeight: 700,
+                            lineHeight: 1.2,
+                            letterSpacing: "-0.02em",
+                            color: "var(--color-text-primary)",
+                        }}
+                    >
+                        Three steps to your{" "}
+                        <span className="gradient-text">startup</span>
+                    </h2>
                 </div>
 
-                {/* Steps */}
+                {/* Steps - Horizontal */}
                 <div className="relative">
-                    {/* Connection line - desktop only */}
-                    <div className="hidden lg:block absolute top-32 left-0 right-0 h-0.5 bg-linear-to-r from-blue-200 via-purple-200 to-green-200"
-                        style={{ width: 'calc(100% - 200px)', left: '100px' }} />
+                    {/* Connecting line - desktop, vertically centered with step numbers */}
+                    <div
+                        className="hidden lg:block absolute left-[16.67%] right-[16.67%] h-[2px]"
+                        style={{
+                            top: "28px",
+                            background: "linear-gradient(90deg, var(--color-primary-blue), var(--color-primary-violet))",
+                            opacity: 0.15,
+                        }}
+                    />
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-8">
-                        {steps.map((item, index) => {
-                            const Icon = item.icon;
-                            return (
-                                <div key={item.step} className="relative">
-                                    {/* Step Card */}
-                                    <div className="relative bg-white rounded-2xl p-8 border border-gray-200 hover:border-gray-300 hover:shadow-xl transition-all duration-300 group">
-                                        {/* Step Number Badge */}
-                                        <div className="absolute -top-6 left-8">
-                                            <div className={`relative w-12 h-12 rounded-full bg-linear-to-br ${item.color} flex items-center justify-center shadow-lg`}>
-                                                <span className="text-white font-bold text-lg">{item.step}</span>
-                                                {/* Pulse ring */}
-                                                <div className={`absolute inset-0 rounded-full bg-linear-to-br ${item.color} animate-ping opacity-20`} />
-                                            </div>
-                                        </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 lg:gap-8">
+                        {steps.map((step, index) => (
+                            <div key={step.number} className="step-card relative text-center">
+                                {/* Step number */}
+                                <div
+                                    className="mb-6"
+                                    style={{
+                                        fontFamily: "var(--font-heading)",
+                                        fontSize: "3.5rem",
+                                        fontWeight: 800,
+                                        lineHeight: 1,
+                                        background: "var(--color-gradient)",
+                                        WebkitBackgroundClip: "text",
+                                        WebkitTextFillColor: "transparent",
+                                        backgroundClip: "text",
+                                        opacity: 0.25,
+                                    }}
+                                >
+                                    {step.number}
+                                </div>
 
-                                        {/* Icon */}
-                                        <div className={`w-16 h-16 rounded-xl ${item.bgColor} flex items-center justify-center mb-6 mt-4 group-hover:scale-110 transition-transform duration-300`}>
-                                            <Icon className={`w-8 h-8 bg-linear-to-br ${item.color} bg-clip-text text-transparent`}
-                                                style={{
-                                                    filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))'
-                                                }}
-                                            />
-                                        </div>
+                                {/* Content */}
+                                <h3
+                                    className="mb-3"
+                                    style={{
+                                        fontFamily: "var(--font-heading)",
+                                        fontSize: "1.25rem",
+                                        fontWeight: 600,
+                                        color: "var(--color-text-primary)",
+                                    }}
+                                >
+                                    {step.title}
+                                </h3>
+                                <p
+                                    style={{
+                                        fontFamily: "var(--font-body)",
+                                        fontSize: "0.95rem",
+                                        lineHeight: 1.7,
+                                        color: "var(--color-text-muted)",
+                                        maxWidth: "320px",
+                                        margin: "0 auto",
+                                        textAlign: "center",
+                                    }}
+                                >
+                                    {step.description}
+                                </p>
 
-                                        {/* Content */}
-                                        <h3 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-transparent group-hover:bg-linear-to-r group-hover:from-gray-900 group-hover:to-gray-700 group-hover:bg-clip-text transition-all duration-300">
-                                            {item.title}
-                                        </h3>
-
-                                        <p className="text-gray-600 leading-relaxed">
-                                            {item.description}
-                                        </p>
-
-                                        {/* Decorative corner */}
-                                        <div className="absolute top-0 right-0 w-20 h-20 opacity-5">
-                                            <div className={`absolute inset-0 bg-linear-to-br ${item.color} rounded-bl-full`} />
+                                {/* Mobile connector */}
+                                {index < 2 && (
+                                    <div className="lg:hidden flex justify-center my-8">
+                                        <div className="flex flex-col items-center gap-1.5">
+                                            <div className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--color-border)" }} />
+                                            <div className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--color-border)" }} />
+                                            <div className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--color-border)" }} />
                                         </div>
                                     </div>
-
-                                    {/* Arrow - desktop only */}
-                                    {index < 2 && (
-                                        <div className="hidden lg:flex absolute -right-4 top-32 z-10 items-center justify-center w-8 h-8 bg-white rounded-full border-2 border-gray-200 shadow-sm">
-                                            <ArrowRight className="w-4 h-4 text-gray-400" />
-                                        </div>
-                                    )}
-
-                                    {/* Mobile connector */}
-                                    {index < 2 && (
-                                        <div className="lg:hidden flex justify-center my-6">
-                                            <div className="flex items-center gap-1">
-                                                <div className="w-2 h-2 rounded-full bg-gray-300" />
-                                                <div className="w-2 h-2 rounded-full bg-gray-300" />
-                                                <div className="w-2 h-2 rounded-full bg-gray-300" />
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
+                                )}
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>

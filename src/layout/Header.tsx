@@ -1,93 +1,119 @@
 /**
- * Header Component - Professional public pages navigation
+ * Header Component - Floating pill-style navigation
+ * Centered content-width bar with rounded corners and frosted glass
  */
 
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, LogOut } from "lucide-react";
-import { Button } from "@/components/ui";
+import { LayoutDashboard, LogOut, Menu, X } from "lucide-react";
 import { useUIStore } from "@/store";
 import { useUser, useClerk } from "@clerk/clerk-react";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { useFeedback } from "@/context/FeedbackContext";
+import { useState } from "react";
 
 const navLinks = [
+    { label: "How it Works", href: "#how-it-works" },
     { label: "Features", href: "#features" },
-    { label: "How It Works", href: "#how-it-works" },
     { label: "Pricing", href: "#pricing" },
 ];
 
 export function Header() {
-    const { setAuthModalOpen } = useUIStore();
+    const { setAuthModalOpen, setAuthModalView } = useUIStore();
     const { user, isLoaded } = useUser();
     const { signOut } = useClerk();
     const { openFeedback } = useFeedback();
     const location = useLocation();
+    const [mobileOpen, setMobileOpen] = useState(false);
 
-    // Don't render header on dashboard routes
     if (location.pathname.startsWith("/dashboard")) {
         return null;
     }
 
+    const handleSignIn = () => {
+        setAuthModalView("signin");
+        setAuthModalOpen(true);
+    };
+
     return (
-        <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-b border-gray-200/80 shadow-sm">
-            <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8">
-                <nav className="flex items-center justify-between h-16 lg:h-20">
+        <header className="fixed top-0 left-0 right-0 z-50 pt-4 px-4">
+            <div
+                className="max-w-[900px] mx-auto rounded-2xl border"
+                style={{
+                    background: "rgba(255,255,255,0.75)",
+                    backdropFilter: "blur(20px) saturate(1.5)",
+                    WebkitBackdropFilter: "blur(20px) saturate(1.5)",
+                    borderColor: "rgba(0,0,0,0.06)",
+                    boxShadow: "0 2px 16px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.02)",
+                }}
+            >
+                <nav className="flex items-center justify-between h-14 px-5">
                     {/* Logo */}
-                    <Link to="/" className="flex items-center gap-2 group">
-                        <div className="relative">
-                            <img
-                                src="/logo.svg"
-                                alt="Pitchrr"
-                                className="h-8 relative z-10 transition-transform group-hover:scale-105"
-                            />
-                        </div>
+                    <Link to="/" className="flex items-center gap-2 shrink-0">
+                        <img
+                            src="/logo.svg"
+                            alt="Pitchrr"
+                            className="h-8 transition-transform hover:scale-105"
+                        />
                     </Link>
 
-                    {/* Desktop Navigation */}
+                    {/* Desktop Navigation - Center */}
                     <div className="hidden lg:flex items-center gap-1">
                         {navLinks.map((link) => (
                             <a
                                 key={link.label}
                                 href={link.href}
-                                className="relative px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors group"
+                                className="px-3.5 py-1.5 text-[13px] font-medium rounded-lg transition-colors duration-200"
+                                style={{
+                                    fontFamily: "var(--font-body)",
+                                    color: "var(--color-text-secondary)",
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.color = "var(--color-text-primary)";
+                                    e.currentTarget.style.background = "rgba(0,0,0,0.03)";
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.color = "var(--color-text-secondary)";
+                                    e.currentTarget.style.background = "transparent";
+                                }}
                             >
                                 {link.label}
-                                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-linear-to-r from-blue-600 to-indigo-600 group-hover:w-3/4 transition-all duration-300" />
                             </a>
                         ))}
-                        <button
-                            onClick={openFeedback}
-                            className="relative px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors group"
-                        >
-                            Feedback
-                            <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-linear-to-r from-blue-600 to-indigo-600 group-hover:w-3/4 transition-all duration-300" />
-                        </button>
                     </div>
 
-                    {/* Auth Buttons */}
-                    <div className="flex items-center gap-4">
+                    {/* Desktop Right Actions */}
+                    <div className="hidden lg:flex items-center gap-2.5">
                         {!isLoaded ? (
-                            <div className="w-10 h-10 rounded-full bg-gray-100 animate-pulse" />
+                            <div className="w-8 h-8 rounded-full bg-gray-100 animate-pulse" />
                         ) : user ? (
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2.5">
+                                {/* Feedback button */}
+                                <button
+                                    onClick={openFeedback}
+                                    className="btn-outline px-3.5 py-1.5 text-[12px] rounded-lg"
+                                    style={{ fontFamily: "var(--font-body)" }}
+                                >
+                                    Feedback
+                                </button>
+
                                 <Link to="/dashboard">
-                                    <Button
-                                        variant="secondary"
-                                        leftIcon={<LayoutDashboard className="w-4 h-4" />}
+                                    <button
+                                        className="btn-gradient px-3.5 py-1.5 text-[12px] rounded-lg inline-flex items-center gap-1.5"
                                     >
+                                        <LayoutDashboard className="w-3.5 h-3.5" />
                                         Dashboard
-                                    </Button>
+                                    </button>
                                 </Link>
+
                                 <div className="relative group">
                                     <UserAvatar
                                         name={user.firstName || user.username || user.primaryEmailAddress?.emailAddress}
                                         imageUrl={user.imageUrl}
                                     />
-                                    {/* Quick Dropdown Mock (to be improved) */}
                                     <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all py-2 z-50">
                                         <div className="px-4 py-2 border-b border-gray-50 mb-1">
                                             <p className="text-xs font-semibold text-gray-900 truncate">
-                                                {user.fullName || 'User'}
+                                                {user.fullName || "User"}
                                             </p>
                                             <p className="text-[10px] text-gray-500 truncate">
                                                 {user.primaryEmailAddress?.emailAddress}
@@ -104,19 +130,75 @@ export function Header() {
                                 </div>
                             </div>
                         ) : (
-                            <Button
-                                className="group"
-                                onClick={() => setAuthModalOpen(true)}
-                            >
-                                Get Started
-                            </Button>
+                            <>
+                                {/* Feedback - outline button */}
+                                <button
+                                    onClick={openFeedback}
+                                    className="btn-outline px-3.5 py-1.5 text-[12px] rounded-lg"
+                                    style={{ fontFamily: "var(--font-body)" }}
+                                >
+                                    Feedback
+                                </button>
+
+                                {/* Sign In - gradient button */}
+                                <button
+                                    onClick={handleSignIn}
+                                    className="btn-gradient px-4 py-1.5 text-[12px] rounded-lg"
+                                >
+                                    Sign In
+                                </button>
+                            </>
                         )}
                     </div>
 
+                    {/* Mobile menu button */}
+                    <button
+                        onClick={() => setMobileOpen(!mobileOpen)}
+                        className="lg:hidden p-2 text-gray-600 hover:text-gray-900 transition-colors"
+                    >
+                        {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                    </button>
                 </nav>
-            </div>
 
+                {/* Mobile Navigation */}
+                {mobileOpen && (
+                    <div className="lg:hidden border-t border-gray-100/50 py-3 px-2 space-y-1">
+                        {navLinks.map((link) => (
+                            <a
+                                key={link.label}
+                                href={link.href}
+                                onClick={() => setMobileOpen(false)}
+                                className="block px-4 py-2.5 text-[13px] font-medium text-gray-700 hover:text-[var(--color-primary-blue)] hover:bg-gray-50 rounded-lg transition-colors"
+                            >
+                                {link.label}
+                            </a>
+                        ))}
+                        <button
+                            onClick={() => { openFeedback(); setMobileOpen(false); }}
+                            className="block w-full text-left px-4 py-2.5 text-[13px] font-medium text-gray-700 hover:text-[var(--color-primary-blue)] hover:bg-gray-50 rounded-lg transition-colors"
+                        >
+                            Feedback
+                        </button>
+                        <div className="pt-2 px-2">
+                            {!user ? (
+                                <button
+                                    onClick={() => { handleSignIn(); setMobileOpen(false); }}
+                                    className="btn-gradient w-full py-2.5 text-[13px] rounded-lg"
+                                >
+                                    Sign In
+                                </button>
+                            ) : (
+                                <Link to="/dashboard" onClick={() => setMobileOpen(false)}>
+                                    <button className="btn-gradient w-full py-2.5 text-[13px] rounded-lg inline-flex items-center justify-center gap-2">
+                                        <LayoutDashboard className="w-4 h-4" />
+                                        Dashboard
+                                    </button>
+                                </Link>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
         </header>
     );
 }
-

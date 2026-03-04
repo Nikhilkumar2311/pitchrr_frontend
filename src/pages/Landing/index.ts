@@ -4,8 +4,7 @@
  */
 
 export { HeroSection } from './HeroSection';
-export { FeaturesSection } from './FeaturesSection';
+export { ModulesSection } from './ModulesSection';
 export { HowItWorksSection } from './HowItWorksSection';
-export { BenefitsSection } from './BenefitsSection';
-export { CTASection } from './CTASection';
+export { ProductPreviewSection } from './ProductPreviewSection';
 export { Footer } from '../../layout/Footer';

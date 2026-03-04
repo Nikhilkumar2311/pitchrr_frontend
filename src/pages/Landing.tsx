@@ -1,184 +1,255 @@
 /**
- * Landing Page
- * 
- * The main entry point for visitors.
- * Features GSAP animations for engaging visuals.
- * 
+ * Landing Page - Redesigned
+ *
+ * Premium SaaS landing page with Lenis smooth scroll,
+ * GSAP animations, and velocity scroll effects.
+ *
  * SECTIONS:
- * 1. Hero - Main headline with CTA
- * 2. Features - The 7-step process
- * 3. How It Works - Visual step-by-step guide
- * 4. Benefits - Why choose Pitchrr + Testimonial
- * 5. CTA - Final call to action
- * 6. Footer - Links and info
- * 
- * GSAP ANIMATIONS:
+ * 1. Hero - Centered headline with word swap, two CTAs, velocity marquee
+ * 2. Modules - 6 interactive hover-expand panels
+ * 3. How It Works - Horizontal 3-step layout
+ * 4. Product Preview - CSS-rendered dashboard mock
+ * 5. CTA - Final minimal call to action
+ * 6. Footer
+ *
+ * ANIMATIONS:
+ * - Lenis smooth scrolling
  * - Hero text reveals on load
- * - Feature cards stagger in on scroll
- * - Benefits animate on scroll
+ * - Word swap in headline
+ * - Scroll-based fade-up for all sections
+ * - Magnetic button hover effect
+ * - Ambient gradient blob movement
  */
 
-import { useEffect, useRef, useState, lazy, Suspense } from 'react';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Header } from '@/layout/Header';
-import { HeroSection } from './Landing/HeroSection';
-import { FeaturesSection } from './Landing/FeaturesSection';
-import { LandingSkeleton } from '@/components/skeletons/LandingSkeleton';
-import { SEO } from '@/components/common';
-
-// Lazy load below-the-fold sections for faster initial page load
-const HowItWorksSection = lazy(() => import('./Landing/HowItWorksSection').then(m => ({ default: m.HowItWorksSection })));
-const BenefitsSection = lazy(() => import('./Landing/BenefitsSection').then(m => ({ default: m.BenefitsSection })));
-// const CTASection = lazy(() => import('./Landing/CTASection').then(m => ({ default: m.CTASection })));
-const Footer = lazy(() => import('../layout/Footer').then(m => ({ default: m.Footer })));
+import { useEffect, useRef, useState } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Lenis from "lenis";
+import { Header } from "@/layout/Header";
+import { HeroSection } from "./Landing/HeroSection";
+import { ModulesSection } from "./Landing/ModulesSection";
+import { HowItWorksSection } from "./Landing/HowItWorksSection";
+import { ProductPreviewSection } from "./Landing/ProductPreviewSection";
+import { Footer } from "@/layout/Footer";
+import { LandingSkeleton } from "@/components/skeletons/LandingSkeleton";
+import { SEO } from "@/components/common";
+import "@/styles/landing.css";
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);
 
 export default function Landing() {
-    // Refs for GSAP animations
+    const pageRef = useRef<HTMLDivElement>(null);
     const heroRef = useRef<HTMLDivElement>(null);
-    const featuresRef = useRef<HTMLDivElement>(null);
-    const benefitsRef = useRef<HTMLDivElement>(null);
-
+    const modulesRef = useRef<HTMLDivElement>(null);
+    const previewRef = useRef<HTMLDivElement>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // Simulate initial loading
-        const timer = setTimeout(() => {
-            setIsLoading(false);
-        }, 1000);
+        const timer = setTimeout(() => setIsLoading(false), 800);
         return () => clearTimeout(timer);
     }, []);
 
+    // Initialize Lenis smooth scroll
+    useEffect(() => {
+        if (isLoading) return;
+
+        const lenis = new Lenis({
+            duration: 1.2,
+            easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            touchMultiplier: 2,
+        });
+
+        // Integrate Lenis with GSAP ScrollTrigger
+        lenis.on("scroll", ScrollTrigger.update);
+
+        gsap.ticker.add((time) => {
+            lenis.raf(time * 1000);
+        });
+        gsap.ticker.lagSmoothing(0);
+
+        return () => {
+            lenis.destroy();
+            gsap.ticker.remove(lenis.raf as unknown as gsap.TickerCallback);
+        };
+    }, [isLoading]);
+
+    // GSAP Animations
     useEffect(() => {
         if (isLoading) return;
 
         const ctx = gsap.context(() => {
             /**
-             * HERO ANIMATION
+             * HERO ANIMATIONS
              */
-            const heroTimeline = gsap.timeline();
+            const heroTl = gsap.timeline({ delay: 0.2 });
 
-            // Entrance sequence
-            heroTimeline.fromTo('.ai-badge',
-                { y: 20, opacity: 0 },
-                { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' }
+            heroTl.fromTo(
+                ".hero-badge",
+                { y: 15, opacity: 0 },
+                { y: 0, opacity: 1, duration: 0.5, ease: "power2.out" }
             );
 
-            heroTimeline.fromTo('.hero-heading',
-                { y: 60, opacity: 0 },
-                { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out' },
-                '-=0.3'
+            heroTl.fromTo(
+                ".hero-headline",
+                { y: 50, opacity: 0 },
+                { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" },
+                "-=0.2"
             );
 
-            // Underline animation (drawing effect)
-            heroTimeline.fromTo('.hero-underline',
-                { opacity: 0, scaleX: 0 },
-                { opacity: 1, scaleX: 1, duration: 0.8, transformOrigin: 'left center', ease: 'power2.out' },
-                '-=0.4'
-            );
-
-            heroTimeline.fromTo('.hero-description',
-                { y: 40, opacity: 0 },
-                { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' },
-                '-=0.5'
-            );
-
-            heroTimeline.fromTo('.hero-cta',
+            heroTl.fromTo(
+                ".hero-subheading",
                 { y: 30, opacity: 0 },
-                { y: 0, opacity: 1, duration: 0.5, ease: 'power3.out' },
-                '-=0.4'
+                { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" },
+                "-=0.4"
             );
 
-            heroTimeline.fromTo('.hero-trust',
-                { opacity: 0 },
-                { opacity: 1, duration: 0.5, ease: 'power1.out' },
-                '-=0.3'
-            );
-
-            // Image entrance
-            gsap.fromTo('.hero-image-container',
-                { x: 50, scale: 0.95, opacity: 0 },
-                { x: 0, scale: 1, opacity: 1, duration: 1, ease: 'power2.out', delay: 0.3 }
+            heroTl.fromTo(
+                ".hero-cta",
+                { y: 25, opacity: 0 },
+                { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" },
+                "-=0.3"
             );
 
             /**
-             * CONTINUOUS FLOATING ANIMATIONS
+             * AMBIENT GRADIENT BLOB MOVEMENT
              */
-            // Main image floating
-            gsap.to('.hero-image-floating', {
-                y: -15,
-                duration: 2,
+            gsap.to(".hero-gradient-blob", {
+                x: "random(-40, 40)",
+                y: "random(-30, 30)",
+                duration: 8,
                 repeat: -1,
                 yoyo: true,
-                ease: 'sine.inOut'
-            });
-
-            // Decorative icons floating
-            gsap.to('.hero-float-1', {
-                y: -20,
-                rotate: 5,
-                duration: 3,
-                repeat: -1,
-                yoyo: true,
-                ease: 'sine.inOut'
-            });
-
-            gsap.to('.hero-float-2', {
-                y: 15,
-                rotate: -5,
-                duration: 3.5,
-                repeat: -1,
-                yoyo: true,
-                ease: 'sine.inOut',
-                delay: 0.5
-            });
-
-            gsap.to('.hero-float-3', {
-                y: 10,
-                duration: 2.5,
-                repeat: -1,
-                yoyo: true,
-                ease: 'sine.inOut',
-                delay: 0.8
+                ease: "sine.inOut",
+                stagger: 2,
             });
 
             /**
-             * FEATURE CARDS ANIMATION
+             * SCROLL-TRIGGERED FADE-UP FOR ALL SECTIONS
              */
-            gsap.from('.feature-card', {
-                scrollTrigger: {
-                    trigger: featuresRef.current,
-                    start: 'top 80%',
-                    toggleActions: 'play none none none',
-                },
-                y: 50,
-                opacity: 0,
-                duration: 0.6,
-                stagger: 0.1,
-                ease: 'power2.out',
+            gsap.utils.toArray<HTMLElement>(".gsap-reveal").forEach((el) => {
+                gsap.fromTo(
+                    el,
+                    { y: 30, opacity: 0 },
+                    {
+                        y: 0,
+                        opacity: 1,
+                        duration: 0.7,
+                        ease: "power2.out",
+                        scrollTrigger: {
+                            trigger: el,
+                            start: "top 88%",
+                            toggleActions: "play none none none",
+                        },
+                    }
+                );
             });
 
             /**
-             * BENEFITS SECTION ANIMATION
+             * MODULE CARDS STAGGER
              */
-            gsap.from('.benefit-item', {
-                scrollTrigger: {
-                    trigger: benefitsRef.current,
-                    start: 'top 80%',
-                },
-                x: -30,
-                opacity: 0,
-                duration: 0.5,
-                stagger: 0.15,
-                ease: 'power2.out',
+            const featureCards = gsap.utils.toArray<HTMLElement>(".feature-card");
+            featureCards.forEach((card, i) => {
+                gsap.fromTo(
+                    card,
+                    { y: 30, opacity: 0 },
+                    {
+                        y: 0,
+                        opacity: 1,
+                        duration: 0.5,
+                        delay: i * 0.08,
+                        ease: "power2.out",
+                        scrollTrigger: {
+                            trigger: card,
+                            start: "top 90%",
+                            toggleActions: "play none none none",
+                        },
+                    }
+                );
             });
 
-        }, heroRef);
+            /**
+             * STEP CARDS SEQUENTIAL
+             */
+            const stepCards = gsap.utils.toArray<HTMLElement>(".step-card");
+            stepCards.forEach((card, i) => {
+                gsap.fromTo(
+                    card,
+                    { y: 30, opacity: 0 },
+                    {
+                        y: 0,
+                        opacity: 1,
+                        duration: 0.6,
+                        delay: i * 0.15,
+                        ease: "power2.out",
+                        scrollTrigger: {
+                            trigger: card,
+                            start: "top 90%",
+                            toggleActions: "play none none none",
+                        },
+                    }
+                );
+            });
+
+            /**
+             * PRODUCT PREVIEW PARALLAX
+             */
+            if (previewRef.current) {
+                gsap.fromTo(
+                    ".product-preview",
+                    { y: 40 },
+                    {
+                        y: -20,
+                        ease: "none",
+                        scrollTrigger: {
+                            trigger: previewRef.current,
+                            start: "top bottom",
+                            end: "bottom top",
+                            scrub: 1,
+                        },
+                    }
+                );
+            }
+        }, pageRef);
 
         return () => ctx.revert();
+    }, [isLoading]);
+
+    // Magnetic button effect
+    useEffect(() => {
+        if (isLoading) return;
+
+        const buttons = document.querySelectorAll<HTMLElement>(".magnetic-btn");
+
+        const handleMouseMove = (e: MouseEvent) => {
+            const btn = e.currentTarget as HTMLElement;
+            const rect = btn.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+            btn.style.transform = `translate(${x * 0.15}px, ${y * 0.15}px)`;
+        };
+
+        const handleMouseLeave = (e: MouseEvent) => {
+            const btn = e.currentTarget as HTMLElement;
+            gsap.to(btn, {
+                x: 0,
+                y: 0,
+                duration: 0.4,
+                ease: "elastic.out(1, 0.5)",
+            });
+        };
+
+        buttons.forEach((btn) => {
+            btn.addEventListener("mousemove", handleMouseMove);
+            btn.addEventListener("mouseleave", handleMouseLeave);
+        });
+
+        return () => {
+            buttons.forEach((btn) => {
+                btn.removeEventListener("mousemove", handleMouseMove);
+                btn.removeEventListener("mouseleave", handleMouseLeave);
+            });
+        };
     }, [isLoading]);
 
     if (isLoading) {
@@ -186,7 +257,7 @@ export default function Landing() {
     }
 
     return (
-        <div className="bg-white w-full mx-auto overflow-x-hidden">
+        <div ref={pageRef} className="landing-page bg-white w-full mx-auto overflow-x-hidden">
             <SEO
                 title="AI-Powered Startup Tools"
                 description="Build investor-ready pitch decks, validate startup ideas, and create winning strategies with AI. Transform your vision into a fundable startup in minutes."
@@ -194,29 +265,25 @@ export default function Landing() {
                 canonical="/"
             />
 
-            {/* Navigation Header */}
+            {/* Navigation */}
             <Header />
 
             {/* Hero Section */}
-            <HeroSection ref={heroRef} />
+            <div ref={heroRef}>
+                <HeroSection />
+            </div>
 
-            {/* Features Section */}
-            <FeaturesSection ref={featuresRef} />
+            {/* Modules Section */}
+            <ModulesSection ref={modulesRef} />
 
-            {/* Below-the-fold sections - lazy loaded */}
-            <Suspense fallback={null}>
-                {/* How It Works Section */}
-                <HowItWorksSection />
+            {/* How It Works */}
+            <HowItWorksSection />
 
-                {/* Benefits Section */}
-                <BenefitsSection ref={benefitsRef} />
+            {/* Product Preview */}
+            <ProductPreviewSection ref={previewRef} />
 
-                {/* CTA Section */}
-                {/* <CTASection /> */}
-
-                {/* Footer */}
-                <Footer />
-            </Suspense>
+            {/* Footer */}
+            <Footer />
         </div>
     );
 }

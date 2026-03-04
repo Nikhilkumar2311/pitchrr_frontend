@@ -1,0 +1,280 @@
+/* ============================================
+   Pitchrr Landing Page Design System
+   ============================================ */
+
+/* --- Lenis Smooth Scroll --- */
+html.lenis,
+html.lenis body {
+    height: auto;
+}
+
+.lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+    overflow: hidden;
+}
+
+/* --- CSS Custom Properties --- */
+:root {
+    /* Colors */
+    --color-primary-blue: #4F7DF3;
+    --color-primary-violet: #7A5CFF;
+    --color-gradient: linear-gradient(135deg, #4F7DF3, #7A5CFF);
+    --color-bg-base: #FFFFFF;
+    --color-bg-light: #F8FAFF;
+    --color-bg-accent: #EEF2FF;
+    --color-text-primary: #0F172A;
+    --color-text-secondary: #1E293B;
+    --color-text-muted: #64748B;
+    --color-border: #E2E8F0;
+
+    /* Typography */
+    --font-heading: 'Sora', sans-serif;
+    --font-body: 'Inter', sans-serif;
+
+    /* Spacing scale */
+    --space-1: 8px;
+    --space-2: 16px;
+    --space-3: 24px;
+    --space-4: 32px;
+    --space-6: 48px;
+    --space-8: 64px;
+
+    /* Radii */
+    --radius-sm: 8px;
+    --radius-md: 10px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 20px;
+    --radius-full: 9999px;
+
+    /* Shadows */
+    --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.04), 0 4px 24px rgba(0, 0, 0, 0.03);
+    --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
+    --shadow-hover: 0 8px 32px rgba(79, 125, 243, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+    --shadow-glow: 0 0 60px rgba(79, 125, 243, 0.15);
+}
+
+/* --- Landing page font overrides --- */
+.landing-page {
+    font-family: var(--font-body);
+    color: var(--color-text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.landing-page h1,
+.landing-page h2,
+.landing-page h3,
+.landing-page h4 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+}
+
+/* --- Gradient text utility --- */
+.gradient-text {
+    background: var(--color-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* --- Gradient button --- */
+.btn-gradient {
+    background: var(--color-gradient);
+    color: white;
+    border: none;
+    font-family: var(--font-body);
+    font-weight: 600;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-gradient:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(79, 125, 243, 0.3);
+}
+
+.btn-gradient::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), transparent);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.btn-gradient:hover::after {
+    opacity: 1;
+}
+
+/* --- Outline button --- */
+.btn-outline {
+    background: transparent;
+    border: 1.5px solid var(--color-border);
+    color: var(--color-text-primary);
+    font-family: var(--font-body);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-outline:hover {
+    border-color: var(--color-primary-blue);
+    color: var(--color-primary-blue);
+    background: rgba(79, 125, 243, 0.04);
+    transform: translateY(-1px);
+}
+
+/* --- Section backgrounds --- */
+.bg-landing-light {
+    background-color: var(--color-bg-light);
+}
+
+.bg-landing-accent {
+    background-color: var(--color-bg-accent);
+}
+
+/* --- Magnetic button hover effect --- */
+.magnetic-btn {
+    transition: transform 0.15s ease-out;
+}
+
+/* --- GSAP animation targets (visible by default, GSAP handles initial state) --- */
+.gsap-reveal,
+.gsap-reveal-left,
+.gsap-reveal-right,
+.gsap-fade {
+    will-change: opacity, transform;
+}
+
+/* --- Velocity scroll marquee --- */
+.velocity-scroll-wrapper {
+    overflow: hidden;
+    white-space: nowrap;
+    width: 100%;
+}
+
+.velocity-scroll-track {
+    display: inline-flex;
+    white-space: nowrap;
+}
+
+.velocity-scroll-text {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: clamp(2rem, 5vw, 4rem);
+    color: var(--color-bg-accent);
+    padding: 0 var(--space-4);
+    user-select: none;
+    display: inline-block;
+}
+
+/* --- Module card interaction --- */
+.module-card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: white;
+    box-shadow: var(--shadow-soft);
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    cursor: default;
+}
+
+.module-card:hover {
+    box-shadow: var(--shadow-hover);
+    border-color: rgba(79, 125, 243, 0.25);
+    transform: translateY(-4px);
+}
+
+.module-card .module-description {
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, margin 0.3s ease;
+    margin-top: 0;
+    overflow: hidden;
+}
+
+.module-card:hover .module-description {
+    max-height: 120px;
+    opacity: 1;
+    margin-top: 12px;
+}
+
+.module-card .module-accent {
+    width: 0;
+    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.module-card:hover .module-accent {
+    width: 40px;
+}
+
+/* --- Product preview mock --- */
+.mock-browser {
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border);
+    background: white;
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+}
+
+.mock-browser-bar {
+    background: var(--color-bg-light);
+    border-bottom: 1px solid var(--color-border);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mock-browser-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.mock-browser-url {
+    flex: 1;
+    margin-left: 12px;
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 6px 14px;
+    font-size: 13px;
+    color: var(--color-text-muted);
+    font-family: var(--font-body);
+}
+
+/* --- Step connector line --- */
+.step-connector {
+    position: absolute;
+    top: 32px;
+    left: 50%;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--color-primary-blue), var(--color-primary-violet));
+    opacity: 0.2;
+}
+
+/* Scrollbar styling for landing page */
+.landing-page::-webkit-scrollbar {
+    width: 6px;
+}
+
+.landing-page::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.landing-page::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 3px;
+}
