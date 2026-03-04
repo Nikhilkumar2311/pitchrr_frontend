@@ -2,6 +2,8 @@
  * Dashboard Home Page
  * Main dashboard with module overview, progress tracking,
  * Generate Idea feature, and skeleton loading
+ * 
+ * Visual redesign — all logic, routing, and data flow preserved.
  */
 
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -61,7 +63,7 @@ const modules: {
       title: "Idea Validation",
       description: "Validate your startup idea with AI-powered analysis",
       path: "/dashboard/idea",
-      color: "#3B82F6",
+      color: "#4F7DF3",
       progress: 0,
       status: "not-started",
       exportCost: 2,
@@ -132,6 +134,13 @@ const getStatusBadge = (status: ModuleStatus) => {
     case "completed":
       return { variant: "success" as const, label: "Completed" };
   }
+};
+
+// Status dot colors
+const statusDotColor: Record<ModuleStatus, string> = {
+  "not-started": "#94A3B8",
+  "in-progress": "#F59E0B",
+  "completed": "#22C55E",
 };
 
 export default function Dashboard() {
@@ -232,6 +241,8 @@ export default function Dashboard() {
     modulesWithProgress.reduce((acc, m) => acc + m.progress, 0) /
     modulesWithProgress.length
   );
+
+  const completedCount = modulesWithProgress.filter((m) => m.status === "completed").length;
 
   // Simulate initial data loading
   useEffect(() => {
@@ -347,24 +358,39 @@ export default function Dashboard() {
         description="Your startup command center. Track progress across all modules, generate AI-powered ideas, and export investor-ready materials."
         canonical="/dashboard"
       />
-      <div className="space-y-8">
+
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="space-y-6"
+      >
         {/* Welcome Section */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h2 className="text-2xl lg:text-3xl font-bold text-gray-900">
-              Welcome back, {user?.firstName || "Founder"}! 👋
+            <h2
+              className="text-2xl font-bold"
+              style={{
+                fontFamily: "var(--dash-font-heading)",
+                color: "var(--dash-text)",
+              }}
+            >
+              Welcome back, {user?.firstName || "Founder"} 👋
             </h2>
-            <p className="mt-1 text-gray-600">
+            <p
+              className="mt-1 text-[15px]"
+              style={{ color: "var(--dash-text-muted)" }}
+            >
               Continue building your startup with Pitchrr
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            {/* Generate Idea Button - Primary Blue */}
+          <div className="flex flex-wrap gap-2.5">
+            {/* Generate Idea Button */}
             <Button
               variant="secondary"
               leftIcon={<Sparkles className="w-4 h-4" />}
               onClick={() => setIsGenerateModalOpen(true)}
-              className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+              className="!bg-[rgba(79,125,243,0.06)] !border-[rgba(79,125,243,0.15)] !text-[#4F7DF3] hover:!bg-[rgba(79,125,243,0.1)] !rounded-[8px] !text-[13px] !font-semibold"
             >
               <span className="flex items-center gap-2">
                 <span>Generate Idea</span>
@@ -382,6 +408,7 @@ export default function Dashboard() {
               }
               onClick={handleExportAll}
               disabled={isExporting || !activeIdeaId}
+              className="!rounded-[8px] !text-[13px] !font-semibold"
             >
               <span className="flex items-center gap-2">
                 <span>{isExporting ? "Exporting..." : "Export All"}</span>
@@ -389,105 +416,149 @@ export default function Dashboard() {
               </span>
             </Button>
             <Link to="/dashboard/idea">
-              <Button rightIcon={<Play className="w-4 h-4" />}>Continue</Button>
+              <Button
+                rightIcon={<Play className="w-4 h-4" />}
+                className="!rounded-[8px] !text-[13px]"
+                style={{
+                  background: "linear-gradient(135deg, #4F7DF3, #7A5CFF)",
+                }}
+              >
+                Continue
+              </Button>
             </Link>
           </div>
         </div>
 
         {/* Current Idea Card - Show if idea exists */}
         {displayIdea && isIdeaBannerVisible && (
-          <Card className="bg-linear-to-r from-blue-50 to-indigo-50 border-blue-200 relative">
-            <button
-              onClick={() => setIsIdeaBannerVisible(false)}
-              className="absolute top-2 right-2 p-1 text-blue-300 hover:text-blue-600 hover:bg-white/50 rounded-full transition-colors"
-              title="Dismiss"
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card
+              className="relative overflow-hidden"
+              style={{
+                background: "linear-gradient(135deg, rgba(79,125,243,0.04), rgba(122,92,255,0.04))",
+                border: "1px solid rgba(79,125,243,0.12)",
+              }}
             >
-              <X className="w-4 h-4" />
-            </button>
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shrink-0">
-                <Lightbulb className="w-6 h-6 text-white" />
+              <button
+                onClick={() => setIsIdeaBannerVisible(false)}
+                className="absolute top-3 right-3 p-1 text-gray-300 hover:text-gray-500 rounded-full transition-colors"
+                title="Dismiss"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                <div
+                  className="w-11 h-11 rounded-[10px] flex items-center justify-center shrink-0"
+                  style={{
+                    background: "linear-gradient(135deg, #4F7DF3, #7A5CFF)",
+                    boxShadow: "0 4px 12px rgba(79,125,243,0.25)",
+                  }}
+                >
+                  <Lightbulb className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: "#4F7DF3" }}>
+                    Current Idea
+                  </p>
+                  <h3
+                    className="font-semibold text-[15px] truncate"
+                    style={{ color: "var(--dash-text)", fontFamily: "var(--dash-font-heading)" }}
+                  >
+                    {displayIdea.title}
+                  </h3>
+                  <p className="text-[13px] mt-0.5 line-clamp-1" style={{ color: "var(--dash-text-muted)" }}>
+                    {displayIdea.description}
+                  </p>
+                </div>
+                <Link to="/dashboard/idea" className="shrink-0">
+                  <Button
+                    rightIcon={<ArrowRight className="w-4 h-4" />}
+                    className="!rounded-[8px] !text-[13px]"
+                    style={{
+                      background: "linear-gradient(135deg, #4F7DF3, #7A5CFF)",
+                    }}
+                  >
+                    Continue
+                  </Button>
+                </Link>
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-blue-900">
-                  Your Current Idea
-                </h3>
-                <p className="text-lg font-bold text-gray-900">
-                  {displayIdea.title}
-                </p>
-                <p className="text-sm text-blue-700 mt-1 line-clamp-2">
-                  {displayIdea.description}
-                </p>
-              </div>
-              <Link to="/dashboard/idea">
-                <Button rightIcon={<ArrowRight className="w-4 h-4" />}>
-                  Continue Validation
-                </Button>
-              </Link>
-            </div>
-          </Card>
+            </Card>
+          </motion.div>
         )}
 
-        {/* See All Ideas + Overall Progress */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
-          <h2 className="text-xl font-semibold text-gray-900">Your Progress</h2>
-          {ideas && ideas.length > 1 && (
-            <Button
-              variant="secondary"
-              size="sm"
-              rightIcon={<ChevronRight className="w-4 h-4" />}
-              onClick={() => setIsIdeasListOpen(true)}
-              className="shrink-0"
+        {/* Progress Section */}
+        <div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+            <h2
+              className="text-lg font-semibold"
+              style={{ fontFamily: "var(--dash-font-heading)", color: "var(--dash-text)" }}
             >
-              See All Ideas ({ideas.length})
-            </Button>
-          )}
-        </div>
-        <Card>
-          <CardHeader>
-            <CardDescription>
-              Complete all 7 modules to be investor-ready
-            </CardDescription>
-          </CardHeader>
-          <div className="mt-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">
-                Overall Completion
-              </span>
-              <span className="text-sm font-bold text-blue-600">
-                {overallProgress}%
-              </span>
+              Your Progress
+            </h2>
+            {ideas && ideas.length > 1 && (
+              <Button
+                variant="secondary"
+                size="sm"
+                rightIcon={<ChevronRight className="w-4 h-4" />}
+                onClick={() => setIsIdeasListOpen(true)}
+                className="shrink-0 !rounded-[8px] !text-[12px]"
+              >
+                See All Ideas ({ideas.length})
+              </Button>
+            )}
+          </div>
+          <Card>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <div>
+                <CardHeader className="!mb-0">
+                  <CardDescription>
+                    Complete all modules to be investor-ready
+                  </CardDescription>
+                </CardHeader>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className="text-[13px] font-medium"
+                  style={{ color: "var(--dash-text-muted)" }}
+                >
+                  {completedCount} of {modulesWithProgress.length} completed
+                </span>
+                <span
+                  className="text-[15px] font-bold"
+                  style={{ color: "#4F7DF3" }}
+                >
+                  {overallProgress}%
+                </span>
+              </div>
             </div>
             <ProgressBar value={overallProgress} size="lg" />
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Badge variant="default">
-              {
-                modulesWithProgress.filter((m) => m.status === "not-started")
-                  .length
-              }{" "}
-              Not Started
-            </Badge>
-            <Badge variant="warning">
-              {
-                modulesWithProgress.filter((m) => m.status === "in-progress")
-                  .length
-              }{" "}
-              In Progress
-            </Badge>
-            <Badge variant="success">
-              {
-                modulesWithProgress.filter((m) => m.status === "completed")
-                  .length
-              }{" "}
-              Completed
-            </Badge>
-          </div>
-        </Card>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Badge variant="default">
+                {modulesWithProgress.filter((m) => m.status === "not-started").length}{" "}
+                Not Started
+              </Badge>
+              <Badge variant="warning">
+                {modulesWithProgress.filter((m) => m.status === "in-progress").length}{" "}
+                In Progress
+              </Badge>
+              <Badge variant="success">
+                {modulesWithProgress.filter((m) => m.status === "completed").length}{" "}
+                Completed
+              </Badge>
+            </div>
+          </Card>
+        </div>
 
         {/* Module Cards Grid */}
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          <h2
+            className="text-lg font-semibold mb-4"
+            style={{ fontFamily: "var(--dash-font-heading)", color: "var(--dash-text)" }}
+          >
             Your Modules
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -497,55 +568,83 @@ export default function Dashboard() {
               return (
                 <motion.div
                   key={module.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
+                  transition={{ delay: index * 0.06, duration: 0.35 }}
+                  whileHover={{ scale: 1.02, y: -2 }}
                 >
                   <Link to={module.path}>
-                    <Card hover className="h-full">
-                      <div className="flex items-start justify-between mb-4">
+                    <Card hover className="h-full relative overflow-hidden">
+                      {/* Top accent gradient line */}
+                      <div
+                        className="absolute top-0 left-0 right-0 h-[2px]"
+                        style={{
+                          background: module.progress > 0
+                            ? `linear-gradient(90deg, ${module.color}, ${module.color}80)`
+                            : `linear-gradient(90deg, ${module.color}30, transparent)`,
+                        }}
+                      />
+                      <div className="flex items-start justify-between mb-3 pt-1">
                         <div
-                          className="w-12 h-12 rounded-xl flex items-center justify-center"
-                          style={{ backgroundColor: `${module.color}15` }}
+                          className="w-10 h-10 rounded-[10px] flex items-center justify-center"
+                          style={{ backgroundColor: `${module.color}0D` }}
                         >
                           <Icon
-                            className="w-6 h-6"
+                            className="w-5 h-5"
                             style={{ color: module.color }}
                           />
                         </div>
-                        <Badge variant={statusBadge.variant}>
-                          {statusBadge.label}
-                        </Badge>
+                        <div className="flex items-center gap-1.5">
+                          <div
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ background: statusDotColor[module.status] }}
+                          />
+                          <Badge variant={statusBadge.variant}>
+                            {statusBadge.label}
+                          </Badge>
+                        </div>
                       </div>
-                      <h3 className="font-semibold text-gray-900 mb-1">
+                      <h3
+                        className="font-semibold text-[14px] mb-1"
+                        style={{
+                          color: "var(--dash-text)",
+                          fontFamily: "var(--dash-font-heading)",
+                        }}
+                      >
                         {module.title}
                       </h3>
                       <div className="flex items-center gap-2 mb-4">
-                        <p className="text-sm text-gray-600 flex-1">
+                        <p className="text-[13px] flex-1" style={{ color: "var(--dash-text-muted)" }}>
                           {module.description}
                         </p>
                         {module.exportCost > 0 && (
-                          <span className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-1 rounded-full border border-amber-200 whitespace-nowrap">
-                            {module.exportCost} credits
-                          </span>
+                          <CreditCost cost={module.exportCost} />
                         )}
                       </div>
                       <div className="mt-auto">
-                        <div className="flex items-center justify-between mb-1 text-xs">
-                          <span className="text-gray-500">Progress</span>
-                          <span className="font-medium text-gray-700">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[11px]" style={{ color: "var(--dash-text-muted)" }}>
+                            Progress
+                          </span>
+                          <span
+                            className="text-[11px] font-semibold"
+                            style={{ color: "var(--dash-text-secondary)" }}
+                          >
                             {module.progress}%
                           </span>
                         </div>
                         <ProgressBar value={module.progress} size="sm" />
                       </div>
-                      <div className="flex items-center justify-end mt-4 text-blue-600">
-                        <span className="text-sm font-medium mr-1">
+                      <div className="flex items-center justify-end mt-3.5">
+                        <span
+                          className="text-[12px] font-semibold flex items-center gap-1 transition-colors"
+                          style={{ color: "#4F7DF3" }}
+                        >
                           {module.status === "not-started"
                             ? "Start"
                             : "Continue"}
+                          <ArrowRight className="w-3.5 h-3.5" />
                         </span>
-                        <ArrowRight className="w-4 h-4" />
                       </div>
                     </Card>
                   </Link>
@@ -555,51 +654,96 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Don't have an idea card - Primary Blue */}
+        {/* Don't have an idea card */}
         {!displayIdea && (
-          <Card className="bg-linear-to-r from-blue-50 to-indigo-50 border-blue-200">
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
-                <Sparkles className="w-6 h-6 text-white" />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card
+              style={{
+                background: "linear-gradient(135deg, rgba(79,125,243,0.04), rgba(122,92,255,0.04))",
+                border: "1px solid rgba(79,125,243,0.12)",
+              }}
+            >
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                <div
+                  className="w-11 h-11 rounded-[10px] flex items-center justify-center"
+                  style={{
+                    background: "linear-gradient(135deg, #4F7DF3, #7A5CFF)",
+                    boxShadow: "0 4px 12px rgba(79,125,243,0.25)",
+                  }}
+                >
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3
+                    className="font-semibold text-[15px]"
+                    style={{ color: "var(--dash-text)", fontFamily: "var(--dash-font-heading)" }}
+                  >
+                    Don't have an idea yet?
+                  </h3>
+                  <p className="text-[13px] mt-0.5" style={{ color: "var(--dash-text-muted)" }}>
+                    Let our AI help you discover startup ideas based on your
+                    interests, skills, and market trends.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => setIsGenerateModalOpen(true)}
+                  rightIcon={<Sparkles className="w-4 h-4" />}
+                  className="!rounded-[8px]"
+                  style={{
+                    background: "linear-gradient(135deg, #4F7DF3, #7A5CFF)",
+                  }}
+                >
+                  Generate Idea
+                </Button>
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-blue-900">
-                  Don't have an idea yet?
-                </h3>
-                <p className="text-sm text-blue-700 mt-1">
-                  Let our AI help you discover startup ideas based on your
-                  interests, skills, and market trends.
-                </p>
-              </div>
-              <Button
-                onClick={() => setIsGenerateModalOpen(true)}
-                rightIcon={<Sparkles className="w-4 h-4" />}
-              >
-                Generate Idea
-              </Button>
-            </div>
-          </Card>
+            </Card>
+          </motion.div>
         )}
 
         {/* Getting Started Tip */}
-        <Card className="bg-linear-to-r from-blue-50 to-blue-100 border-blue-200">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-            <div className="flex-1">
-              <h3 className="font-semibold text-blue-800">
-                💡 Getting Started Tip
-              </h3>
-              <p className="text-sm text-blue-700 mt-1">
-                Start with <strong>Idea Validation</strong> to get an AI-powered
-                assessment of your startup idea. This will guide the rest of
-                your planning.
-              </p>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.35 }}
+        >
+          <Card
+            style={{
+              background: "linear-gradient(135deg, rgba(79,125,243,0.03), rgba(122,92,255,0.03))",
+              border: "1px solid rgba(79,125,243,0.08)",
+            }}
+          >
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+              <div className="flex-1">
+                <h3
+                  className="font-semibold text-[14px]"
+                  style={{ color: "var(--dash-text)", fontFamily: "var(--dash-font-heading)" }}
+                >
+                  💡 Getting Started Tip
+                </h3>
+                <p className="text-[13px] mt-1" style={{ color: "var(--dash-text-muted)" }}>
+                  Start with <strong>Idea Validation</strong> to get an AI-powered
+                  assessment of your startup idea. This will guide the rest of
+                  your planning.
+                </p>
+              </div>
+              <Link to="/dashboard/idea" className="shrink-0">
+                <Button
+                  className="!rounded-[8px] !text-[13px]"
+                  style={{
+                    background: "linear-gradient(135deg, #4F7DF3, #7A5CFF)",
+                  }}
+                >
+                  Start Idea Validation
+                </Button>
+              </Link>
             </div>
-            <Link to="/dashboard/idea">
-              <Button>Start Idea Validation</Button>
-            </Link>
-          </div>
-        </Card>
-      </div>
+          </Card>
+        </motion.div>
+      </motion.div>
 
       {/* Generate Idea Modal */}
       <GenerateIdeaModal

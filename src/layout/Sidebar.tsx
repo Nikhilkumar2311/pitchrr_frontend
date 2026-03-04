@@ -1,6 +1,6 @@
 /**
  * Sidebar Component - Dashboard navigation
- * Uses standard Tailwind classes.
+ * Premium styling with gradient active indicators.
  */
 
 import { Link, useLocation } from "react-router-dom";
@@ -51,12 +51,9 @@ export function Sidebar() {
   } = useUIStore();
   const { ideaId } = useParams<{ ideaId?: string }>();
 
-  // Determine the active idea ID to use for links
-  // Priority: URL param > Store idea ID (if we added it to store) > undefined
-  const activeIdeaId = ideaId; // useParams is usually the most reliable for current context
+  const activeIdeaId = ideaId;
 
-
-  const sidebarWidth = isSidebarCollapsed ? "w-[72px]" : "w-[280px]";
+  const sidebarWidth = isSidebarCollapsed ? "w-[72px]" : "w-[260px]";
 
   return (
     <>
@@ -67,7 +64,7 @@ export function Sidebar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
@@ -76,7 +73,7 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 h-screen bg-white border-r border-gray-200 z-50
+          fixed top-0 left-0 h-screen z-50
           transition-all duration-300 ease-in-out
           ${sidebarWidth}
           ${isSidebarOpen
@@ -84,9 +81,14 @@ export function Sidebar() {
             : "-translate-x-full lg:translate-x-0"
           }
         `}
+        style={{
+          background: 'var(--dash-bg, #F8FAFF)',
+        }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+        <div
+          className="flex items-center justify-between h-[56px] px-4"
+        >
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
             <div className="relative">
@@ -100,7 +102,7 @@ export function Sidebar() {
 
           {/* Mobile close button */}
           <button
-            className="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+            className="lg:hidden p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
             onClick={() => setSidebarOpen(false)}
           >
             <X className="w-5 h-5" />
@@ -108,20 +110,30 @@ export function Sidebar() {
 
           {/* Desktop collapse button */}
           <button
-            className="hidden lg:flex p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+            className="hidden lg:flex p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
             onClick={toggleSidebarCollapse}
           >
             {isSidebarCollapsed ? (
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-4 h-4" />
             ) : (
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4" />
             )}
           </button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4">
-          <ul className="space-y-1 px-3">
+        <nav className="flex-1 overflow-y-auto py-3">
+          {!isSidebarCollapsed && (
+            <div className="px-4 mb-2">
+              <span
+                className="text-[10px] font-semibold uppercase tracking-widest"
+                style={{ color: 'var(--dash-text-muted)' }}
+              >
+                Workspace
+              </span>
+            </div>
+          )}
+          <ul className="space-y-0.5 px-3">
             {navItems.map((item) => {
               const Icon = item.icon;
               const linkPath = activeIdeaId && item.path.includes('/dashboard/') && item.path !== '/dashboard'
@@ -134,18 +146,46 @@ export function Sidebar() {
                   <Link
                     to={linkPath}
                     className={`
-                      flex items-center gap-3 px-3 py-2.5 rounded-lg
-                      transition-colors duration-200
-                      ${isActive
-                        ? "bg-blue-50 text-blue-600"
-                        : "text-gray-600 hover:bg-gray-100"
-                      }
+                      relative flex items-center gap-3 px-3 py-2 rounded-[var(--dash-radius-sm,8px)]
+                      transition-all duration-200 group
                     `}
+                    style={{
+                      fontFamily: 'var(--dash-font-body)',
+                      ...(isActive
+                        ? {
+                          background: 'rgba(79,125,243,0.06)',
+                          color: '#4F7DF3',
+                        }
+                        : {
+                          color: 'var(--dash-text-muted)',
+                        }),
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.background = 'rgba(0,0,0,0.03)';
+                        e.currentTarget.style.color = 'var(--dash-text-secondary)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.color = 'var(--dash-text-muted)';
+                      }
+                    }}
                     onClick={() => setSidebarOpen(false)}
                   >
-                    <Icon className="w-5 h-5 shrink-0" />
+                    {/* Active gradient accent bar */}
+                    {isActive && (
+                      <motion.div
+                        layoutId="sidebar-active"
+                        className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full"
+                        style={{ background: 'linear-gradient(180deg, #4F7DF3, #7A5CFF)' }}
+                        transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                      />
+                    )}
+                    <Icon className="w-[18px] h-[18px] shrink-0" />
                     {!isSidebarCollapsed && (
-                      <span className="font-medium text-sm">{item.label}</span>
+                      <span className="text-[13px] font-medium">{item.label}</span>
                     )}
                   </Link>
                 </li>
@@ -155,14 +195,26 @@ export function Sidebar() {
         </nav>
 
         {/* Logout */}
-        <div className="p-3 border-t border-gray-200">
+        <div className="p-3">
           <button
             onClick={() => signOut()}
-            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer"
+            className="flex items-center gap-3 w-full px-3 py-2 rounded-lg transition-all cursor-pointer"
+            style={{
+              color: 'var(--dash-text-muted)',
+              fontFamily: 'var(--dash-font-body)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(239,68,68,0.05)';
+              e.currentTarget.style.color = '#EF4444';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = 'var(--dash-text-muted)';
+            }}
           >
-            <LogOut className="w-5 h-5 shrink-0" />
+            <LogOut className="w-[18px] h-[18px] shrink-0" />
             {!isSidebarCollapsed && (
-              <span className="font-medium text-sm">Logout</span>
+              <span className="text-[13px] font-medium">Logout</span>
             )}
           </button>
         </div>

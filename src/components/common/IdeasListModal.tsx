@@ -33,10 +33,10 @@ export function IdeasListModal({
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Your Ideas" size="lg">
-            <div className="space-y-3">
+            <div className="space-y-2">
                 {isLoading ? (
                     <div className="flex items-center justify-center py-8">
-                        <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                        <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#4F7DF3' }} />
                     </div>
                 ) : ideas && ideas.length > 0 ? (
                     ideas.map((idea, index) => {
@@ -44,46 +44,74 @@ export function IdeasListModal({
                         return (
                             <motion.button
                                 key={idea.id}
-                                initial={{ opacity: 0, y: 10 }}
+                                initial={{ opacity: 0, y: 8 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.05 }}
+                                transition={{ delay: index * 0.04 }}
                                 onClick={() => handleSelect(idea)}
-                                className={`
-                                    w-full text-left p-4 rounded-xl border-2 transition-all
-                                    ${isActive
-                                        ? 'border-blue-500 bg-blue-50'
-                                        : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                                className="w-full text-left p-4 rounded-[10px] transition-all duration-200"
+                                style={{
+                                    background: isActive ? 'rgba(79,125,243,0.05)' : 'transparent',
+                                    border: isActive
+                                        ? '1.5px solid rgba(79,125,243,0.25)'
+                                        : '1.5px solid var(--dash-border-solid, #E8ECF4)',
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (!isActive) {
+                                        e.currentTarget.style.background = 'rgba(0,0,0,0.02)';
+                                        e.currentTarget.style.borderColor = 'rgba(79,125,243,0.15)';
                                     }
-                                `}
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (!isActive) {
+                                        e.currentTarget.style.background = 'transparent';
+                                        e.currentTarget.style.borderColor = 'var(--dash-border-solid, #E8ECF4)';
+                                    }
+                                }}
                             >
                                 <div className="flex items-start gap-3">
-                                    <div className={`
-                                        w-10 h-10 rounded-lg flex items-center justify-center shrink-0
-                                        ${isActive ? 'bg-blue-500' : 'bg-gray-200'}
-                                    `}>
+                                    <div
+                                        className="w-9 h-9 rounded-[8px] flex items-center justify-center shrink-0"
+                                        style={{
+                                            background: isActive
+                                                ? 'linear-gradient(135deg, #4F7DF3, #7A5CFF)'
+                                                : 'rgba(0,0,0,0.04)',
+                                        }}
+                                    >
                                         {isActive ? (
-                                            <Check className="w-5 h-5 text-white" />
+                                            <Check className="w-4 h-4 text-white" />
                                         ) : (
-                                            <Lightbulb className="w-5 h-5 text-gray-500" />
+                                            <Lightbulb className="w-4 h-4" style={{ color: '#94A3B8' }} />
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <h3 className="font-semibold text-gray-900 truncate">
+                                        <div className="flex items-center gap-2 mb-0.5">
+                                            <h3
+                                                className="font-semibold text-[14px] truncate"
+                                                style={{
+                                                    color: 'var(--dash-text, #0F172A)',
+                                                    fontFamily: 'var(--dash-font-heading, Sora, sans-serif)',
+                                                }}
+                                            >
                                                 {idea.title}
                                             </h3>
                                             {isActive && (
-                                                <Badge variant="success" className="shrink-0">
+                                                <Badge variant="primary" className="shrink-0">
                                                     Active
                                                 </Badge>
                                             )}
                                         </div>
-                                        <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                                        <p
+                                            className="text-[13px] line-clamp-2 mb-2"
+                                            style={{ color: 'var(--dash-text-muted, #64748B)' }}
+                                        >
                                             {idea.description}
                                         </p>
-                                        <div className="flex items-center gap-4 text-xs text-gray-500">
-                                            <span>
-                                                Created {formatDistanceToNow(new Date(idea.createdAt), { addSuffix: true })}
+                                        <div className="flex items-center gap-3">
+                                            <span
+                                                className="text-[11px]"
+                                                style={{ color: '#94A3B8' }}
+                                            >
+                                                {formatDistanceToNow(new Date(idea.createdAt), { addSuffix: true })}
                                             </span>
                                             {idea.industry && (
                                                 <Badge variant="default">{idea.industry}</Badge>
@@ -95,15 +123,22 @@ export function IdeasListModal({
                         );
                     })
                 ) : (
-                    <div className="text-center py-8 text-gray-500">
-                        <Lightbulb className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                        <p>No ideas yet. Create your first one!</p>
+                    <div className="text-center py-10">
+                        <div
+                            className="w-12 h-12 rounded-[10px] flex items-center justify-center mx-auto mb-3"
+                            style={{ background: 'rgba(0,0,0,0.04)' }}
+                        >
+                            <Lightbulb className="w-5 h-5" style={{ color: '#94A3B8' }} />
+                        </div>
+                        <p className="text-[14px] font-medium" style={{ color: 'var(--dash-text-muted)' }}>
+                            No ideas yet. Create your first one!
+                        </p>
                     </div>
                 )}
 
                 {/* Create New Button */}
                 {onCreateNew && (
-                    <div className="pt-3 border-t border-gray-200">
+                    <div className="pt-3" style={{ boxShadow: '0 -1px 0 rgba(0,0,0,0.04)' }}>
                         <Button
                             variant="secondary"
                             leftIcon={<Plus className="w-4 h-4" />}
@@ -111,7 +146,7 @@ export function IdeasListModal({
                                 onClose();
                                 onCreateNew();
                             }}
-                            className="w-full"
+                            className="w-full !rounded-[8px] !text-[13px]"
                         >
                             Create New Idea
                         </Button>

@@ -2,7 +2,7 @@
  * Card Component
  * 
  * A container component for grouping related content.
- * Uses standard Tailwind classes for styling.
+ * Uses design system tokens for premium SaaS styling.
  */
 
 import type { ReactNode, HTMLAttributes } from 'react';
@@ -17,8 +17,8 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
 const paddingStyles = {
     none: '',
     sm: 'p-4',
-    md: 'p-6',
-    lg: 'p-8',
+    md: 'p-5',
+    lg: 'p-7',
 };
 
 export function Card({
@@ -31,11 +31,11 @@ export function Card({
 }: CardProps) {
     const cardClasses = `
     bg-white 
-    rounded-xl 
-    ${noBorder ? '' : 'border border-gray-200'}
-    shadow-sm
+    rounded-[12px]
+    ${noBorder ? '' : 'border border-[var(--dash-border-solid,#E8ECF4)]'}
+    shadow-[var(--dash-shadow-card,0_2px_8px_rgba(0,0,0,0.04))]
     ${paddingStyles[padding]}
-    ${hover ? 'hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer' : ''}
+    ${hover ? 'hover:shadow-[var(--dash-shadow-hover)] hover:scale-[1.02] transition-all duration-200 cursor-pointer' : ''}
     ${className}
   `.trim().replace(/\s+/g, ' ');
 
@@ -66,7 +66,7 @@ interface CardTitleProps {
 
 export function CardTitle({ children, className = '' }: CardTitleProps) {
     return (
-        <h3 className={`text-lg font-semibold text-gray-900 ${className}`}>
+        <h3 className={`text-lg font-semibold text-[var(--dash-text,#0F172A)] ${className}`}>
             {children}
         </h3>
     );
@@ -79,7 +79,7 @@ interface CardDescriptionProps {
 
 export function CardDescription({ children, className = '' }: CardDescriptionProps) {
     return (
-        <p className={`text-sm text-gray-500 mt-1 ${className}`}>
+        <p className={`text-sm text-[var(--dash-text-muted,#64748B)] mt-1 ${className}`}>
             {children}
         </p>
     );
@@ -105,7 +105,7 @@ interface CardFooterProps {
 
 export function CardFooter({ children, className = '' }: CardFooterProps) {
     return (
-        <div className={`mt-4 pt-4 border-t border-gray-100 ${className}`}>
+        <div className={`mt-4 pt-4 border-t border-[var(--dash-border,rgba(0,0,0,0.06))] ${className}`}>
             {children}
         </div>
     );

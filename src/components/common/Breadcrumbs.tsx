@@ -1,6 +1,6 @@
 /**
  * Breadcrumbs Component
- * Uses standard Tailwind classes.
+ * Dashboard navigation breadcrumbs with design system styling.
  */
 
 import { Link, useLocation } from 'react-router-dom';
@@ -33,27 +33,32 @@ export function Breadcrumbs() {
     });
 
     return (
-        <nav className="hidden sm:flex items-center gap-2 text-sm" aria-label="Breadcrumb">
+        <nav
+            className="hidden sm:flex items-center gap-1.5 text-[13px]"
+            aria-label="Breadcrumb"
+            style={{ fontFamily: 'var(--dash-font-body, Inter, sans-serif)' }}
+        >
             {/* Home icon */}
             <Link
                 to="/dashboard"
                 className="p-1 rounded text-gray-400 hover:text-gray-600 transition-colors"
             >
-                <Home className="w-4 h-4" />
+                <Home className="w-3.5 h-3.5" />
             </Link>
 
             {/* Breadcrumb items */}
             {breadcrumbs.map((crumb) => (
-                <div key={crumb.path} className="flex items-center gap-2">
-                    <ChevronRight className="w-4 h-4 text-gray-300" />
+                <div key={crumb.path} className="flex items-center gap-1.5">
+                    <ChevronRight className="w-3.5 h-3.5 text-gray-300" />
                     {crumb.isLast ? (
-                        <span className="font-medium text-gray-900">
+                        <span className="font-medium" style={{ color: 'var(--dash-text, #0F172A)' }}>
                             {crumb.label}
                         </span>
                     ) : (
                         <Link
                             to={crumb.path}
-                            className="text-gray-500 hover:text-gray-700 transition-colors"
+                            className="transition-colors hover:text-gray-700"
+                            style={{ color: 'var(--dash-text-muted, #64748B)' }}
                         >
                             {crumb.label}
                         </Link>

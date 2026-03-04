@@ -1,7 +1,7 @@
 /**
  * Modal Component
  * 
- * Accessible modal with standard Tailwind classes.
+ * Accessible modal with premium SaaS styling and Framer Motion animations.
  */
 
 import { useEffect, type ReactNode } from 'react';
@@ -71,42 +71,39 @@ export function Modal({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="fixed inset-0 bg-black/40 backdrop-blur-md z-50"
+                        transition={{ duration: 0.25 }}
+                        className="fixed inset-0 z-50"
+                        style={{
+                            background: 'rgba(15, 23, 42, 0.4)',
+                            backdropFilter: 'blur(8px)',
+                            WebkitBackdropFilter: 'blur(8px)',
+                        }}
                         onClick={handleBackdropClick}
                         aria-hidden="true"
                     />
 
-                    {/* Main modal container using grid for perfect centering */}
-                    <div className="fixed inset-0 z-50 grid place-items-center p-4 overflow-y-auto w-full h-full">
-                        {/* Backdrop - full screen behind the grid content */}
+                    {/* Main modal container */}
+                    <div
+                        className="fixed inset-0 z-50 grid place-items-center p-4 overflow-y-auto w-full h-full"
+                        onClick={handleBackdropClick}
+                    >
+                        {/* Modal Content */}
                         <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="fixed inset-0 bg-black/40 backdrop-blur-md"
-                            onClick={handleBackdropClick}
-                            aria-hidden="true"
-                        />
-
-                        {/* Modal Content - relative to allow centering over backdrop */}
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                            initial={{ opacity: 0, scale: 0.96, y: 12 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                            exit={{ opacity: 0, scale: 0.96, y: 12 }}
                             transition={{
                                 type: "spring",
-                                damping: 25,
-                                stiffness: 300,
-                                duration: 0.4
+                                damping: 28,
+                                stiffness: 350,
+                                duration: 0.3
                             }}
-                            className={`
-                                relative w-full ${sizeStyles[size]}
-                                bg-white rounded-2xl shadow-2xl
-                                overflow-hidden z-10
-                                my-auto
-                            `}
+                            className={`relative w-full ${sizeStyles[size]} overflow-hidden z-10 my-auto`}
+                            style={{
+                                background: 'white',
+                                borderRadius: 'var(--dash-radius, 12px)',
+                                boxShadow: '0 24px 48px rgba(0,0,0,0.12), 0 8px 16px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)',
+                            }}
                             role="dialog"
                             aria-modal="true"
                             aria-labelledby={title ? 'modal-title' : undefined}
@@ -114,11 +111,18 @@ export function Modal({
                         >
                             {/* Header */}
                             {(title || showCloseButton) && (
-                                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                                <div
+                                    className="flex items-center justify-between px-6 py-4"
+                                    style={{ boxShadow: '0 1px 0 rgba(0,0,0,0.05)' }}
+                                >
                                     {title && (
                                         <h2
                                             id="modal-title"
-                                            className="text-lg font-semibold text-gray-900"
+                                            className="text-[15px] font-semibold"
+                                            style={{
+                                                color: 'var(--dash-text, #0F172A)',
+                                                fontFamily: 'var(--dash-font-heading, Sora, sans-serif)',
+                                            }}
                                         >
                                             {title}
                                         </h2>
@@ -126,17 +130,26 @@ export function Modal({
                                     {showCloseButton && (
                                         <button
                                             onClick={onClose}
-                                            className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                                            className="p-1.5 rounded-lg transition-colors"
+                                            style={{ color: '#94A3B8' }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.color = '#64748B';
+                                                e.currentTarget.style.background = 'rgba(0,0,0,0.04)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.color = '#94A3B8';
+                                                e.currentTarget.style.background = 'transparent';
+                                            }}
                                             aria-label="Close modal"
                                         >
-                                            <X className="w-5 h-5" />
+                                            <X className="w-4 h-4" />
                                         </button>
                                     )}
                                 </div>
                             )}
 
                             {/* Body */}
-                            <div className="px-6 py-4 overflow-y-auto max-h-[85vh]">
+                            <div className="px-6 py-5 overflow-y-auto max-h-[85vh]">
                                 {children}
                             </div>
                         </motion.div>

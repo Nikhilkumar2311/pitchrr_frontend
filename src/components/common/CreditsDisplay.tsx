@@ -1,8 +1,7 @@
 /**
  * CreditsDisplay Component
  *
- * Shows current credit balance in the dashboard header with a plus button
- * to navigate to the credits store.
+ * Shows current credit balance in dashboard header.
  */
 
 import { Link } from 'react-router-dom';
@@ -21,7 +20,7 @@ export function CreditsDisplay() {
             const response = await api.get('/credits');
             return response.data;
         },
-        refetchInterval: 5000, // Refetch every 5 seconds
+        refetchInterval: 5000,
         enabled: isLoaded && isSignedIn,
     });
 
@@ -32,9 +31,9 @@ export function CreditsDisplay() {
 
     if (isLoading) {
         return (
-            <div className="flex items-center gap-2 h-9 px-3 bg-gray-100 rounded-lg animate-pulse">
-                <div className="w-4 h-4 bg-gray-300 rounded" />
-                <div className="w-12 h-4 bg-gray-300 rounded" />
+            <div className="flex items-center gap-2 h-8 px-3 bg-gray-100 rounded-lg animate-pulse">
+                <div className="w-3.5 h-3.5 bg-gray-300 rounded" />
+                <div className="w-10 h-3.5 bg-gray-300 rounded" />
             </div>
         );
     }
@@ -42,22 +41,31 @@ export function CreditsDisplay() {
     return (
         <div className="flex items-center gap-1">
             {/* Credit Balance */}
-            <div className="flex items-center gap-2 h-9 px-3 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-lg">
-                <Coins className="w-4 h-4 text-amber-600" />
-                <span className="text-sm font-semibold text-amber-800">
-                    {credits?.balance ?? 0}
-                </span>
+            <div
+                className="flex items-center gap-2 h-8 px-3 rounded-lg text-[13px] font-semibold"
+                style={{
+                    background: 'rgba(245,158,11,0.06)',
+                    border: '1px solid rgba(245,158,11,0.15)',
+                    color: '#B45309',
+                    fontFamily: 'var(--dash-font-body)',
+                }}
+            >
+                <Coins className="w-3.5 h-3.5" />
+                <span>{credits?.balance ?? 0}</span>
             </div>
 
             {/* Add Credits Button */}
             <Link
                 to="/dashboard/store/credits"
-                className="flex items-center justify-center w-9 h-9 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 rounded-lg transition-all shadow-sm hover:shadow-md"
+                className="flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 hover:scale-105"
+                style={{
+                    background: 'var(--dash-gradient)',
+                    boxShadow: '0 2px 6px rgba(79,125,243,0.2)',
+                }}
                 title="Buy Credits"
             >
-                <Plus className="w-4 h-4 text-white" />
+                <Plus className="w-3.5 h-3.5 text-white" />
             </Link>
         </div>
     );
 }
-

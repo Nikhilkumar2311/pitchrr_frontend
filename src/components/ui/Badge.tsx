@@ -1,7 +1,7 @@
 /**
  * Badge Component
  * 
- * Status indicators with standard Tailwind classes.
+ * Status indicators with design system colors.
  */
 
 import type { ReactNode } from 'react';
@@ -14,16 +14,16 @@ interface BadgeProps {
 }
 
 const variantStyles = {
-    default: 'bg-gray-100 text-gray-700',
-    primary: 'bg-blue-100 text-blue-700',
-    success: 'bg-green-100 text-green-700',
-    warning: 'bg-yellow-100 text-yellow-700',
-    danger: 'bg-red-100 text-red-700',
+    default: 'bg-slate-100 text-slate-600',
+    primary: 'bg-blue-50 text-[#4F7DF3]',
+    success: 'bg-emerald-50 text-emerald-600',
+    warning: 'bg-amber-50 text-amber-600',
+    danger: 'bg-red-50 text-red-600',
 };
 
 const sizeStyles = {
-    sm: 'px-2 py-0.5 text-xs',
-    md: 'px-2.5 py-1 text-sm',
+    sm: 'px-2.5 py-0.5 text-[11px]',
+    md: 'px-3 py-1 text-xs',
 };
 
 export function Badge({
@@ -34,7 +34,7 @@ export function Badge({
 }: BadgeProps) {
     const badgeClasses = `
     inline-flex items-center
-    font-medium rounded-full
+    font-semibold rounded-full tracking-wide
     ${variantStyles[variant]}
     ${sizeStyles[size]}
     ${className}

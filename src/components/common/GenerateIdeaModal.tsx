@@ -218,30 +218,61 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                style={{
+                    background: 'rgba(15, 23, 42, 0.4)',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                }}
                 onClick={resetAndClose}
             >
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                    className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
+                    className="rounded-[12px] w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
+                    style={{
+                        background: 'white',
+                        boxShadow: '0 24px 48px rgba(0,0,0,0.12), 0 8px 16px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)',
+                    }}
                     onClick={e => e.stopPropagation()}
                 >
-                    {/* Header - fixed at top */}
-                    <div className="flex items-center justify-between p-6 border-b border-gray-200 shrink-0">
+                    <div
+                        className="flex items-center justify-between p-6 shrink-0"
+                        style={{ boxShadow: '0 1px 0 rgba(0,0,0,0.05)' }}
+                    >
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
+                            <div
+                                className="w-10 h-10 rounded-[10px] flex items-center justify-center"
+                                style={{
+                                    background: 'linear-gradient(135deg, #4F7DF3, #7A5CFF)',
+                                    boxShadow: '0 4px 12px rgba(79,125,243,0.25)',
+                                }}
+                            >
                                 <Sparkles className="w-5 h-5 text-white" />
                             </div>
                             <div>
-                                <h2 className="text-xl font-bold text-gray-900">Generate Startup Idea</h2>
-                                <p className="text-sm text-gray-500">Let AI help you find your next big thing</p>
+                                <h2
+                                    className="text-lg font-bold"
+                                    style={{ color: 'var(--dash-text, #0F172A)', fontFamily: 'var(--dash-font-heading, Sora, sans-serif)' }}
+                                >
+                                    Generate Startup Idea
+                                </h2>
+                                <p className="text-[13px]" style={{ color: 'var(--dash-text-muted, #64748B)' }}>Let AI help you find your next big thing</p>
                             </div>
                         </div>
                         <button
                             onClick={resetAndClose}
-                            className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                            className="p-1.5 rounded-lg transition-colors"
+                            style={{ color: '#94A3B8' }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.color = '#64748B';
+                                e.currentTarget.style.background = 'rgba(0,0,0,0.04)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.color = '#94A3B8';
+                                e.currentTarget.style.background = 'transparent';
+                            }}
                         >
                             <X className="w-5 h-5" />
                         </button>
@@ -256,7 +287,8 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                             </div>
                             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                                 <motion.div
-                                    className="h-full bg-linear-to-r from-blue-500 to-blue-600"
+                                    className="h-full rounded-full"
+                                    style={{ background: 'linear-gradient(135deg, #4F7DF3, #7A5CFF)' }}
                                     initial={{ width: 0 }}
                                     animate={{ width: `${progress}%` }}
                                     transition={{ duration: 0.3 }}
@@ -273,7 +305,11 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                                 <motion.div
                                     animate={{ rotate: 360 }}
                                     transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                                    className="w-16 h-16 mx-auto mb-6 rounded-full bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center"
+                                    className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center"
+                                    style={{
+                                        background: 'linear-gradient(135deg, #4F7DF3, #7A5CFF)',
+                                        boxShadow: '0 8px 24px rgba(79,125,243,0.3)',
+                                    }}
                                 >
                                     <Sparkles className="w-8 h-8 text-white" />
                                 </motion.div>
@@ -307,10 +343,16 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: index * 0.1 }}
                                             onClick={() => setSelectedIndex(index)}
-                                            className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${isSelected
-                                                ? 'border-blue-500 bg-blue-50/50 shadow-md'
-                                                : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-gray-50'
+                                            className={`w-full text-left p-4 rounded-[10px] transition-all duration-200 ${isSelected
+                                                ? 'shadow-md'
+                                                : ''
                                                 }`}
+                                            style={{
+                                                background: isSelected ? 'rgba(79,125,243,0.04)' : 'white',
+                                                border: isSelected
+                                                    ? '1.5px solid rgba(79,125,243,0.25)'
+                                                    : '1.5px solid var(--dash-border-solid, #E8ECF4)',
+                                            }}
                                         >
                                             {/* Card Header */}
                                             <div className="flex items-start gap-3">
@@ -410,7 +452,13 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                     </div>
 
                     {/* Footer - fixed at bottom */}
-                    <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50 shrink-0">
+                    <div
+                        className="flex items-center justify-between p-6 shrink-0"
+                        style={{
+                            boxShadow: '0 -1px 0 rgba(0,0,0,0.04)',
+                            background: 'var(--dash-bg, #F8FAFF)',
+                        }}
+                    >
                         {generatedIdeas.length > 0 ? (
                             <>
                                 <Button variant="secondary" onClick={() => {
