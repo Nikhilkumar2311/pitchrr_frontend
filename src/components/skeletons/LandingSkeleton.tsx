@@ -29,40 +29,57 @@ export function LandingSkeleton() {
                 </div>
             </div>
 
-            {/* Hero Section Skeleton - Centered layout */}
+            {/* Hero Section Skeleton - Split layout */}
             <div
-                className="min-h-[90vh] flex flex-col items-center justify-center pt-24 pb-10"
+                className="min-h-[90vh] flex flex-col items-center justify-center pt-32 pb-10"
                 style={{
                     background: "linear-gradient(135deg, #EEF2FF 0%, #F0F4FF 25%, #F8FAFF 50%, #F3EEFF 75%, #EEF2FF 100%)",
                 }}
             >
-                <div className="max-w-[900px] mx-auto px-6 text-center w-full">
-                    {/* Badge */}
-                    <div className="h-8 w-52 bg-white/60 rounded-full mx-auto mb-8 border border-gray-200/30" />
+                <div className="max-w-[1280px] mx-auto w-full px-6 lg:px-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
 
-                    {/* Headline */}
-                    <div className="space-y-3 mb-6">
-                        <div className="h-12 lg:h-14 w-[80%] bg-gray-200/40 rounded-xl mx-auto" />
-                        <div className="h-12 lg:h-14 w-[55%] bg-gray-200/40 rounded-xl mx-auto" />
-                    </div>
+                        {/* Left Column: Text & CTA */}
+                        <div className="max-w-xl mx-auto lg:mx-0 text-center lg:text-left w-full space-y-8">
+                            {/* Headline */}
+                            <div className="space-y-4">
+                                <div className="h-12 lg:h-16 w-[90%] bg-gray-200/50 rounded-xl mx-auto lg:mx-0" />
+                                <div className="h-12 lg:h-16 w-[70%] bg-gray-200/50 rounded-xl mx-auto lg:mx-0" />
+                            </div>
 
-                    {/* Subheading */}
-                    <div className="space-y-2 mb-10 max-w-[500px] mx-auto">
-                        <div className="h-4 w-full bg-gray-200/30 rounded" />
-                        <div className="h-4 w-3/4 bg-gray-200/30 rounded mx-auto" />
-                    </div>
+                            {/* Subheading */}
+                            <div className="space-y-3">
+                                <div className="h-4 w-[85%] bg-gray-200/40 rounded mx-auto lg:mx-0" />
+                                <div className="h-4 w-[75%] bg-gray-200/40 rounded mx-auto lg:mx-0" />
+                                <div className="h-4 w-[60%] bg-gray-200/40 rounded mx-auto lg:mx-0" />
+                            </div>
 
-                    {/* CTA buttons */}
-                    <div className="flex gap-4 justify-center">
-                        <div className="h-12 w-36 bg-blue-200/30 rounded-xl" />
-                        <div className="h-12 w-40 bg-gray-200/30 rounded-xl border border-gray-200/30" />
+                            {/* CTAs */}
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
+                                <div className="h-12 w-full sm:w-40 bg-blue-200/40 rounded-xl" />
+                                <div className="h-12 w-full sm:w-44 bg-gray-200/40 rounded-xl" />
+                            </div>
+                        </div>
+
+                        {/* Right Column: Workflow Scene Mock */}
+                        <div className="relative w-full aspect-square max-w-[500px] mx-auto hidden md:block">
+                            {/* Central Hub */}
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-16 bg-blue-100/30 rounded-xl border border-blue-200/40 backdrop-blur-sm" />
+                            {/* Top Node */}
+                            <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-32 h-12 bg-white/40 rounded-xl border border-gray-200/30 backdrop-blur-sm" />
+                            {/* Bottom Nodes (Fanned out) */}
+                            <div className="absolute bottom-[20%] left-[10%] w-36 h-12 bg-white/40 rounded-xl border border-gray-200/30 backdrop-blur-sm" />
+                            <div className="absolute bottom-[10%] left-1/2 -translate-x-1/2 w-36 h-12 bg-white/40 rounded-xl border border-gray-200/30 backdrop-blur-sm" />
+                            <div className="absolute bottom-[20%] right-[10%] w-36 h-12 bg-white/40 rounded-xl border border-gray-200/30 backdrop-blur-sm" />
+                        </div>
+
                     </div>
                 </div>
 
                 {/* Marquee strip placeholder */}
-                <div className="w-full mt-20 space-y-2">
-                    <div className="h-10 w-full bg-gray-200/15 rounded" />
-                    <div className="h-10 w-full bg-gray-200/15 rounded" />
+                <div className="w-full mt-24 space-y-3">
+                    <div className="h-12 w-full bg-gray-200/20 rounded" />
+                    <div className="h-12 w-full bg-gray-200/20 rounded" />
                 </div>
             </div>
 

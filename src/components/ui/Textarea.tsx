@@ -2,9 +2,10 @@
  * Textarea Component
  * 
  * Premium styled textarea with design system tokens.
+ * Features subtle depth with inner shadow and smooth focus transitions.
  */
 
-import { forwardRef, type TextareaHTMLAttributes } from 'react';
+import { forwardRef, useState, type TextareaHTMLAttributes } from 'react';
 
 interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
     label?: string;
@@ -22,12 +23,14 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             fullWidth = true,
             className = '',
             id,
+            style,
             ...props
         },
         ref
     ) => {
         const textareaId = id || `textarea-${Math.random().toString(36).substr(2, 9)}`;
         const hasError = Boolean(error);
+        const [isFocused, setIsFocused] = useState(false);
 
         const wrapperClasses = `${fullWidth ? 'w-full' : ''} ${className}`.trim();
 
@@ -36,10 +39,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
                 {label && (
                     <label
                         htmlFor={textareaId}
-                        className="block text-[13px] font-medium mb-1.5"
+                        className="block text-[12px] font-semibold mb-1.5 uppercase tracking-wider"
                         style={{
-                            color: 'var(--dash-text, #0F172A)',
+                            color: 'var(--dash-text-muted, #64748B)',
                             fontFamily: 'var(--dash-font-body, Inter, sans-serif)',
+                            letterSpacing: '0.04em',
                         }}
                     >
                         {label}
@@ -49,30 +53,35 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
                 <textarea
                     ref={ref}
                     id={textareaId}
-                    className={`
-                        w-full px-4 py-3 text-[13px]
-                        bg-white rounded-[10px]
-                        transition-all duration-200
-                        outline-none
-                        resize-y min-h-[100px]
-                        disabled:opacity-50 disabled:cursor-not-allowed
-                    `.trim().replace(/\s+/g, ' ')}
+                    className="w-full outline-none resize-y disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
                         fontFamily: 'var(--dash-font-body, Inter, sans-serif)',
                         color: 'var(--dash-text, #0F172A)',
+                        fontSize: 13,
+                        fontWeight: 500,
+                        lineHeight: 1.6,
+                        padding: '12px 14px',
+                        minHeight: 100,
+                        background: isFocused ? '#fff' : 'rgba(0,0,0,0.015)',
                         border: '1.5px solid',
-                        borderColor: hasError ? '#F87171' : 'var(--dash-border-solid, #E8ECF4)',
+                        borderColor: isFocused
+                            ? (hasError ? '#EF4444' : '#4F7DF3')
+                            : (hasError ? '#F87171' : 'var(--dash-border-solid, #E8ECF4)'),
+                        borderRadius: 10,
+                        boxShadow: isFocused
+                            ? (hasError
+                                ? '0 0 0 3px rgba(239,68,68,0.06), inset 0 1px 2px rgba(0,0,0,0.03)'
+                                : '0 0 0 3px rgba(79,125,243,0.06), inset 0 1px 2px rgba(0,0,0,0.03)')
+                            : 'inset 0 1px 2px rgba(0,0,0,0.04)',
+                        transition: 'all 0.2s ease',
+                        ...style,
                     }}
                     onFocus={(e) => {
-                        e.currentTarget.style.borderColor = hasError ? '#EF4444' : '#4F7DF3';
-                        e.currentTarget.style.boxShadow = hasError
-                            ? '0 0 0 3px rgba(239,68,68,0.08)'
-                            : '0 0 0 3px rgba(79,125,243,0.08)';
+                        setIsFocused(true);
                         props.onFocus?.(e);
                     }}
                     onBlur={(e) => {
-                        e.currentTarget.style.borderColor = hasError ? '#F87171' : 'var(--dash-border-solid, #E8ECF4)';
-                        e.currentTarget.style.boxShadow = 'none';
+                        setIsFocused(false);
                         props.onBlur?.(e);
                     }}
                     aria-invalid={hasError}
@@ -80,7 +89,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
                 />
 
                 {error && (
-                    <p className="mt-1.5 text-[12px] text-red-500" role="alert">
+                    <p className="mt-1.5 text-[12px]" style={{ color: '#EF4444' }} role="alert">
                         {error}
                     </p>
                 )}

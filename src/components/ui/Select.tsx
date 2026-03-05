@@ -3,6 +3,7 @@
  * 
  * Custom dropdown select with premium SaaS styling.
  * Replaces the native <select> with a custom dropdown for consistent cross-browser appearance.
+ * Features subtle depth with inner shadow and smooth focus transitions.
  */
 
 import { useState, useRef, useEffect } from 'react';
@@ -69,10 +70,11 @@ export function Select({
         <div className={`relative ${className}`} ref={containerRef}>
             {label && (
                 <label
-                    className="block text-[13px] font-medium mb-1.5"
+                    className="block text-[12px] font-semibold mb-1.5 uppercase tracking-wider"
                     style={{
-                        color: 'var(--dash-text, #0F172A)',
+                        color: 'var(--dash-text-muted, #64748B)',
                         fontFamily: 'var(--dash-font-body, Inter, sans-serif)',
+                        letterSpacing: '0.04em',
                     }}
                 >
                     {label}
@@ -84,17 +86,14 @@ export function Select({
             <button
                 type="button"
                 onClick={() => !disabled && setIsOpen(!isOpen)}
-                className={`
-                    w-full flex items-center justify-between
-                    px-4 py-2.5 text-[13px]
-                    bg-white rounded-[10px]
-                    transition-all duration-200
-                    outline-none cursor-pointer
-                    disabled:opacity-50 disabled:cursor-not-allowed
-                `}
+                className="w-full flex items-center justify-between outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
                     fontFamily: 'var(--dash-font-body, Inter, sans-serif)',
+                    fontSize: 13,
+                    fontWeight: selectedOption ? 500 : 400,
                     color: selectedOption ? 'var(--dash-text, #0F172A)' : '#94A3B8',
+                    padding: '11px 14px',
+                    background: isOpen ? '#fff' : 'rgba(0,0,0,0.015)',
                     border: '1.5px solid',
                     borderColor: isOpen
                         ? '#4F7DF3'
@@ -103,7 +102,11 @@ export function Select({
                             : (!value && required)
                                 ? '#FBBF24'
                                 : 'var(--dash-border-solid, #E8ECF4)',
-                    boxShadow: isOpen ? '0 0 0 3px rgba(79,125,243,0.08)' : 'none',
+                    borderRadius: 10,
+                    boxShadow: isOpen
+                        ? '0 0 0 3px rgba(79,125,243,0.06), inset 0 1px 2px rgba(0,0,0,0.03)'
+                        : 'inset 0 1px 2px rgba(0,0,0,0.04)',
+                    transition: 'all 0.2s ease',
                 }}
                 disabled={disabled}
                 aria-haspopup="listbox"
@@ -113,10 +116,11 @@ export function Select({
                     {selectedOption?.label || placeholder}
                 </span>
                 <ChevronDown
-                    className="w-4 h-4 shrink-0 transition-transform duration-200"
+                    className="w-4 h-4 shrink-0"
                     style={{
-                        color: '#94A3B8',
+                        color: isOpen ? '#4F7DF3' : '#94A3B8',
                         transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'all 0.2s ease',
                     }}
                 />
             </button>
@@ -149,7 +153,7 @@ export function Select({
                                         onChange(option.value);
                                         setIsOpen(false);
                                     }}
-                                    className="w-full flex items-center justify-between px-3.5 py-2 text-[13px] transition-colors duration-100 cursor-pointer"
+                                    className="w-full flex items-center justify-between px-3.5 py-2.5 text-[13px] transition-colors duration-100 cursor-pointer"
                                     style={{
                                         fontFamily: 'var(--dash-font-body, Inter, sans-serif)',
                                         color: isSelected ? '#4F7DF3' : 'var(--dash-text, #0F172A)',
@@ -179,7 +183,7 @@ export function Select({
             </AnimatePresence>
 
             {error && (
-                <p className="mt-1.5 text-[12px] text-red-500" role="alert">
+                <p className="mt-1.5 text-[12px]" style={{ color: '#EF4444' }} role="alert">
                     {error}
                 </p>
             )}

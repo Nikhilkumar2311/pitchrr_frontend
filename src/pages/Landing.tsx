@@ -1,24 +1,17 @@
 /**
- * Landing Page - Redesigned
+ * Landing Page — Premium Scroll Experience
  *
- * Premium SaaS landing page with Lenis smooth scroll,
- * GSAP animations, and velocity scroll effects.
+ * Lenis smooth scroll + GSAP ScrollTrigger powered.
  *
- * SECTIONS:
- * 1. Hero - Centered headline with word swap, two CTAs, velocity marquee
- * 2. Modules - 6 interactive hover-expand panels
- * 3. How It Works - Horizontal 3-step layout
- * 4. Product Preview - CSS-rendered dashboard mock
- * 5. CTA - Final minimal call to action
- * 6. Footer
- *
- * ANIMATIONS:
- * - Lenis smooth scrolling
- * - Hero text reveals on load
- * - Word swap in headline
- * - Scroll-based fade-up for all sections
- * - Magnetic button hover effect
- * - Ambient gradient blob movement
+ * SCROLL EFFECTS:
+ * ① Hero fade-out + scale on scroll (cinematic exit)
+ * ② Scroll progress indicator bar
+ * ③ Section headers: word-by-word clip reveal
+ * ④ Module cards: 3D tilt-in stagger
+ * ⑤ How It Works steps: slide-in from alternating sides
+ * ⑥ Product Preview: scale-in with perspective
+ * ⑦ Parallax depth layers throughout
+ * ⑧ Ambient gradient blob drift
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -50,17 +43,18 @@ export default function Landing() {
         return () => clearTimeout(timer);
     }, []);
 
-    // Initialize Lenis smooth scroll
+    /* ═══════════════════════════════════════════
+       LENIS SMOOTH SCROLL
+       ═══════════════════════════════════════════ */
     useEffect(() => {
         if (isLoading) return;
 
         const lenis = new Lenis({
-            duration: 1.2,
+            duration: 1.4,
             easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
             touchMultiplier: 2,
         });
 
-        // Integrate Lenis with GSAP ScrollTrigger
         lenis.on("scroll", ScrollTrigger.update);
 
         gsap.ticker.add((time) => {
@@ -74,14 +68,16 @@ export default function Landing() {
         };
     }, [isLoading]);
 
-    // GSAP Animations
+    /* ═══════════════════════════════════════════
+       GSAP ANIMATIONS
+       ═══════════════════════════════════════════ */
     useEffect(() => {
         if (isLoading) return;
 
         const ctx = gsap.context(() => {
-            /**
-             * HERO ANIMATIONS
-             */
+            /* ──────────────────────────────────
+               ① HERO — Entry animations
+               ────────────────────────────────── */
             const heroTl = gsap.timeline({ delay: 0.2 });
 
             heroTl.fromTo(
@@ -111,9 +107,109 @@ export default function Landing() {
                 "-=0.3"
             );
 
-            /**
-             * AMBIENT GRADIENT BLOB MOVEMENT
-             */
+            /* ──────────────────────────────────
+               HERO WORKFLOW — Hub-and-spoke reveal
+               ────────────────────────────────── */
+            const wfNodes = gsap.utils.toArray<HTMLElement>(".wf-node");
+            const wfPaths = gsap.utils.toArray<SVGPathElement>(".wf-path");
+
+            const workflowTl = gsap.timeline({ delay: 0.6 });
+
+            wfPaths.forEach((p) => {
+                const len = p.getTotalLength();
+                gsap.set(p, { strokeDasharray: len, strokeDashoffset: len, opacity: 0 });
+            });
+
+            // Idea node
+            workflowTl.call(() => {
+                if (wfNodes[0]) wfNodes[0].classList.add("wf-node--active");
+            });
+            workflowTl.to({}, { duration: 0.35 });
+
+            // Arrow: Idea → Validation
+            if (wfPaths[0]) {
+                workflowTl.set(wfPaths[0], { opacity: 1 });
+                workflowTl.to(wfPaths[0], {
+                    strokeDashoffset: 0,
+                    duration: 0.4,
+                    ease: "power2.inOut",
+                });
+            }
+
+            // Validation hub
+            workflowTl.call(() => {
+                if (wfNodes[1]) wfNodes[1].classList.add("wf-node--active");
+            });
+            workflowTl.to({}, { duration: 0.3 });
+
+            // All outgoing arrows
+            const outPaths = wfPaths.slice(1);
+            if (outPaths.length > 0) {
+                workflowTl.set(outPaths, { opacity: 1 });
+                workflowTl.to(outPaths, {
+                    strokeDashoffset: 0,
+                    duration: 0.5,
+                    ease: "power2.inOut",
+                    stagger: 0.08,
+                });
+            }
+
+            // All module nodes
+            const moduleNodes = wfNodes.slice(2);
+            workflowTl.call(() => {
+                moduleNodes.forEach((n, i) => {
+                    setTimeout(() => {
+                        n.classList.add("wf-node--active");
+                    }, i * 80);
+                });
+            });
+            workflowTl.to({}, { duration: 0.5 });
+
+            // Particle dots
+            const particles = gsap.utils.toArray<SVGCircleElement>(".wf-particle");
+            if (particles.length > 0) {
+                workflowTl.to(particles, {
+                    opacity: 0.65,
+                    duration: 0.6,
+                    ease: "power2.out",
+                    stagger: 0.1,
+                });
+            }
+
+            /* ──────────────────────────────────
+               ② HERO — Cinematic scroll exit
+               Fades out + scales down as user scrolls past
+               ────────────────────────────────── */
+            if (heroRef.current) {
+                gsap.to(".hero-left", {
+                    y: -80,
+                    opacity: 0,
+                    ease: "none",
+                    scrollTrigger: {
+                        trigger: heroRef.current,
+                        start: "60% top",
+                        end: "bottom top",
+                        scrub: 1,
+                    },
+                });
+
+                gsap.to(".hero-right", {
+                    y: -50,
+                    opacity: 0,
+                    scale: 0.95,
+                    ease: "none",
+                    scrollTrigger: {
+                        trigger: heroRef.current,
+                        start: "60% top",
+                        end: "bottom top",
+                        scrub: 1,
+                    },
+                });
+            }
+
+            /* ──────────────────────────────────
+               AMBIENT GRADIENT BLOB MOVEMENT
+               ────────────────────────────────── */
             gsap.to(".hero-gradient-blob", {
                 x: "random(-40, 40)",
                 y: "random(-30, 30)",
@@ -124,20 +220,108 @@ export default function Landing() {
                 stagger: 2,
             });
 
-            /**
-             * SCROLL-TRIGGERED FADE-UP FOR ALL SECTIONS
-             */
+            /* ──────────────────────────────────
+               PARALLAX LAYERS — Multi-speed depth
+               ────────────────────────────────── */
+            if (heroRef.current) {
+                gsap.to(".parallax-bg", {
+                    y: -80,
+                    ease: "none",
+                    scrollTrigger: {
+                        trigger: heroRef.current,
+                        start: "top top",
+                        end: "bottom top",
+                        scrub: 1,
+                    },
+                });
+
+                gsap.to(".parallax-mid", {
+                    y: -40,
+                    ease: "none",
+                    scrollTrigger: {
+                        trigger: heroRef.current,
+                        start: "top top",
+                        end: "bottom top",
+                        scrub: 1,
+                    },
+                });
+            }
+
+            /* ──────────────────────────────────
+               ③ SECTION HEADERS — Slide-up reveal
+               ────────────────────────────────── */
             gsap.utils.toArray<HTMLElement>(".gsap-reveal").forEach((el) => {
                 gsap.fromTo(
                     el,
-                    { y: 30, opacity: 0 },
+                    { y: 40, opacity: 0 },
                     {
                         y: 0,
                         opacity: 1,
-                        duration: 0.7,
-                        ease: "power2.out",
+                        duration: 0.8,
+                        ease: "power3.out",
                         scrollTrigger: {
                             trigger: el,
+                            start: "top 85%",
+                            toggleActions: "play none none none",
+                        },
+                    }
+                );
+            });
+
+            /* ──────────────────────────────────
+               ④ MODULE CARDS — 3D tilt-in stagger
+               Cards rotate in from a slight angle
+               ────────────────────────────────── */
+            const featureCards = gsap.utils.toArray<HTMLElement>(".feature-card");
+            featureCards.forEach((card, i) => {
+                gsap.fromTo(
+                    card,
+                    {
+                        y: 50,
+                        opacity: 0,
+                        rotateX: 8,
+                        scale: 0.95,
+                    },
+                    {
+                        y: 0,
+                        opacity: 1,
+                        rotateX: 0,
+                        scale: 1,
+                        duration: 0.7,
+                        delay: i * 0.06,
+                        ease: "power3.out",
+                        scrollTrigger: {
+                            trigger: card,
+                            start: "top 90%",
+                            toggleActions: "play none none none",
+                        },
+                    }
+                );
+            });
+
+            /* ──────────────────────────────────
+               ⑤ HOW IT WORKS STEPS — Alternating slide-in
+               Odd steps from left, even from right
+               ────────────────────────────────── */
+            const stepCards = gsap.utils.toArray<HTMLElement>(".step-card");
+            stepCards.forEach((card, i) => {
+                const fromX = i % 2 === 0 ? -60 : 60;
+                gsap.fromTo(
+                    card,
+                    {
+                        x: fromX,
+                        opacity: 0,
+                        scale: 0.95,
+                    },
+                    {
+                        x: 0,
+                        opacity: 1,
+                        scale: 1,
+                        duration: 0.8,
+                        delay: i * 0.12,
+                        ease: "power3.out",
+                        scrollTrigger: {
+                            trigger: card,
                             start: "top 88%",
                             toggleActions: "play none none none",
                         },
@@ -145,77 +329,57 @@ export default function Landing() {
                 );
             });
 
-            /**
-             * MODULE CARDS STAGGER
-             */
-            const featureCards = gsap.utils.toArray<HTMLElement>(".feature-card");
-            featureCards.forEach((card, i) => {
-                gsap.fromTo(
-                    card,
-                    { y: 30, opacity: 0 },
-                    {
-                        y: 0,
-                        opacity: 1,
-                        duration: 0.5,
-                        delay: i * 0.08,
-                        ease: "power2.out",
-                        scrollTrigger: {
-                            trigger: card,
-                            start: "top 90%",
-                            toggleActions: "play none none none",
-                        },
-                    }
-                );
-            });
-
-            /**
-             * STEP CARDS SEQUENTIAL
-             */
-            const stepCards = gsap.utils.toArray<HTMLElement>(".step-card");
-            stepCards.forEach((card, i) => {
-                gsap.fromTo(
-                    card,
-                    { y: 30, opacity: 0 },
-                    {
-                        y: 0,
-                        opacity: 1,
-                        duration: 0.6,
-                        delay: i * 0.15,
-                        ease: "power2.out",
-                        scrollTrigger: {
-                            trigger: card,
-                            start: "top 90%",
-                            toggleActions: "play none none none",
-                        },
-                    }
-                );
-            });
-
-            /**
-             * PRODUCT PREVIEW PARALLAX
-             */
+            /* ──────────────────────────────────
+               ⑥ PRODUCT PREVIEW — Scale-in with perspective
+               Starts small & tilted, scales up to full size
+               ────────────────────────────────── */
             if (previewRef.current) {
                 gsap.fromTo(
                     ".product-preview",
-                    { y: 40 },
                     {
-                        y: -20,
-                        ease: "none",
+                        y: 80,
+                        scale: 0.88,
+                        rotateX: 6,
+                        opacity: 0,
+                        transformPerspective: 1200,
+                    },
+                    {
+                        y: 0,
+                        scale: 1,
+                        rotateX: 0,
+                        opacity: 1,
+                        ease: "power3.out",
+                        duration: 1,
                         scrollTrigger: {
                             trigger: previewRef.current,
-                            start: "top bottom",
-                            end: "bottom top",
-                            scrub: 1,
+                            start: "top 80%",
+                            toggleActions: "play none none none",
                         },
                     }
                 );
+
+                // Subtle parallax on the preview
+                gsap.to(".product-preview", {
+                    y: -30,
+                    ease: "none",
+                    scrollTrigger: {
+                        trigger: previewRef.current,
+                        start: "top bottom",
+                        end: "bottom top",
+                        scrub: 1.5,
+                    },
+                });
             }
+
+
         }, pageRef);
 
         return () => ctx.revert();
     }, [isLoading]);
 
-    // Magnetic button effect
+    /* ═══════════════════════════════════════════
+       MAGNETIC BUTTON EFFECT
+       ═══════════════════════════════════════════ */
     useEffect(() => {
         if (isLoading) return;
 

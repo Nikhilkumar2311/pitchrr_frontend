@@ -110,54 +110,48 @@ export const ModulesSection = forwardRef<HTMLElement>((_, ref) => {
                 </div>
 
                 {/* Modules Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start">
                     {modules.map((mod) => {
                         const Icon = mod.icon;
                         return (
                             <div
                                 key={mod.title}
-                                className="module-card feature-card py-5 px-6"
+                                className="module-card feature-card"
                             >
-                                {/* Accent line */}
-                                <div
-                                    className="module-accent h-[3px] rounded-full mb-3 mx-auto"
-                                    style={{ background: mod.accent }}
-                                />
-
-                                {/* Icon + Title */}
-                                <div className="flex items-center justify-center gap-3">
+                                {/* Fixed content area */}
+                                <div className="py-5 px-6">
+                                    {/* Accent line */}
                                     <div
-                                        className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
-                                        style={{ background: mod.accentBg }}
-                                    >
-                                        <Icon
-                                            className="w-5 h-5"
-                                            style={{ color: mod.accent }}
-                                        />
+                                        className="module-accent h-[3px] rounded-full mb-3 mx-auto"
+                                        style={{ background: mod.accent }}
+                                    />
+
+                                    {/* Icon + Title */}
+                                    <div className="flex items-center justify-center gap-3">
+                                        <div
+                                            className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
+                                            style={{ background: mod.accentBg }}
+                                        >
+                                            <Icon
+                                                className="w-5 h-5"
+                                                style={{ color: mod.accent }}
+                                            />
+                                        </div>
+                                        <h3
+                                            style={{
+                                                fontFamily: "var(--font-heading)",
+                                                fontSize: "0.95rem",
+                                                fontWeight: 600,
+                                                color: "var(--color-text-primary)",
+                                            }}
+                                        >
+                                            {mod.title}
+                                        </h3>
                                     </div>
-                                    <h3
-                                        style={{
-                                            fontFamily: "var(--font-heading)",
-                                            fontSize: "0.95rem",
-                                            fontWeight: 600,
-                                            color: "var(--color-text-primary)",
-                                        }}
-                                    >
-                                        {mod.title}
-                                    </h3>
                                 </div>
 
-                                {/* Expandable description */}
-                                <p
-                                    className="module-description"
-                                    style={{
-                                        fontFamily: "var(--font-body)",
-                                        fontSize: "0.85rem",
-                                        lineHeight: 1.6,
-                                        color: "var(--color-text-muted)",
-                                        textAlign: "center",
-                                    }}
-                                >
+                                {/* Expandable description — outside padding area */}
+                                <p className="module-description">
                                     {mod.description}
                                 </p>
                             </div>
