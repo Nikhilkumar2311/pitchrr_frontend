@@ -161,43 +161,50 @@ export function Header() {
                 </nav>
 
                 {/* Mobile Navigation */}
-                {mobileOpen && (
-                    <div className="lg:hidden border-t border-gray-100/50 py-3 px-2 space-y-1">
-                        {navLinks.map((link) => (
-                            <a
-                                key={link.label}
-                                href={link.href}
-                                onClick={() => setMobileOpen(false)}
-                                className="block px-4 py-2.5 text-[13px] font-medium text-gray-700 hover:text-[var(--color-primary-blue)] hover:bg-gray-50 rounded-lg transition-colors"
-                            >
-                                {link.label}
-                            </a>
-                        ))}
-                        <button
-                            onClick={() => { openFeedback(); setMobileOpen(false); }}
-                            className="block w-full text-left px-4 py-2.5 text-[13px] font-medium text-gray-700 hover:text-[var(--color-primary-blue)] hover:bg-gray-50 rounded-lg transition-colors"
-                        >
-                            Feedback
-                        </button>
-                        <div className="pt-2 px-2">
-                            {!user ? (
-                                <button
-                                    onClick={() => { handleSignIn(); setMobileOpen(false); }}
-                                    className="btn-gradient w-full py-2.5 text-[13px] rounded-lg"
+                <div
+                    className={`lg:hidden grid transition-all duration-300 ease-in-out ${mobileOpen
+                            ? "grid-rows-[1fr] opacity-100 mt-2"
+                            : "grid-rows-[0fr] opacity-0"
+                        }`}
+                >
+                    <div className="overflow-hidden">
+                        <div className="border-t border-gray-100/50 py-3 px-2 space-y-1">
+                            {navLinks.map((link) => (
+                                <a
+                                    key={link.label}
+                                    href={link.href}
+                                    onClick={() => setMobileOpen(false)}
+                                    className="block px-4 py-2.5 text-[13px] font-medium text-gray-700 hover:text-[var(--color-primary-blue)] hover:bg-gray-50 rounded-lg transition-colors"
                                 >
-                                    Sign In
-                                </button>
-                            ) : (
-                                <Link to="/dashboard" onClick={() => setMobileOpen(false)}>
-                                    <button className="btn-gradient w-full py-2.5 text-[13px] rounded-lg inline-flex items-center justify-center gap-2">
-                                        <LayoutDashboard className="w-4 h-4" />
-                                        Dashboard
+                                    {link.label}
+                                </a>
+                            ))}
+                            <button
+                                onClick={() => { openFeedback(); setMobileOpen(false); }}
+                                className="block w-full text-left px-4 py-2.5 text-[13px] font-medium text-gray-700 hover:text-[var(--color-primary-blue)] hover:bg-gray-50 rounded-lg transition-colors"
+                            >
+                                Feedback
+                            </button>
+                            <div className="pt-2 px-2">
+                                {!user ? (
+                                    <button
+                                        onClick={() => { handleSignIn(); setMobileOpen(false); }}
+                                        className="btn-gradient w-full py-2.5 text-[13px] rounded-lg"
+                                    >
+                                        Sign In
                                     </button>
-                                </Link>
-                            )}
+                                ) : (
+                                    <Link to="/dashboard" onClick={() => setMobileOpen(false)}>
+                                        <button className="btn-gradient w-full py-2.5 text-[13px] rounded-lg inline-flex items-center justify-center gap-2">
+                                            <LayoutDashboard className="w-4 h-4" />
+                                            Dashboard
+                                        </button>
+                                    </Link>
+                                )}
+                            </div>
                         </div>
                     </div>
-                )}
+                </div>
             </div>
         </header>
     );

@@ -141,7 +141,7 @@ export const HeroSection = forwardRef<HTMLElement>((_, ref) => {
         <div className="hero-grid flex flex-col lg:flex-row items-center gap-12 lg:gap-8">
 
           {/* ── LEFT COLUMN — Copy ── */}
-          <div className="hero-left flex-1 max-w-[600px] text-center lg:text-left">
+          <div className="hero-left flex-1 max-w-[600px] text-center lg:text-left mx-auto lg:mx-0">
             <div
               className="hero-badge gsap-fade inline-flex items-center gap-2 px-4 py-2 rounded-full border text-[13px] font-medium mb-8"
               style={{
@@ -169,12 +169,12 @@ export const HeroSection = forwardRef<HTMLElement>((_, ref) => {
               }}
             >
               Turn Startup Ideas
-              <br />
+              <br className="hidden sm:block" />
               Into <span className="gradient-text">Investor-Ready</span> Companies
             </h1>
 
             <p
-              className="hero-subheading gsap-fade mt-6"
+              className="hero-subheading gsap-fade mt-6 mx-auto lg:mx-0"
               style={{
                 fontFamily: "var(--font-body)",
                 fontSize: "clamp(1rem, 1.8vw, 1.15rem)",
@@ -187,7 +187,7 @@ export const HeroSection = forwardRef<HTMLElement>((_, ref) => {
               branding, and create investor-ready pitch decks — all powered by AI.
             </p>
 
-            <div className="hero-cta gsap-fade flex flex-col sm:flex-row items-center lg:items-start gap-4 mt-10">
+            <div className="hero-cta gsap-fade flex flex-col sm:flex-row items-center justify-center lg:justify-start lg:items-start gap-4 mt-10">
               <button
                 onClick={handleHaveIdea}
                 className="btn-gradient magnetic-btn px-8 py-4 text-[15px] rounded-[var(--radius-lg)] inline-flex items-center gap-2"
@@ -206,7 +206,7 @@ export const HeroSection = forwardRef<HTMLElement>((_, ref) => {
           </div>
 
           {/* ── RIGHT COLUMN — Premium Workflow Scene ── */}
-          <div className="hero-right flex-1 flex items-center justify-center">
+          <div className="hero-right hidden lg:flex flex-1 items-center justify-center">
             <div className="hero-workflow" style={{ perspective: "1000px" }}>
               <div
                 className="hero-workflow__inner"
