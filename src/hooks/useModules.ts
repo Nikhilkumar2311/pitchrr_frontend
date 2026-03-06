@@ -18,6 +18,7 @@ import api from '@/services/api';
 import { useAuth } from '@clerk/clerk-react';
 import toast from 'react-hot-toast';
 import { trackModuleGenerated, trackCreditUsed, trackPitchDeckCreated } from '@/utils/analytics';
+import { creditKeys } from './useCredits';
 
 // =============================================================================
 // TYPES
@@ -128,6 +129,7 @@ export function useModuleData(
     options?: { pollWhileGenerating?: boolean }
 ) {
     const { isSignedIn } = useAuth();
+    const queryClient = useQueryClient();
     const pollWhileGenerating = options?.pollWhileGenerating ?? true;
 
     return useQuery({
@@ -147,9 +149,13 @@ export function useModuleData(
                 // 1. Data exists and status is not IN_PROGRESS, OR
                 // 2. Status is COMPLETED or FAILED
                 if (data?.exists && data?.status !== 'IN_PROGRESS') {
+                    // Refresh credit balance — credits are deducted on successful generation
+                    queryClient.invalidateQueries({ queryKey: creditKeys.stats() });
                     return false;
                 }
                 if (data?.status === 'COMPLETED' || data?.status === 'FAILED') {
+                    // Refresh credit balance — credits are deducted on successful generation
+                    queryClient.invalidateQueries({ queryKey: creditKeys.stats() });
                     return false;
                 }
                 // Otherwise poll every 5 seconds
