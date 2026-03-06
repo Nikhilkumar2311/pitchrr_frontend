@@ -77,9 +77,8 @@ export const HeroSection = forwardRef<HTMLElement>((_, ref) => {
   return (
     <section
       ref={ref}
-      className="relative overflow-hidden"
+      className="relative overflow-hidden min-h-[auto] lg:min-h-[92vh]"
       style={{
-        minHeight: "92vh",
         paddingTop: "110px",
         paddingBottom: "40px",
         background:
