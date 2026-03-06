@@ -27,15 +27,13 @@ import {
     Type,
     Paintbrush,
     Loader2,
+    Layers,
+    Edit3,
+    LayoutGrid,
 } from 'lucide-react';
 import {
-    Card,
-    CardHeader,
-    CardTitle,
-    CardDescription,
     Button,
     Input,
-    Badge,
 } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { useIdeaStore, getStoredActiveIdeaId } from '@/store';
@@ -50,9 +48,8 @@ import {
     useExportStatus,
 } from '@/hooks';
 import { downloadFile } from '@/utils';
-import { LogoEditor } from '@/components/branding';
 import { CanvasLogoEditor } from '@/components/branding/CanvasLogoEditor';
-import { Layers, Edit3 } from 'lucide-react';
+import { LogoPresets } from '@/components/branding/LogoPresets';
 
 /**
  * Brand tone options
@@ -77,7 +74,7 @@ export default function Branding() {
     const [startupName, setStartupName] = useState('');
     const [selectedTone, setSelectedTone] = useState('Professional');
     const [selectedColorPreset, setSelectedColorPreset] = useState(colorPresets[0]);
-    const [editorMode, setEditorMode] = useState<'simple' | 'advanced'>('simple');
+    const [editorMode, setEditorMode] = useState<'presets' | 'advanced'>('presets');
 
     // Get current idea from store for backward compatibility
     const { currentIdea, activeIdeaId: storedActiveIdeaId, setActiveIdeaId } = useIdeaStore();
@@ -206,137 +203,140 @@ export default function Branding() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="max-w-5xl mx-auto">
             <SEO
                 title="Branding"
                 description="Create your brand identity with AI. Generate logos, taglines, color palettes, typography, and brand voice guidelines."
                 canonical="/dashboard/branding"
             />
 
-            {/* Page Header */}
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <Palette className="w-7 h-7 text-[#8B5CF6]" />
-                        Branding
-                    </h1>
-                    <p className="mt-1 text-gray-600">
-                        Give your startup an identity
-                    </p>
+            <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="space-y-8"
+            >
+                {/* ═══════════════════════════════════════════════
+                    PAGE HEADER
+                 ═══════════════════════════════════════════════ */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h1
+                            className="text-2xl font-bold flex items-center gap-2.5"
+                            style={{
+                                color: 'var(--dash-text)',
+                                fontFamily: 'var(--dash-font-heading)',
+                            }}
+                        >
+                            <div
+                                className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
+                                style={{ background: 'rgba(139,92,246,0.08)' }}
+                            >
+                                <Palette className="w-5 h-5" style={{ color: '#8B5CF6' }} />
+                            </div>
+                            Branding
+                        </h1>
+                        <p
+                            className="mt-1 text-[14px]"
+                            style={{ color: 'var(--dash-text-muted)' }}
+                        >
+                            Give your startup an identity
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <Button
+                            variant="secondary"
+                            leftIcon={<Save className="w-4 h-4" />}
+                            onClick={handleSave}
+                        >
+                            Save
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            leftIcon={<Download className="w-4 h-4" />}
+                            disabled={!hasGenerated || isExporting || !!exportJobId}
+                            isLoading={isExporting || !!exportJobId}
+                            onClick={downloadBrandKit}
+                        >
+                            <span className="flex items-center gap-2">
+                                {exportJobId ? 'Exporting...' : 'Export PDF'}
+                                {!exportJobId && <CreditCost cost={2} />}
+                            </span>
+                        </Button>
+                    </div>
                 </div>
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="secondary"
-                        leftIcon={<Save className="w-4 h-4" />}
-                        onClick={handleSave}
-                    >
-                        Save
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        leftIcon={<Download className="w-4 h-4" />}
-                        disabled={!hasGenerated || isExporting || !!exportJobId}
-                        isLoading={isExporting || !!exportJobId}
-                        onClick={downloadBrandKit}
-                    >
-                        <span className="flex items-center gap-2">
-                            {exportJobId ? 'Exporting...' : 'Export PDF'}
-                            {!exportJobId && <CreditCost cost={2} />}
-                        </span>
-                    </Button>
-                </div>
-            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Left Column: Input & Additional Info */}
-                <div className="space-y-6">
+                {/* ═══════════════════════════════════════════════
+                    INPUT SECTION (soft panel)
+                 ═══════════════════════════════════════════════ */}
+                <div
+                    className="rounded-[14px] p-5 sm:p-6"
+                    style={{
+                        background: 'rgba(0,0,0,0.012)',
+                        border: '1px solid var(--dash-border-solid, #E8ECF4)',
+                    }}
+                >
                     {/* Startup Name */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Startup Name</CardTitle>
-                            <CardDescription>
-                                Enter your startup name to generate branding
-                            </CardDescription>
-                        </CardHeader>
+                    <div className="mb-5">
+                        <h2
+                            className="text-[15px] font-semibold"
+                            style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                        >
+                            Startup Name
+                        </h2>
+                        <p className="text-[13px] mt-0.5 mb-3" style={{ color: 'var(--dash-text-muted)' }}>
+                            Enter your startup name to generate branding
+                        </p>
                         <Input
                             placeholder="e.g., Pitchrr"
                             value={startupName}
                             onChange={(e) => setStartupName(e.target.value)}
-                            className="mt-4"
                         />
-                    </Card>
+                    </div>
 
                     {/* Brand Tone */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Brand Tone</CardTitle>
-                            <CardDescription>
-                                How should your brand feel?
-                            </CardDescription>
-                        </CardHeader>
-                        <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="mb-5">
+                        <h2
+                            className="text-[15px] font-semibold"
+                            style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                        >
+                            Brand Tone
+                        </h2>
+                        <p className="text-[13px] mt-0.5 mb-3" style={{ color: 'var(--dash-text-muted)' }}>
+                            How should your brand feel?
+                        </p>
+                        <div className="flex flex-wrap gap-2">
                             {brandTones.map((tone) => (
                                 <button
                                     key={tone}
                                     onClick={() => setSelectedTone(tone)}
-                                    className={`
-                                        px-4 py-2 rounded-lg text-sm font-medium transition-all
-                                        ${selectedTone === tone
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                        }
-                                    `}
+                                    className="px-4 py-2 rounded-[8px] text-[13px] font-medium transition-all cursor-pointer"
+                                    style={{
+                                        background: selectedTone === tone
+                                            ? 'linear-gradient(135deg, #8B5CF6, #7C3AED)'
+                                            : 'rgba(0,0,0,0.02)',
+                                        color: selectedTone === tone ? '#fff' : 'var(--dash-text-secondary)',
+                                        border: selectedTone === tone
+                                            ? '1px solid transparent'
+                                            : '1px solid var(--dash-border-solid, #E8ECF4)',
+                                    }}
                                 >
                                     {tone}
                                 </button>
                             ))}
                         </div>
-                    </Card>
+                    </div>
 
-                    {/* Color Palette */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Paintbrush className="w-5 h-5" />
-                                Color Palette
-                            </CardTitle>
-                            <CardDescription>
-                                Choose a color scheme for your brand
-                            </CardDescription>
-                        </CardHeader>
-                        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            {colorPresets.map((preset) => (
-                                <button
-                                    key={preset.name}
-                                    onClick={() => setSelectedColorPreset(preset)}
-                                    className={`
-                                        p-3 rounded-lg border-2 transition-all
-                                        ${selectedColorPreset.name === preset.name
-                                            ? 'border-blue-600 ring-2 ring-blue-200'
-                                            : 'border-gray-200 hover:border-gray-300'
-                                        }
-                                    `}
-                                >
-                                    <div className="flex gap-1 mb-2">
-                                        <div className="w-6 h-6 rounded-full" style={{ backgroundColor: preset.primary }} />
-                                        <div className="w-6 h-6 rounded-full" style={{ backgroundColor: preset.secondary }} />
-                                        <div className="w-6 h-6 rounded-full" style={{ backgroundColor: preset.accent }} />
-                                    </div>
-                                    <div className="text-xs font-medium text-gray-700">
-                                        {preset.name}
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-                    </Card>
 
                     {/* Generate Button */}
                     <Button
                         onClick={handleGenerate}
                         isLoading={isGenerating}
                         leftIcon={<Sparkles className="w-4 h-4" />}
-                        className="w-full"
                         disabled={!activeIdeaId}
+                        style={{
+                            background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+                        }}
                     >
                         <span className="flex items-center gap-2">
                             Generate Brand Identity
@@ -344,167 +344,113 @@ export default function Branding() {
                         </span>
                     </Button>
                     {!activeIdeaId && (
-                        <p className="text-sm text-gray-500 text-center">
+                        <p className="text-[12px] mt-2" style={{ color: 'var(--dash-text-muted)' }}>
                             Please create an idea in Idea Validation first
                         </p>
                     )}
-
-                    {/* Brand Voice - Moved to left column */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Brand Voice</CardTitle>
-                        </CardHeader>
-                        <div className="mt-4">
-                            {hasGenerated && branding?.brand_voice ? (
-                                <>
-                                    <div className="text-sm text-gray-600 mb-2">
-                                        Tone: <span className="font-medium">{branding.brand_voice.tone}</span>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {branding.brand_voice.keywords?.map((keyword: string, i: number) => (
-                                            <Badge key={i} variant="primary">{keyword}</Badge>
-                                        ))}
-                                    </div>
-                                    {branding.brand_voice.description && (
-                                        <p className="text-gray-600 mt-3 text-sm">{branding.brand_voice.description}</p>
-                                    )}
-                                </>
-                            ) : (
-                                <div className="text-center py-6 text-gray-400">
-                                    <div className="text-sm">Tone:</div>
-                                    <p className="text-xs mt-2">Generate branding to see voice recommendations</p>
-                                </div>
-                            )}
-                        </div>
-                    </Card>
-
-                    {/* Font Recommendations - Moved to left column */}
-                    {hasGenerated && branding?.typography && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                        >
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Font Recommendations</CardTitle>
-                                </CardHeader>
-                                <div className="mt-4 space-y-3">
-                                    <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
-                                        <span className="text-sm text-gray-600">Heading Font</span>
-                                        <span className="font-semibold" style={{ fontFamily: branding.typography.heading_font }}>
-                                            {branding.typography.heading_font}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
-                                        <span className="text-sm text-gray-600">Body Font</span>
-                                        <span className="font-semibold" style={{ fontFamily: branding.typography.body_font }}>
-                                            {branding.typography.body_font}
-                                        </span>
-                                    </div>
-                                </div>
-                            </Card>
-                        </motion.div>
-                    )}
-
-                    {/* Color Palette from AI */}
-                    {hasGenerated && branding?.color_palette && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                        >
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>AI-Generated Color Palette</CardTitle>
-                                    <CardDescription>Click any color to copy its hex code</CardDescription>
-                                </CardHeader>
-                                <div className="mt-4 flex flex-wrap gap-4">
-                                    {Object.entries(branding.color_palette).map(([name, color]) => (
-                                        <div
-                                            key={name}
-                                            className="flex flex-col items-center gap-2 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
-                                            onClick={() => {
-                                                navigator.clipboard.writeText(color as string);
-                                                toast.success(`Copied ${color}`);
-                                            }}
-                                        >
-                                            <div
-                                                className="w-16 h-16 rounded-lg shadow-md border-2 border-white"
-                                                style={{ backgroundColor: color as string }}
-                                            />
-                                            <span className="text-sm font-medium text-gray-700 capitalize">{name}</span>
-                                            <span className="text-xs font-mono text-gray-500 bg-white px-2 py-1 rounded">
-                                                {(color as string).toUpperCase()}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </Card>
-                        </motion.div>
-                    )}
                 </div>
 
-                {/* Right Column: Preview */}
-                <div className="space-y-6">
-                    {/* Generating State */}
-                    {isGenerating && (
-                        <Card className="bg-purple-50 border-purple-200">
-                            <div className="flex items-center gap-4">
-                                <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
-                                <div>
-                                    <h3 className="font-medium text-purple-900">
-                                        Generating Brand Identity...
-                                    </h3>
-                                    <p className="text-sm text-purple-700">
-                                        This usually takes 30-60 seconds
-                                    </p>
-                                </div>
+                {/* ═══════════════════════════════════════════════
+                    GENERATING STATE (inline strip)
+                 ═══════════════════════════════════════════════ */}
+                {isGenerating && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
+                        <div
+                            className="flex items-center gap-4 p-4 rounded-[12px]"
+                            style={{
+                                background: 'linear-gradient(135deg, rgba(139,92,246,0.04), rgba(124,58,237,0.04))',
+                                border: '1px solid rgba(139,92,246,0.1)',
+                            }}
+                        >
+                            <div
+                                className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
+                                style={{ background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)' }}
+                            >
+                                <Loader2 className="w-5 h-5 text-white animate-spin" />
                             </div>
-                        </Card>
-                    )}
+                            <div>
+                                <h3
+                                    className="font-semibold text-[14px]"
+                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                >
+                                    Generating Brand Identity...
+                                </h3>
+                                <p className="text-[13px]" style={{ color: 'var(--dash-text-muted)' }}>
+                                    This usually takes 30-60 seconds
+                                </p>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
 
-                    {/* Logo Editor Card */}
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <CardTitle>Logo Editor</CardTitle>
-                                    <CardDescription>
-                                        Create your perfect logo
-                                    </CardDescription>
-                                </div>
-                                <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
-                                    <button
-                                        onClick={() => setEditorMode('simple')}
-                                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${editorMode === 'simple'
-                                            ? 'bg-white shadow text-gray-900'
-                                            : 'text-gray-600 hover:text-gray-900'
-                                            }`}
-                                    >
-                                        <Edit3 className="w-4 h-4 inline mr-1" />
-                                        Simple
-                                    </button>
-                                    <button
-                                        onClick={() => setEditorMode('advanced')}
-                                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${editorMode === 'advanced'
-                                            ? 'bg-white shadow text-gray-900'
-                                            : 'text-gray-600 hover:text-gray-900'
-                                            }`}
-                                    >
-                                        <Layers className="w-4 h-4 inline mr-1" />
-                                        Advanced
-                                    </button>
-                                </div>
+                {/* ═══════════════════════════════════════════════
+                    RESULTS
+                 ═══════════════════════════════════════════════ */}
+
+                {/* Logo Editor — only shown after branding is generated */}
+                {hasGenerated && (
+                    <div>
+                        {/* Section divider label */}
+                        <div className="flex items-center gap-3 mb-5">
+                            <div className="h-px flex-1" style={{ background: 'var(--dash-border-solid, #E8ECF4)' }} />
+                            <span
+                                className="text-[11px] font-bold uppercase tracking-widest"
+                                style={{ color: '#94A3B8', letterSpacing: '0.08em' }}
+                            >
+                                AI Branding
+                            </span>
+                            <div className="h-px flex-1" style={{ background: 'var(--dash-border-solid, #E8ECF4)' }} />
+                        </div>
+
+                        <div className="flex items-center justify-between mb-4">
+                            <h2
+                                className="text-[18px] font-bold flex items-center gap-2"
+                                style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                            >
+                                <Edit3 className="w-4 h-4" style={{ color: '#8B5CF6' }} />
+                                Logo Editor
+                            </h2>
+                            <div
+                                className="flex gap-1 p-1 rounded-[8px]"
+                                style={{ background: 'rgba(0,0,0,0.03)' }}
+                            >
+
+                                <button
+                                    onClick={() => setEditorMode('advanced')}
+                                    className="px-3 py-1.5 rounded-[6px] text-[12px] font-medium transition-all cursor-pointer flex items-center gap-1.5"
+                                    style={{
+                                        background: editorMode === 'advanced' ? 'white' : 'transparent',
+                                        color: editorMode === 'advanced' ? 'var(--dash-text)' : 'var(--dash-text-muted)',
+                                        boxShadow: editorMode === 'advanced' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                                    }}
+                                >
+                                    <Layers className="w-3.5 h-3.5" />
+                                    Advanced
+                                </button>
+                                <button
+                                    onClick={() => setEditorMode('presets')}
+                                    className="px-3 py-1.5 rounded-[6px] text-[12px] font-medium transition-all cursor-pointer flex items-center gap-1.5"
+                                    style={{
+                                        background: editorMode === 'presets' ? 'white' : 'transparent',
+                                        color: editorMode === 'presets' ? 'var(--dash-text)' : 'var(--dash-text-muted)',
+                                        boxShadow: editorMode === 'presets' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                                    }}
+                                >
+                                    <LayoutGrid className="w-3.5 h-3.5" />
+                                    Presets
+                                </button>
                             </div>
-                        </CardHeader>
-                        <div className="mt-4">
-                            {editorMode === 'simple' ? (
-                                <LogoEditor
+                        </div>
+
+                        <div>
+                            {editorMode === 'presets' ? (
+                                <LogoPresets
                                     startupName={startupName}
                                     primaryColor={branding?.color_palette?.primary || selectedColorPreset.primary}
                                     secondaryColor={branding?.color_palette?.secondary || selectedColorPreset.secondary}
-                                    onDownload={() => toast.success('Logo download started!')}
                                 />
                             ) : (
                                 <CanvasLogoEditor
@@ -514,56 +460,223 @@ export default function Branding() {
                                 />
                             )}
                         </div>
-                    </Card>
+                    </div>
+                )}
 
-                    {/* Brand Name Display */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Brand Name</CardTitle>
-                        </CardHeader>
-                        <div className="mt-4 text-center">
-                            <h2
-                                className="text-3xl font-bold"
-                                style={{ color: branding?.color_palette?.primary || selectedColorPreset.primary }}
+                {/* Brand Name Display */}
+                <div
+                    className="text-center py-6 rounded-[12px]"
+                    style={{ background: 'rgba(0,0,0,0.015)' }}
+                >
+                    <h2
+                        className="text-3xl font-bold"
+                        style={{ color: branding?.color_palette?.primary || selectedColorPreset.primary }}
+                    >
+                        {startupName || 'Your Startup'}
+                    </h2>
+                    {hasGenerated && branding?.taglines?.[0] && (
+                        <p
+                            className="mt-2 italic text-[14px]"
+                            style={{ color: 'var(--dash-text-muted)' }}
+                        >
+                            "{branding.taglines[0]}"
+                        </p>
+                    )}
+                </div>
+
+                {/* Taglines */}
+                {hasGenerated && branding?.taglines && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
+                        <h2
+                            className="text-[18px] font-bold flex items-center gap-2 mb-4"
+                            style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                        >
+                            <Type className="w-4 h-4" style={{ color: '#8B5CF6' }} />
+                            Tagline Suggestions
+                        </h2>
+                        <div className="space-y-2">
+                            {branding.taglines.map((tagline: string, i: number) => (
+                                <div
+                                    key={i}
+                                    className="p-3.5 rounded-[10px] text-[13px] italic"
+                                    style={{
+                                        background: 'rgba(0,0,0,0.015)',
+                                        color: 'var(--dash-text-secondary)',
+                                    }}
+                                >
+                                    "{tagline}"
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* Brand Voice */}
+                <div>
+                    <h2
+                        className="text-[18px] font-bold flex items-center gap-2 mb-4"
+                        style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                    >
+                        <Sparkles className="w-4 h-4" style={{ color: '#8B5CF6' }} />
+                        Brand Voice
+                    </h2>
+                    {hasGenerated && branding?.brand_voice ? (
+                        <div>
+                            <div
+                                className="text-[13px] mb-3"
+                                style={{ color: 'var(--dash-text-secondary)' }}
                             >
-                                {startupName || 'Your Startup'}
-                            </h2>
-                            {hasGenerated && branding?.taglines?.[0] && (
-                                <p className="text-gray-600 mt-2 italic">
-                                    "{branding.taglines[0]}"
+                                Tone: <span className="font-semibold" style={{ color: 'var(--dash-text)' }}>
+                                    {branding.brand_voice.tone}
+                                </span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                                {branding.brand_voice.keywords?.map((keyword: string, i: number) => (
+                                    <span
+                                        key={i}
+                                        style={{
+                                            fontSize: 11,
+                                            fontWeight: 600,
+                                            color: '#8B5CF6',
+                                            background: 'rgba(139,92,246,0.06)',
+                                            borderRadius: 6,
+                                            padding: '4px 10px',
+                                            border: '1px solid rgba(139,92,246,0.1)',
+                                        }}
+                                    >
+                                        {keyword}
+                                    </span>
+                                ))}
+                            </div>
+                            {branding.brand_voice.description && (
+                                <p
+                                    className="mt-3 text-[13px] leading-relaxed"
+                                    style={{ color: 'var(--dash-text-secondary)' }}
+                                >
+                                    {branding.brand_voice.description}
                                 </p>
                             )}
                         </div>
-                    </Card>
-
-                    {/* Taglines */}
-                    {hasGenerated && branding?.taglines && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
+                    ) : (
+                        <div
+                            className="text-center py-8 rounded-[10px]"
+                            style={{ background: 'rgba(0,0,0,0.015)' }}
                         >
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <Type className="w-5 h-5" />
-                                        Tagline Suggestions
-                                    </CardTitle>
-                                </CardHeader>
-                                <div className="mt-4 space-y-3">
-                                    {branding.taglines.map((tagline: string, i: number) => (
-                                        <div
-                                            key={i}
-                                            className="p-3 rounded-lg bg-gray-50 text-gray-700 italic"
-                                        >
-                                            "{tagline}"
-                                        </div>
-                                    ))}
-                                </div>
-                            </Card>
-                        </motion.div>
+                            <p className="text-[13px]" style={{ color: 'var(--dash-text-muted)' }}>
+                                Generate branding to see voice recommendations
+                            </p>
+                        </div>
                     )}
                 </div>
-            </div>
+
+                {/* Font Recommendations */}
+                {hasGenerated && branding?.typography && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                    >
+                        <h2
+                            className="text-[18px] font-bold flex items-center gap-2 mb-4"
+                            style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                        >
+                            <Type className="w-4 h-4" style={{ color: '#8B5CF6' }} />
+                            Font Recommendations
+                        </h2>
+                        <div className="space-y-2">
+                            <div
+                                className="flex items-center justify-between p-3.5 rounded-[10px]"
+                                style={{ background: 'rgba(0,0,0,0.015)' }}
+                            >
+                                <span className="text-[13px]" style={{ color: 'var(--dash-text-secondary)' }}>
+                                    Heading Font
+                                </span>
+                                <span
+                                    className="font-semibold text-[14px]"
+                                    style={{ fontFamily: branding.typography.heading_font, color: 'var(--dash-text)' }}
+                                >
+                                    {branding.typography.heading_font}
+                                </span>
+                            </div>
+                            <div
+                                className="flex items-center justify-between p-3.5 rounded-[10px]"
+                                style={{ background: 'rgba(0,0,0,0.015)' }}
+                            >
+                                <span className="text-[13px]" style={{ color: 'var(--dash-text-secondary)' }}>
+                                    Body Font
+                                </span>
+                                <span
+                                    className="font-semibold text-[14px]"
+                                    style={{ fontFamily: branding.typography.body_font, color: 'var(--dash-text)' }}
+                                >
+                                    {branding.typography.body_font}
+                                </span>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* AI-Generated Color Palette */}
+                {hasGenerated && branding?.color_palette && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                    >
+                        <h2
+                            className="text-[18px] font-bold flex items-center gap-2 mb-1"
+                            style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                        >
+                            <Paintbrush className="w-4 h-4" style={{ color: '#8B5CF6' }} />
+                            AI-Generated Color Palette
+                        </h2>
+                        <p className="text-[13px] mb-4" style={{ color: 'var(--dash-text-muted)' }}>
+                            Click any color to copy its hex code
+                        </p>
+                        <div className="flex flex-wrap gap-3">
+                            {Object.entries(branding.color_palette).map(([name, color]) => (
+                                <div
+                                    key={name}
+                                    className="flex flex-col items-center gap-2 p-3 rounded-[10px] cursor-pointer transition-all"
+                                    style={{ background: 'rgba(0,0,0,0.015)' }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.03)'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.015)'; }}
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(color as string);
+                                        toast.success(`Copied ${color}`);
+                                    }}
+                                >
+                                    <div
+                                        className="w-14 h-14 rounded-[8px]"
+                                        style={{
+                                            backgroundColor: color as string,
+                                            boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.06)',
+                                        }}
+                                    />
+                                    <span
+                                        className="text-[12px] font-medium capitalize"
+                                        style={{ color: 'var(--dash-text-secondary)' }}
+                                    >
+                                        {name}
+                                    </span>
+                                    <span
+                                        className="text-[11px] font-mono px-2 py-0.5 rounded-[4px]"
+                                        style={{
+                                            background: 'rgba(0,0,0,0.03)',
+                                            color: 'var(--dash-text-muted)',
+                                        }}
+                                    >
+                                        {(color as string).toUpperCase()}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+            </motion.div>
         </div>
     );
 }
