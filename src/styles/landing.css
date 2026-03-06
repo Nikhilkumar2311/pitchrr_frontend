@@ -172,7 +172,7 @@ html.lenis body {
     font-family: var(--font-heading);
     font-weight: 700;
     font-size: clamp(2rem, 5vw, 4rem);
-    color: var(--color-bg-accent);
+    color: rgba(79, 125, 243, 0.18);
     padding: 0 var(--space-4);
     user-select: none;
     display: inline-block;
