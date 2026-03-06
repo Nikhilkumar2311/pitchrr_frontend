@@ -53,7 +53,8 @@ import {
 } from '@/hooks';
 import { downloadFile } from '@/utils';
 
-
+/** Fallback: convert any remaining $ to ₹ for cached data generated before prompt update */
+const toRupee = (text: string): string => text.replace(/\$/g, '₹');
 
 export default function GTMStrategy() {
     const { ideaId: urlIdeaId } = useParams<{ ideaId?: string }>();
@@ -362,7 +363,7 @@ export default function GTMStrategy() {
                                         </span>
                                     </div>
                                     <p className="text-[13px] leading-relaxed mb-3" style={{ color: 'var(--dash-text-secondary)' }}>
-                                        {strategy.pricing_strategy.description}
+                                        {toRupee(strategy.pricing_strategy.description)}
                                     </p>
                                     {strategy.pricing_strategy.tiers && (
                                         <div
@@ -372,7 +373,7 @@ export default function GTMStrategy() {
                                             {strategy.pricing_strategy.tiers.map((tier: { name: string; price: string }, i: number) => (
                                                 <div key={i} className="flex justify-between items-center text-[13px]">
                                                     <span style={{ color: 'var(--dash-text-secondary)' }}>{tier.name}</span>
-                                                    <span className="font-semibold" style={{ color: 'var(--dash-text)' }}>{tier.price}</span>
+                                                    <span className="font-semibold" style={{ color: 'var(--dash-text)' }}>{toRupee(tier.price)}</span>
                                                 </div>
                                             ))}
                                         </div>
