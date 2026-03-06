@@ -14,10 +14,17 @@
  * - Fetches idea from Core Service
  * - Generates GTM strategy via AI
  * - React Query polls for results
+ *
+ * DESIGN:
+ * - Result sections shown ONLY after generation (no pre-rendered empty boxes)
+ * - NO outer panel borders on result sections — headings + content flow openly
+ * - Soft coral/warm accent (#F97066) instead of harsh red
+ * - Design tokens for all colors
  */
 
 import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
     Rocket,
     Save,
@@ -29,16 +36,9 @@ import {
     TrendingUp,
     BarChart3,
     Loader2,
+    ArrowRight,
 } from 'lucide-react';
-import {
-    Card,
-    CardHeader,
-    CardTitle,
-    CardDescription,
-    Button,
-    Textarea,
-    Badge,
-} from '@/components/ui';
+import { Button } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { useIdeaStore, getStoredActiveIdeaId } from '@/store';
 import { GTMStrategySkeleton } from '@/components/skeletons/GTMStrategySkeleton';
@@ -53,52 +53,33 @@ import {
 } from '@/hooks';
 import { downloadFile } from '@/utils';
 
+
+
 export default function GTMStrategy() {
     const { ideaId: urlIdeaId } = useParams<{ ideaId?: string }>();
-
     const [productDescription, setProductDescription] = useState('');
 
-    // Get current idea from store for backward compatibility
     const { currentIdea, activeIdeaId: storedActiveIdeaId, setActiveIdeaId } = useIdeaStore();
-    // Read from localStorage directly on initial render to avoid async hydration delay
     const initialStoredId = useMemo(() => getStoredActiveIdeaId(), []);
 
-    // ==========================================================================
     // API HOOKS
-    // ==========================================================================
-
     const { data: ideas, isLoading: isLoadingIdeas } = useIdeas();
     const activeIdeaId = urlIdeaId || storedActiveIdeaId || initialStoredId || ideas?.[0]?.id;
-
     const { data: idea, isLoading: isLoadingIdea } = useIdea(activeIdeaId);
-
-    const {
-        data: moduleData,
-    } = useModuleData(activeIdeaId, 'gtm_strategy');
-
+    const { data: moduleData } = useModuleData(activeIdeaId, 'gtm_strategy');
     const { mutate: generateModule, isPending: isTriggering } = useGenerateModule(activeIdeaId || '');
 
-    // ==========================================================================
     // DERIVED STATE
-    // ==========================================================================
-
     const hasGenerated = moduleData?.exists && moduleData.data;
     const strategy = moduleData?.data || null;
     const isLoading = isLoadingIdeas || isLoadingIdea;
-    // Use status from backend to detect pending state (survives page refresh)
     const isGenerating = isTriggering || moduleData?.status === 'IN_PROGRESS';
 
-    // ==========================================================================
     // EFFECTS
-    // ==========================================================================
-
-    // Track the last known idea data to detect when NEW data arrives
     const [lastIdeaKey, setLastIdeaKey] = useState<string | null>(null);
 
-    // Populate product description from idea (only when idea data actually changes)
     useEffect(() => {
         const currentIdeaKey = idea ? `${idea.id}-${idea.description}` : null;
-
         if (idea?.description && currentIdeaKey !== lastIdeaKey) {
             setProductDescription(idea.description);
             setLastIdeaKey(currentIdeaKey);
@@ -108,26 +89,18 @@ export default function GTMStrategy() {
         }
     }, [idea, currentIdea, lastIdeaKey]);
 
-    // Sync activeIdeaId in store when idea changes to keep persistence across modules
     useEffect(() => {
         if (activeIdeaId && activeIdeaId !== storedActiveIdeaId) {
             setActiveIdeaId(activeIdeaId);
         }
     }, [activeIdeaId, storedActiveIdeaId, setActiveIdeaId]);
 
-    // ==========================================================================
     // HANDLERS
-    // ==========================================================================
-
     const handleGenerate = () => {
-        if (!activeIdeaId) {
-            toast.error('Please create an idea first');
-            return;
-        }
+        if (!activeIdeaId) { toast.error('Please create an idea first'); return; }
         generateModule('gtm_strategy');
     };
 
-    // Export hooks
     const { mutate: exportModule, isPending: isExporting } = useExportModule('gtm-strategy', activeIdeaId);
     const [exportJobId, setExportJobId] = useState<string | null>(null);
     const { data: exportStatus } = useExportStatus(exportJobId);
@@ -146,282 +119,398 @@ export default function GTMStrategy() {
     }, [exportStatus, idea?.title]);
 
     const exportToPDF = () => {
-        if (!hasGenerated) {
-            toast.error('Please generate strategy first');
-            return;
-        }
-        exportModule({}, {
-            onSuccess: (data) => setExportJobId(data.jobId),
-        });
+        if (!hasGenerated) { toast.error('Please generate strategy first'); return; }
+        exportModule({}, { onSuccess: (data) => setExportJobId(data.jobId) });
     };
 
-    const handleSave = () => {
-        toast.success('GTM strategy saved!');
-    };
+    const handleSave = () => { toast.success('GTM strategy saved!'); };
 
-    // ==========================================================================
+    // Phase colors for launch timeline
+    const phaseColors = [
+        { bg: 'rgba(249,112,102,0.06)', border: '#F97066', text: '#E05A50' },
+        { bg: 'rgba(251,146,60,0.06)', border: '#FB923C', text: '#EA580C' },
+        { bg: 'rgba(52,211,153,0.06)', border: '#34D399', text: '#059669' },
+        { bg: 'rgba(129,140,248,0.06)', border: '#818CF8', text: '#6366F1' },
+    ];
+
     // RENDER
-    // ==========================================================================
-
-    if (isLoading) {
-        return <GTMStrategySkeleton />;
-    }
+    if (isLoading) return <GTMStrategySkeleton />;
 
     return (
-        <div className="space-y-6">
+        <div className="max-w-5xl mx-auto space-y-7">
             <SEO
                 title="Go-To-Market Strategy"
-                description="Create a comprehensive launch strategy with AI. Get target user segments, pricing strategies, launch timelines, and growth tactics."
+                description="Create a comprehensive launch strategy with AI."
                 canonical="/dashboard/gtm"
             />
 
-            {/* Page Header */}
+            {/* Header */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <Rocket className="w-7 h-7 text-[#EF4444]" />
+                    <h1
+                        className="text-2xl font-bold flex items-center gap-2"
+                        style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                    >
+                        <Rocket className="w-7 h-7" style={{ color: '#F97066' }} />
                         GTM Strategy
                     </h1>
-                    <p className="mt-1 text-gray-600">
+                    <p className="mt-1 text-[14px]" style={{ color: 'var(--dash-text-muted)' }}>
                         How will this product launch and grow?
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="secondary"
-                        leftIcon={<Save className="w-4 h-4" />}
+                <div className="flex items-center gap-2">
+                    <button
                         onClick={handleSave}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-medium transition-all cursor-pointer"
+                        style={{ color: 'var(--dash-text-muted)', border: '1px solid var(--dash-border-solid, #E8ECF4)' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.02)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                     >
-                        Save
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        leftIcon={<Download className="w-4 h-4" />}
-                        disabled={!hasGenerated || isExporting || !!exportJobId}
-                        isLoading={isExporting || !!exportJobId}
+                        <Save className="w-3.5 h-3.5" /> Save
+                    </button>
+                    <button
                         onClick={exportToPDF}
+                        disabled={!hasGenerated || isExporting || !!exportJobId}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-medium transition-all cursor-pointer disabled:opacity-40"
+                        style={{ color: 'var(--dash-text-muted)', border: '1px solid var(--dash-border-solid, #E8ECF4)' }}
+                        onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = 'rgba(0,0,0,0.02)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                     >
-                        <span className="flex items-center gap-2">
-                            {exportJobId ? 'Exporting...' : 'Export PDF'}
-                            {!exportJobId && <CreditCost cost={2} />}
-                        </span>
-                    </Button>
+                        {(isExporting || !!exportJobId) ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                        {exportJobId ? 'Exporting...' : 'Export PDF'}
+                        {!exportJobId && <CreditCost cost={2} />}
+                    </button>
                 </div>
             </div>
 
-            {/* Input Section */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Describe Your Product</CardTitle>
-                    <CardDescription>
-                        Tell us about your product to generate a tailored GTM strategy
-                    </CardDescription>
-                </CardHeader>
-                <Textarea
+            {/* Input Section — this one keeps a subtle panel since it's interactive */}
+            <div
+                className="p-5 rounded-[14px]"
+                style={{ border: '1px solid var(--dash-border-solid, #E8ECF4)' }}
+            >
+                <h2
+                    className="text-[18px] font-bold flex items-center gap-2 mb-1"
+                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                >
+                    <Sparkles className="w-4 h-4" style={{ color: '#F97066' }} />
+                    Describe Your Product
+                </h2>
+                <p className="text-[13px] mb-3" style={{ color: 'var(--dash-text-muted)' }}>
+                    Tell us about your product to generate a tailored GTM strategy
+                </p>
+                <textarea
                     placeholder="Example: An AI-powered platform that helps first-time founders validate their startup ideas..."
                     rows={3}
                     value={productDescription}
                     onChange={(e) => setProductDescription(e.target.value)}
-                    className="mt-4"
+                    className="w-full px-4 py-3 rounded-[10px] text-[13px] outline-none transition-all resize-none"
+                    style={{
+                        background: 'rgba(0,0,0,0.015)',
+                        border: '1px solid var(--dash-border-solid, #E8ECF4)',
+                        color: 'var(--dash-text)',
+                    }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = '#F97066'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(249,112,102,0.08)'; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--dash-border-solid, #E8ECF4)'; e.currentTarget.style.boxShadow = 'none'; }}
                 />
-                <Button
-                    onClick={handleGenerate}
-                    isLoading={isGenerating}
-                    leftIcon={<Sparkles className="w-4 h-4" />}
-                    className="mt-4"
-                    disabled={!activeIdeaId}
-                >
-                    <span className="flex items-center gap-2">
-                        Generate GTM Strategy
-                        <CreditCost cost={15} />
-                    </span>
-                </Button>
-                {!activeIdeaId && (
-                    <p className="text-sm text-gray-500 mt-2">
-                        Please create an idea in Idea Validation first
-                    </p>
-                )}
-            </Card>
+                <div className="flex items-center gap-3 mt-3">
+                    <Button
+                        onClick={handleGenerate}
+                        isLoading={isGenerating}
+                        leftIcon={<Sparkles className="w-4 h-4" />}
+                        disabled={!activeIdeaId}
+                        style={{ background: 'linear-gradient(135deg, #F97066, #E05A50)' }}
+                    >
+                        <span className="flex items-center gap-2">
+                            Generate GTM Strategy
+                            <CreditCost cost={15} />
+                        </span>
+                    </Button>
+                    {!activeIdeaId && (
+                        <p className="text-[12px]" style={{ color: 'var(--dash-text-muted)' }}>
+                            Please create an idea in Idea Validation first
+                        </p>
+                    )}
+                </div>
+            </div>
 
             {/* Generating State */}
             {isGenerating && (
-                <Card className="bg-red-50 border-red-200">
-                    <div className="flex items-center gap-4">
-                        <Loader2 className="w-6 h-6 animate-spin text-red-500" />
-                        <div>
-                            <h3 className="font-medium text-red-900">
-                                Generating GTM Strategy...
-                            </h3>
-                            <p className="text-sm text-red-700">
-                                This usually takes 30-60 seconds
-                            </p>
-                        </div>
+                <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-4 px-5 py-4 rounded-[12px]"
+                    style={{
+                        background: 'linear-gradient(135deg, rgba(249,112,102,0.06), rgba(249,112,102,0.02))',
+                        border: '1px solid rgba(249,112,102,0.15)',
+                    }}
+                >
+                    <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#F97066' }} />
+                    <div>
+                        <h3 className="font-medium text-[14px]" style={{ color: 'var(--dash-text)' }}>
+                            Generating GTM Strategy...
+                        </h3>
+                        <p className="text-[13px]" style={{ color: 'var(--dash-text-muted)' }}>
+                            Building your launch plan, pricing, and growth strategies. This usually takes 30-60 seconds.
+                        </p>
                     </div>
-                </Card>
+                </motion.div>
             )}
 
-            {/* Results Grid - Always show with conditional content */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Target Users */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Target className="w-5 h-5 text-[#EF4444]" />
-                            Target Users
-                        </CardTitle>
-                    </CardHeader>
-                    <div className="mt-4 space-y-4">
-                        {hasGenerated && strategy?.target_segments ? (
-                            strategy.target_segments.map((segment: { name: string; description: string; priority: string }, i: number) => (
-                                <div key={i} className="p-4 rounded-lg bg-gray-50">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="font-medium text-gray-900">{segment.name}</span>
-                                        <Badge variant={segment.priority === 'high' ? 'success' : 'default'}>
-                                            {segment.priority}
-                                        </Badge>
-                                    </div>
-                                    <p className="text-sm text-gray-600">{segment.description}</p>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="text-center py-8 text-gray-400">
-                                <Target className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                <p className="text-sm">Generate to see target users</p>
-                            </div>
-                        )}
+            {/* ================================================================= */}
+            {/* RESULTS — only shown after generation, NO outer boxes             */}
+            {/* ================================================================= */}
+            {hasGenerated && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-8"
+                >
+                    {/* Divider */}
+                    <div className="flex items-center gap-3">
+                        <div className="h-px flex-1" style={{ background: 'var(--dash-border-solid, #E8ECF4)' }} />
+                        <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: '#94A3B8' }}>
+                            AI-Generated Strategy
+                        </span>
+                        <div className="h-px flex-1" style={{ background: 'var(--dash-border-solid, #E8ECF4)' }} />
                     </div>
-                </Card>
 
-                {/* Pricing Strategy */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <DollarSign className="w-5 h-5 text-[#EF4444]" />
-                            Pricing Strategy
-                        </CardTitle>
-                    </CardHeader>
-                    <div className="mt-4 p-4 rounded-lg bg-linear-to-r from-green-50 to-blue-50 border border-green-200">
-                        {hasGenerated && strategy?.pricing_strategy ? (
-                            <>
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm text-gray-600">Pricing Model</span>
-                                    <Badge variant="success" size="md">
-                                        {strategy.pricing_strategy.model?.toUpperCase() || 'FREEMIUM'}
-                                    </Badge>
-                                </div>
-                                <p className="text-gray-700">{strategy.pricing_strategy.description}</p>
-                                {strategy.pricing_strategy.tiers && (
-                                    <div className="mt-3 space-y-2">
-                                        {strategy.pricing_strategy.tiers.map((tier: { name: string; price: string }, i: number) => (
-                                            <div key={i} className="flex justify-between text-sm">
-                                                <span className="text-gray-600">{tier.name}</span>
-                                                <span className="font-medium">{tier.price}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </>
-                        ) : (
-                            <div className="text-center py-4 text-gray-400">
-                                <DollarSign className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                <p className="text-sm">Generate to see pricing strategy</p>
-                            </div>
-                        )}
-                    </div>
-                </Card>
-
-                {/* Launch Plan */}
-                <Card className="lg:col-span-2">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Calendar className="w-5 h-5 text-[#EF4444]" />
-                            Launch Plan Timeline
-                        </CardTitle>
-                    </CardHeader>
-                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {hasGenerated && strategy?.launch_plan ? (
-                            strategy.launch_plan.map((phase: { phase: string; timeline: string; activities: string[] }, i: number) => (
-                                <div
-                                    key={i}
-                                    className="p-4 rounded-lg bg-gray-50 border-l-4"
-                                    style={{ borderLeftColor: '#EF4444' }}
+                    {/* Target Users + Pricing — single column */}
+                    <div className="space-y-8">
+                        {/* Target Users */}
+                        {strategy?.target_segments && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                            >
+                                <h3
+                                    className="text-[18px] font-bold flex items-center gap-2 mb-4"
+                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
                                 >
-                                    <div className="font-medium text-gray-900">{phase.phase}</div>
-                                    <div className="text-sm text-gray-500 mb-2">{phase.timeline}</div>
-                                    <ul className="space-y-1">
-                                        {phase.activities?.map((task: string, j: number) => (
-                                            <li key={j} className="text-sm text-gray-600 flex items-center gap-2">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-[#EF4444]" />
-                                                {task}
-                                            </li>
-                                        ))}
-                                    </ul>
+                                    <Target className="w-4 h-4" style={{ color: '#F97066' }} />
+                                    Target Users
+                                </h3>
+                                <div className="space-y-2.5">
+                                    {strategy.target_segments.map((segment: { name: string; description: string; priority: string }, i: number) => (
+                                        <div
+                                            key={i}
+                                            className="p-3.5 rounded-[10px] transition-all"
+                                            style={{ background: 'rgba(0,0,0,0.018)' }}
+                                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.03)'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.018)'; }}
+                                        >
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="font-semibold text-[13px]" style={{ color: 'var(--dash-text)' }}>
+                                                    {segment.name}
+                                                </span>
+                                                <span
+                                                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide"
+                                                    style={{
+                                                        background: segment.priority === 'high'
+                                                            ? 'rgba(52,211,153,0.1)'
+                                                            : segment.priority === 'medium'
+                                                                ? 'rgba(251,146,60,0.1)'
+                                                                : 'rgba(0,0,0,0.04)',
+                                                        color: segment.priority === 'high'
+                                                            ? '#059669'
+                                                            : segment.priority === 'medium'
+                                                                ? '#EA580C'
+                                                                : 'var(--dash-text-muted)',
+                                                    }}
+                                                >
+                                                    {segment.priority}
+                                                </span>
+                                            </div>
+                                            <p className="text-[13px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+                                                {segment.description}
+                                            </p>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))
-                        ) : (
-                            <div className="col-span-full text-center py-8 text-gray-400">
-                                <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                <p className="text-sm">Generate to see launch timeline</p>
-                            </div>
+                            </motion.div>
                         )}
-                    </div>
-                </Card>
 
-                {/* Growth Strategies */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <TrendingUp className="w-5 h-5 text-[#EF4444]" />
-                            Growth Strategies
-                        </CardTitle>
-                    </CardHeader>
-                    <div className="mt-4 space-y-2">
-                        {hasGenerated && strategy?.growth_strategies ? (
-                            strategy.growth_strategies.map((item: { strategy: string; description: string }, i: number) => (
-                                <div key={i} className="p-3 rounded-lg bg-gray-50">
-                                    <div className="font-medium text-gray-900">{item.strategy}</div>
-                                    <p className="text-sm text-gray-600 mt-1">{item.description}</p>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="text-center py-8 text-gray-400">
-                                <TrendingUp className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                <p className="text-sm">Generate to see growth strategies</p>
-                            </div>
-                        )}
-                    </div>
-                </Card>
-
-                {/* Key Metrics */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <BarChart3 className="w-5 h-5 text-[#EF4444]" />
-                            Key Metrics (KPIs)
-                        </CardTitle>
-                    </CardHeader>
-                    <div className="mt-4 space-y-3">
-                        {hasGenerated && strategy?.kpis ? (
-                            <>
-                                {strategy.kpis.map((kpi: { metric: string; target: string; timeframe: string }, i: number) => (
-                                    <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
-                                        <span className="text-gray-700">{kpi.metric}</span>
-                                        <Badge variant="default">{kpi.target}</Badge>
+                        {/* Pricing Strategy */}
+                        {strategy?.pricing_strategy && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.15 }}
+                            >
+                                <h3
+                                    className="text-[18px] font-bold flex items-center gap-2 mb-4"
+                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                >
+                                    <DollarSign className="w-4 h-4" style={{ color: '#34D399' }} />
+                                    Pricing Strategy
+                                </h3>
+                                <div
+                                    className="p-4 rounded-[12px]"
+                                    style={{
+                                        background: 'linear-gradient(135deg, rgba(52,211,153,0.04), rgba(129,140,248,0.04))',
+                                    }}
+                                >
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-[12px]" style={{ color: 'var(--dash-text-muted)' }}>
+                                            Pricing Model
+                                        </span>
+                                        <span
+                                            className="text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider"
+                                            style={{ background: 'rgba(52,211,153,0.12)', color: '#059669' }}
+                                        >
+                                            {strategy.pricing_strategy.model?.toUpperCase() || 'FREEMIUM'}
+                                        </span>
                                     </div>
-                                ))}
-                                <p className="mt-4 text-sm text-gray-500">
+                                    <p className="text-[13px] leading-relaxed mb-3" style={{ color: 'var(--dash-text-secondary)' }}>
+                                        {strategy.pricing_strategy.description}
+                                    </p>
+                                    {strategy.pricing_strategy.tiers && (
+                                        <div
+                                            className="space-y-2.5 pt-3"
+                                            style={{ borderTop: '1px solid rgba(52,211,153,0.1)' }}
+                                        >
+                                            {strategy.pricing_strategy.tiers.map((tier: { name: string; price: string }, i: number) => (
+                                                <div key={i} className="flex justify-between items-center text-[13px]">
+                                                    <span style={{ color: 'var(--dash-text-secondary)' }}>{tier.name}</span>
+                                                    <span className="font-semibold" style={{ color: 'var(--dash-text)' }}>{tier.price}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </motion.div>
+                        )}
+                    </div>
+
+                    {/* Launch Plan Timeline — full width, NO outer box */}
+                    {strategy?.launch_plan && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                        >
+                            <h3
+                                className="text-[18px] font-bold flex items-center gap-2 mb-4"
+                                style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                            >
+                                <Calendar className="w-4 h-4" style={{ color: '#FB923C' }} />
+                                Launch Plan Timeline
+                            </h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                {strategy.launch_plan.map((phase: { phase: string; timeline: string; activities: string[] }, i: number) => {
+                                    const color = phaseColors[i % phaseColors.length];
+                                    return (
+                                        <div
+                                            key={i}
+                                            className="p-4 rounded-[12px] relative"
+                                            style={{ background: color.bg, borderLeft: `3px solid ${color.border}` }}
+                                        >
+                                            <div className="font-semibold text-[13px] mb-0.5" style={{ color: color.text }}>
+                                                {phase.phase}
+                                            </div>
+                                            <div className="text-[11px] mb-2.5" style={{ color: 'var(--dash-text-muted)' }}>
+                                                {phase.timeline}
+                                            </div>
+                                            <ul className="space-y-1.5">
+                                                {phase.activities?.map((task: string, j: number) => (
+                                                    <li key={j} className="text-[12px] flex items-start gap-2" style={{ color: 'var(--dash-text-secondary)' }}>
+                                                        <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: color.border }} />
+                                                        {task}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                            {i < strategy.launch_plan.length - 1 && (
+                                                <div className="hidden lg:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10">
+                                                    <ArrowRight className="w-3.5 h-3.5" style={{ color: 'var(--dash-border-solid, #E8ECF4)' }} />
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {/* Growth + KPIs — single column */}
+                    <div className="space-y-8">
+                        {/* Growth Strategies */}
+                        {strategy?.growth_strategies && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.25 }}
+                            >
+                                <h3
+                                    className="text-[18px] font-bold flex items-center gap-2 mb-4"
+                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                >
+                                    <TrendingUp className="w-4 h-4" style={{ color: '#818CF8' }} />
+                                    Growth Strategies
+                                </h3>
+                                <div className="space-y-2.5">
+                                    {strategy.growth_strategies.map((item: { strategy: string; description: string }, i: number) => (
+                                        <div
+                                            key={i}
+                                            className="p-3.5 rounded-[10px] transition-all"
+                                            style={{ background: 'rgba(0,0,0,0.018)' }}
+                                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.03)'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.018)'; }}
+                                        >
+                                            <div className="font-semibold text-[13px] mb-1" style={{ color: 'var(--dash-text)' }}>
+                                                {item.strategy}
+                                            </div>
+                                            <p className="text-[13px] leading-relaxed" style={{ color: 'var(--dash-text-secondary)' }}>
+                                                {item.description}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* Key Metrics */}
+                        {strategy?.kpis && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.3 }}
+                            >
+                                <h3
+                                    className="text-[18px] font-bold flex items-center gap-2 mb-4"
+                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                >
+                                    <BarChart3 className="w-4 h-4" style={{ color: '#FBBF24' }} />
+                                    Key Metrics (KPIs)
+                                </h3>
+                                <div className="space-y-2">
+                                    {strategy.kpis.map((kpi: { metric: string; target: string; timeframe: string }, i: number) => (
+                                        <div
+                                            key={i}
+                                            className="flex items-center justify-between p-3 rounded-[10px] transition-all"
+                                            style={{ background: 'rgba(0,0,0,0.018)' }}
+                                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.03)'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.018)'; }}
+                                        >
+                                            <span className="text-[13px]" style={{ color: 'var(--dash-text-secondary)' }}>
+                                                {kpi.metric}
+                                            </span>
+                                            <span
+                                                className="text-[11px] font-medium px-2 py-0.5 rounded-full"
+                                                style={{ background: 'rgba(251,191,36,0.1)', color: '#D97706' }}
+                                            >
+                                                {kpi.target}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <p className="mt-3 text-[12px]" style={{ color: 'var(--dash-text-muted)' }}>
                                     Track these metrics from day one to measure growth and make data-driven decisions.
                                 </p>
-                            </>
-                        ) : (
-                            <div className="text-center py-8 text-gray-400">
-                                <BarChart3 className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                <p className="text-sm">Generate to see key metrics</p>
-                            </div>
+                            </motion.div>
                         )}
                     </div>
-                </Card>
-            </div>
+                </motion.div>
+            )}
         </div>
     );
 }
