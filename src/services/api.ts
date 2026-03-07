@@ -131,8 +131,15 @@ api.interceptors.response.use(
                     break;
 
                 case 404:
-                    // Not found - resource doesn't exist
-                    toast.error('Resource not found.');
+                    // Not found - resource doesn't exist.
+                    // We suppress the global toast for certain endpoints that might 
+                    // legitimately return 404 during new user onboarding/syncing.
+                    const silent404Paths = ['/credits', '/users/me', '/users/sync'];
+                    const isSilentPath = error.config?.url && silent404Paths.some(path => error.config?.url?.includes(path));
+
+                    if (!isSilentPath) {
+                        toast.error('Resource not found.');
+                    }
                     break;
 
                 case 500:
