@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import Sitemap from 'vite-plugin-sitemap'
 
 /**
  * Vite Configuration
@@ -10,6 +11,7 @@ import path from 'path'
  * Key configurations:
  * 1. React plugin - Enables React Fast Refresh for HMR (Hot Module Replacement)
  * 2. Path aliases - Makes imports cleaner (e.g., @/components instead of ../../components)
+ * 3. Sitemap - Automatically generates sitemap.xml for SEO during build
  * 
  * WHY PATH ALIASES?
  * - Cleaner imports: import { Button } from '@/components/ui/Button'
@@ -17,7 +19,24 @@ import path from 'path'
  * - Easier refactoring: moving files doesn't break imports
  */
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    Sitemap({
+      hostname: 'https://pitchrr.in',
+      generateRobotsTxt: true,
+      // Focus on public routes for the sitemap since protected ones are useless for crawlers
+      dynamicRoutes: [
+        '/',
+        '/login',
+        '/register',
+        '/privacy',
+        '/terms',
+        '/refund',
+        '/contact',
+        '/about'
+      ]
+    })
+  ],
 
   // Path aliases configuration
   // Each alias maps a shorthand to a directory in src/
