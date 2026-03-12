@@ -585,15 +585,6 @@ export default function PitchDeck() {
                             ))}
                         </div>
 
-                        {/* One Pager Modal */}
-                        {showOnePager && activeIdeaId && (
-                            <OnePager
-                                slides={slides}
-                                companyName={ideaData?.title || 'My Startup'}
-                                ideaId={activeIdeaId}
-                                onClose={() => setShowOnePager(false)}
-                            />
-                        )}
                     </div>
 
                     {/* Slide Preview */}
@@ -1103,9 +1094,19 @@ export default function PitchDeck() {
                         <p className="text-sm text-gray-500 mt-1 max-w-xs">
                             Click "Generate Pitch Deck" to create your investor-ready presentation
                         </p>
-                    </Card>
+                </Card>
                 )
             }
+
+            {/* One Pager Modal - rendered outside grid to prevent overlap */}
+            {showOnePager && activeIdeaId && (
+                <OnePager
+                    slides={slides}
+                    companyName={ideaData?.title || 'My Startup'}
+                    ideaId={activeIdeaId}
+                    onClose={() => setShowOnePager(false)}
+                />
+            )}
         </div>
     );
 }

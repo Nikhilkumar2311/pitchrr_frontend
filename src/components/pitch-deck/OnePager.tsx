@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Download, X, Loader2, Globe, Target, Zap, Shield, Lightbulb, Upload, /*ExternalLink,*/ Palette } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { useExportOnePager, useExportStatus } from '@/hooks';
+import { downloadFile } from '@/utils';
 // import { Link } from 'react-router-dom';
 
 interface Slide {
@@ -119,31 +120,13 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
     // Extract data from slides
     const extractedData = extractDataFromSlides(slides);
 
-    // Auto-download when export completes - fetch the file and trigger download
+    // Auto-download when export completes
     useEffect(() => {
         if (exportStatus?.state === 'completed' && exportStatus?.downloadUrl) {
-            // Fetch the PDF and trigger download without opening Cloudinary URL
-            fetch(exportStatus.downloadUrl)
-                .then(response => response.blob())
-                .then(blob => {
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${companyName.replace(/[^a-zA-Z0-9]/g, '_')}_one_pager.pdf`;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-                })
-                .catch(() => {
-                    // Fallback TEMPORARILY DISABLED for AWS Activate
-                    // if (exportStatus.downloadUrl) {
-                    //     window.open(exportStatus.downloadUrl, '_blank');
-                    // }
-                })
-                .finally(() => {
-                    setExportJobId(null);
-                });
+            const filename = `${companyName.replace(/[^a-zA-Z0-9]/g, '_')}_one_pager.pdf`;
+            downloadFile(exportStatus.downloadUrl, filename)
+                .then(() => setExportJobId(null))
+                .catch(() => setExportJobId(null));
         } else if (exportStatus?.state === 'failed') {
             setExportJobId(null);
         }
@@ -394,8 +377,7 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                                 OVERVIEW...
                             </div>
                             <p className="text-gray-600 text-[9px] leading-relaxed">
-                                {extractedData.overview.substring(0, 400)}
-                                {extractedData.overview.length > 400 && '...'}
+                                {extractedData.overview}
                             </p>
                         </div>
 
@@ -412,7 +394,7 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                                         Problem
                                     </div>
                                     <ul className="mt-1 space-y-0.5 text-[8px]">
-                                        {extractedData.problem.slice(0, 4).map((item, idx) => (
+                                        {extractedData.problem.slice(0, 3).map((item, idx) => (
                                             <li key={idx} className="flex items-start gap-1">
                                                 <span className="font-bold" style={{ color: selectedColor }}>•</span>
                                                 <span className="text-gray-700">{item}</span>
@@ -430,7 +412,7 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                                         Solution
                                     </div>
                                     <ul className="mt-1 space-y-0.5 text-[8px]">
-                                        {extractedData.solution.slice(0, 4).map((item, idx) => (
+                                        {extractedData.solution.slice(0, 3).map((item, idx) => (
                                             <li key={idx} className="flex items-start gap-1">
                                                 <span className="font-bold" style={{ color: selectedColor }}>•</span>
                                                 <span className="text-gray-700">{item}</span>
@@ -448,7 +430,7 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                                         Traction
                                     </div>
                                     <ul className="mt-1 space-y-0.5 text-[8px]">
-                                        {extractedData.traction.slice(0, 4).map((item, idx) => (
+                                        {extractedData.traction.slice(0, 3).map((item, idx) => (
                                             <li key={idx} className="flex items-start gap-1">
                                                 <span className="font-bold" style={{ color: selectedColor }}>•</span>
                                                 <span className="text-gray-700">{item}</span>
@@ -467,28 +449,10 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                                     </div>
                                     <div className="mt-1 grid grid-cols-2 gap-1 text-[8px]">
                                         {extractedData.team.slice(0, 4).map((member, idx) => (
-                                            <div key={idx} className="text-gray-700">{member}</div>
+                                            <div key={idx} className="text-gray-700 truncate">{member}</div>
                                         ))}
                                     </div>
                                 </div>
-
-                                {/* Website - moved to left column */}
-                                {websiteUrl && (
-                                    <div className="flex items-center gap-2 bg-gray-50 rounded p-2">
-                                        <div className="w-10 h-10 bg-gray-300 rounded flex items-center justify-center text-[5px] text-gray-500 flex-shrink-0">
-                                            QR Code
-                                        </div>
-                                        <div>
-                                            <div className="text-[7px] font-bold uppercase" style={{ color: selectedColor }}>Website</div>
-                                            {/* TEMPORARILY DISABLED for AWS Activate
-                                            <Link to={websiteUrl} target="_blank" rel="noopener noreferrer" className="text-[7px] flex items-center gap-0.5" style={{ color: selectedColor }}>
-                                                {websiteUrl} <ExternalLink className="w-2 h-2" />
-                                            </Link>
-                                            */}
-                                            <span className="text-[7px]" style={{ color: selectedColor }}>{websiteUrl}</span>
-                                        </div>
-                                    </div>
-                                )}
                             </div>
 
                             {/* Right Column */}
@@ -499,7 +463,7 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                                         Competitive Edge
                                     </div>
                                     <div className="mt-1 grid grid-cols-2 gap-1">
-                                        {extractedData.competition.slice(0, 4).map((item, idx) => {
+                                        {extractedData.competition.slice(0, 3).map((item, idx) => {
                                             const IconComponent = [Target, Zap, Shield, Lightbulb][idx] || Target;
                                             const title = item.split(':')[0] || item.substring(0, 20);
                                             const subtitle = item.split(':')[1] || '';
@@ -528,7 +492,7 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                                             style={{ background: getPieGradient(extractedData.useOfFunds) }}
                                         />
                                         <div className="flex-1 space-y-0.5">
-                                            {extractedData.useOfFunds.map((item, idx) => (
+                                            {extractedData.useOfFunds.slice(0, 4).map((item, idx) => (
                                                 <div key={idx} className="flex items-center gap-1 text-[7px]">
                                                     <div
                                                         className="w-2 h-2 rounded-sm flex-shrink-0"
@@ -557,7 +521,7 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                                                 style={{ background: getPieGradient(extractedData.businessModel) }}
                                             />
                                             <div className="flex-1 space-y-0.5">
-                                                {extractedData.businessModel.slice(0, 4).map((item, idx) => (
+                                                {extractedData.businessModel.slice(0, 3).map((item, idx) => (
                                                     <div key={idx} className="flex items-center gap-1 text-[7px]">
                                                         <div
                                                             className="w-2 h-2 rounded-sm flex-shrink-0"
@@ -568,6 +532,19 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                                                     </div>
                                                 ))}
                                             </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Website & QR Code */}
+                                {websiteUrl && (
+                                    <div className="flex items-center gap-2 bg-gray-50 rounded p-2">
+                                        <div className="w-10 h-10 bg-gray-300 rounded flex items-center justify-center text-[5px] text-gray-500 flex-shrink-0">
+                                            QR Code
+                                        </div>
+                                        <div>
+                                            <div className="text-[7px] font-bold uppercase" style={{ color: selectedColor }}>Website</div>
+                                            <span className="text-[7px]" style={{ color: selectedColor }}>{websiteUrl}</span>
                                         </div>
                                     </div>
                                 )}
