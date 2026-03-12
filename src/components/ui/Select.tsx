@@ -99,9 +99,7 @@ export function Select({
                         ? '#4F7DF3'
                         : hasError
                             ? '#F87171'
-                            : (!value && required)
-                                ? '#FBBF24'
-                                : 'var(--dash-border-solid, #E8ECF4)',
+                            : 'var(--dash-border-solid, #E8ECF4)',
                     borderRadius: 10,
                     boxShadow: isOpen
                         ? '0 0 0 3px rgba(79,125,243,0.06), inset 0 1px 2px rgba(0,0,0,0.03)'

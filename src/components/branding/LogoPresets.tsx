@@ -1,16 +1,17 @@
 /**
  * Logo Presets Component
  * 
- * 10 pre-made SVG logo templates that dynamically adapt to the user's
- * startup name and selected colors. 
+ * 25 pre-made SVG logo templates that dynamically adapt to the user's
+ * startup name and selected colors. A random subset of 15 is shown
+ * each time the component mounts, so users see variety across ideas.
  * 
- * Click any preset to download it as a PNG (costs 2 credits).
+ * First logo download is FREE, subsequent downloads cost 2 credits.
  */
 
-import { useState, useCallback } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useState, useCallback, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Download, Loader2 } from 'lucide-react';
+import { Download, Loader2, Gift } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/services/api';
 import { CreditCost } from '@/components/common';
@@ -22,6 +23,7 @@ interface LogoTemplateProps {
 }
 
 const PRESET_CREDIT_COST = 2;
+const DISPLAY_COUNT = 15; // show this many from the full pool
 
 // ═══════════════════════════════════════════════════════════════
 // TEMPLATE 1: Circle Lettermark — first letter in a filled circle
@@ -386,6 +388,225 @@ const MonogramRing = ({ name, primaryColor }: LogoTemplateProps) => {
 };
 
 // ═══════════════════════════════════════════════════════════════
+// TEMPLATE 16: Layered Circles — overlapping circles with letter
+// ═══════════════════════════════════════════════════════════════
+const LayeredCircles = ({ name, primaryColor, secondaryColor }: LogoTemplateProps) => {
+    const letter = (name || 'P').charAt(0).toUpperCase();
+    return (
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="80" cy="100" r="65" fill={primaryColor} opacity="0.8" />
+            <circle cx="120" cy="100" r="65" fill={secondaryColor} opacity="0.6" />
+            <text
+                x="100" y="108"
+                textAnchor="middle" dominantBaseline="middle"
+                fill="white" fontSize="60" fontWeight="700"
+                fontFamily="Inter, system-ui, sans-serif"
+            >
+                {letter}
+            </text>
+        </svg>
+    );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// TEMPLATE 17: Star Badge — letter inside a 6-point star
+// ═══════════════════════════════════════════════════════════════
+const StarBadge = ({ name, primaryColor }: LogoTemplateProps) => {
+    const letter = (name || 'P').charAt(0).toUpperCase();
+    return (
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <polygon
+                points="100,10 120,70 185,70 130,110 150,175 100,135 50,175 70,110 15,70 80,70"
+                fill={primaryColor}
+            />
+            <text
+                x="100" y="108"
+                textAnchor="middle" dominantBaseline="middle"
+                fill="white" fontSize="52" fontWeight="700"
+                fontFamily="Inter, system-ui, sans-serif"
+            >
+                {letter}
+            </text>
+        </svg>
+    );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// TEMPLATE 18: Pill Badge — name inside a pill shape
+// ═══════════════════════════════════════════════════════════════
+const PillBadge = ({ name, primaryColor }: LogoTemplateProps) => {
+    const displayName = (name || 'Startup').substring(0, 7);
+    const fontSize = displayName.length > 5 ? 24 : displayName.length > 3 ? 30 : 36;
+    return (
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <rect x="15" y="55" width="170" height="90" rx="45" fill={primaryColor} />
+            <text
+                x="100" y="105"
+                textAnchor="middle" dominantBaseline="middle"
+                fill="white" fontSize={fontSize} fontWeight="700"
+                fontFamily="Inter, system-ui, sans-serif"
+                letterSpacing="2"
+            >
+                {displayName.toUpperCase()}
+            </text>
+        </svg>
+    );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// TEMPLATE 19: Diagonal Split — diagonally split rectangle
+// ═══════════════════════════════════════════════════════════════
+const DiagonalSplit = ({ name, primaryColor, secondaryColor }: LogoTemplateProps) => {
+    const letter = (name || 'P').charAt(0).toUpperCase();
+    return (
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 20 L180 20 L180 180 L20 20 Z" fill={primaryColor} />
+            <path d="M20 20 L180 180 L20 180 L20 20 Z" fill={secondaryColor} />
+            <text
+                x="100" y="120"
+                textAnchor="middle" dominantBaseline="middle"
+                fill="white" fontSize="72" fontWeight="700"
+                fontFamily="Inter, system-ui, sans-serif"
+            >
+                {letter}
+            </text>
+        </svg>
+    );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// TEMPLATE 20: Circle Outline — outlined circle with bold letter
+// ═══════════════════════════════════════════════════════════════
+const CircleOutline = ({ name, primaryColor }: LogoTemplateProps) => {
+    const letter = (name || 'P').charAt(0).toUpperCase();
+    return (
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="100" cy="100" r="80" fill="none" stroke={primaryColor} strokeWidth="8" />
+            <circle cx="100" cy="100" r="65" fill="none" stroke={primaryColor} strokeWidth="2" opacity="0.3" />
+            <text
+                x="100" y="108"
+                textAnchor="middle" dominantBaseline="middle"
+                fill={primaryColor} fontSize="80" fontWeight="800"
+                fontFamily="Inter, system-ui, sans-serif"
+            >
+                {letter}
+            </text>
+        </svg>
+    );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// TEMPLATE 21: Ribbon — letter on a ribbon/banner shape
+// ═══════════════════════════════════════════════════════════════
+const RibbonMark = ({ name, primaryColor, secondaryColor }: LogoTemplateProps) => {
+    const letter = (name || 'P').charAt(0).toUpperCase();
+    return (
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <path d="M30 60 L170 60 L185 100 L170 140 L30 140 L15 100 Z" fill={primaryColor} />
+            <path d="M30 60 L15 100 L30 140" fill="none" stroke={secondaryColor} strokeWidth="3" />
+            <path d="M170 60 L185 100 L170 140" fill="none" stroke={secondaryColor} strokeWidth="3" />
+            <text
+                x="100" y="108"
+                textAnchor="middle" dominantBaseline="middle"
+                fill="white" fontSize="60" fontWeight="700"
+                fontFamily="Inter, system-ui, sans-serif"
+            >
+                {letter}
+            </text>
+        </svg>
+    );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// TEMPLATE 22: Octagon — letter inside an octagon
+// ═══════════════════════════════════════════════════════════════
+const OctagonMark = ({ name, primaryColor }: LogoTemplateProps) => {
+    const letter = (name || 'P').charAt(0).toUpperCase();
+    return (
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <polygon
+                points="65,20 135,20 180,65 180,135 135,180 65,180 20,135 20,65"
+                fill={primaryColor}
+            />
+            <text
+                x="100" y="108"
+                textAnchor="middle" dominantBaseline="middle"
+                fill="white" fontSize="72" fontWeight="700"
+                fontFamily="Inter, system-ui, sans-serif"
+            >
+                {letter}
+            </text>
+        </svg>
+    );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// TEMPLATE 23: Three Bars — abstract bars + name
+// ═══════════════════════════════════════════════════════════════
+const ThreeBars = ({ name, primaryColor, secondaryColor }: LogoTemplateProps) => {
+    const displayName = (name || 'Startup').substring(0, 8);
+    const fontSize = displayName.length > 6 ? 22 : displayName.length > 4 ? 26 : 32;
+    return (
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <rect x="40" y="30" width="20" height="80" rx="10" fill={primaryColor} />
+            <rect x="90" y="50" width="20" height="60" rx="10" fill={secondaryColor} />
+            <rect x="140" y="20" width="20" height="90" rx="10" fill={primaryColor} opacity="0.6" />
+            <text
+                x="100" y="160"
+                textAnchor="middle" dominantBaseline="middle"
+                fill={primaryColor} fontSize={fontSize} fontWeight="700"
+                fontFamily="Inter, system-ui, sans-serif"
+                letterSpacing="2"
+            >
+                {displayName.toUpperCase()}
+            </text>
+        </svg>
+    );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// TEMPLATE 24: Slash Mark — letter with a diagonal slash accent
+// ═══════════════════════════════════════════════════════════════
+const SlashMark = ({ name, primaryColor, secondaryColor }: LogoTemplateProps) => {
+    const letter = (name || 'P').charAt(0).toUpperCase();
+    return (
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <line x1="140" y1="30" x2="60" y2="170" stroke={secondaryColor} strokeWidth="20" strokeLinecap="round" opacity="0.25" />
+            <text
+                x="100" y="108"
+                textAnchor="middle" dominantBaseline="middle"
+                fill={primaryColor} fontSize="90" fontWeight="800"
+                fontFamily="Inter, system-ui, sans-serif"
+            >
+                {letter}
+            </text>
+        </svg>
+    );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// TEMPLATE 25: Concentric Squares — nested rounded squares with letter
+// ═══════════════════════════════════════════════════════════════
+const ConcentricSquares = ({ name, primaryColor, secondaryColor }: LogoTemplateProps) => {
+    const letter = (name || 'P').charAt(0).toUpperCase();
+    return (
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <rect x="15" y="15" width="170" height="170" rx="24" fill="none" stroke={primaryColor} strokeWidth="5" />
+            <rect x="35" y="35" width="130" height="130" rx="18" fill="none" stroke={secondaryColor} strokeWidth="3" opacity="0.5" />
+            <rect x="55" y="55" width="90" height="90" rx="14" fill={primaryColor} />
+            <text
+                x="100" y="108"
+                textAnchor="middle" dominantBaseline="middle"
+                fill="white" fontSize="52" fontWeight="700"
+                fontFamily="Inter, system-ui, sans-serif"
+            >
+                {letter}
+            </text>
+        </svg>
+    );
+};
+
+// ═══════════════════════════════════════════════════════════════
 // TEMPLATE REGISTRY
 // ═══════════════════════════════════════════════════════════════
 
@@ -396,7 +617,7 @@ interface PresetTemplate {
     Component: React.FC<LogoTemplateProps>;
 }
 
-const templates: PresetTemplate[] = [
+const allTemplates: PresetTemplate[] = [
     { id: 'circle', label: 'Circle', category: 'Lettermark', Component: CircleLettermark },
     { id: 'rounded', label: 'Rounded', category: 'Lettermark', Component: RoundedSquare },
     { id: 'dual', label: 'Duo', category: 'Lettermark', Component: DualLetter },
@@ -412,7 +633,31 @@ const templates: PresetTemplate[] = [
     { id: 'bracket', label: 'Bracket', category: 'Minimal', Component: CornerBracket },
     { id: 'wave', label: 'Wave', category: 'Banner', Component: WaveBanner },
     { id: 'monogram', label: 'Monogram', category: 'Lettermark', Component: MonogramRing },
+    // ── NEW TEMPLATES ──
+    { id: 'layered', label: 'Layered', category: 'Geometric', Component: LayeredCircles },
+    { id: 'star', label: 'Star', category: 'Badge', Component: StarBadge },
+    { id: 'pill', label: 'Pill', category: 'Bold', Component: PillBadge },
+    { id: 'diagonal', label: 'Diagonal', category: 'Geometric', Component: DiagonalSplit },
+    { id: 'outline', label: 'Outline', category: 'Minimal', Component: CircleOutline },
+    { id: 'ribbon', label: 'Ribbon', category: 'Banner', Component: RibbonMark },
+    { id: 'octagon', label: 'Octagon', category: 'Geometric', Component: OctagonMark },
+    { id: 'bars', label: 'Bars', category: 'Abstract', Component: ThreeBars },
+    { id: 'slash', label: 'Slash', category: 'Minimal', Component: SlashMark },
+    { id: 'concentric', label: 'Concentric', category: 'Geometric', Component: ConcentricSquares },
 ];
+
+// ═══════════════════════════════════════════════════════════════
+// SHUFFLE UTIL (Fisher-Yates)
+// ═══════════════════════════════════════════════════════════════
+
+function shuffleArray<T>(arr: T[]): T[] {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
 
 // ═══════════════════════════════════════════════════════════════
 // SVG → PNG DOWNLOAD UTIL
@@ -460,41 +705,80 @@ export function LogoPresets({
     const [downloadingId, setDownloadingId] = useState<string | null>(null);
     const queryClient = useQueryClient();
 
+    // Fetch credit stats to check freeLogoUsed flag
+    const { data: creditStats } = useQuery({
+        queryKey: ['credits', 'stats'],
+        queryFn: async () => {
+            const response = await api.get('/credits');
+            return response.data;
+        },
+    });
+
+    const freeLogoAvailable = creditStats && !creditStats.freeLogoUsed;
+
+    // Shuffle templates once on mount — useMemo with [] ensures stable randomization
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const templates = useMemo(() => shuffleArray(allTemplates).slice(0, DISPLAY_COUNT), []);
+
     const handleDownload = useCallback(async (templateId: string, svgContainer: HTMLDivElement) => {
         const svgEl = svgContainer.querySelector('svg');
         if (!svgEl) { toast.error('Logo not found'); return; }
 
         setDownloadingId(templateId);
 
-        // 1. Deduct credits
-        try {
-            const { data } = await api.post('/credits/deduct', {
-                amount: PRESET_CREDIT_COST,
-                reason: `Logo preset download: ${templateId}`,
-            });
-            queryClient.setQueryData(['credits', 'stats'], (old: any) => ({
-                ...old,
-                balance: data.newBalance,
-            }));
-            queryClient.invalidateQueries({ queryKey: ['credits', 'stats'] });
-        } catch (err: any) {
-            if (err?.response?.status === 402) {
-                toast.error(`Insufficient credits. Logo download requires ${PRESET_CREDIT_COST} credits.`);
-            } else {
-                toast.error('Failed to process credits. Please try again.');
+        // Check if user still has free logo available
+        const currentStats = queryClient.getQueryData<any>(['credits', 'stats']);
+        const isFreeDownload = currentStats && !currentStats.freeLogoUsed;
+
+        if (isFreeDownload) {
+            // Use free logo endpoint — no credits deducted
+            try {
+                await api.post('/credits/use-free-logo');
+                queryClient.invalidateQueries({ queryKey: ['credits', 'stats'] });
+                toast.success('🎉 Free logo download used!');
+            } catch (err: any) {
+                if (err?.response?.status === 409) {
+                    // Race condition: free logo already used, fall through to paid path
+                    toast('Free download already used, deducting credits...');
+                } else {
+                    toast.error('Failed to process. Please try again.');
+                    setDownloadingId(null);
+                    return;
+                }
             }
-            setDownloadingId(null);
-            return;
+        } else {
+            // Deduct credits for subsequent downloads
+            try {
+                const { data } = await api.post('/credits/deduct', {
+                    amount: PRESET_CREDIT_COST,
+                    reason: `Logo preset download: ${templateId}`,
+                });
+                queryClient.setQueryData(['credits', 'stats'], (old: any) => ({
+                    ...old,
+                    balance: data.newBalance,
+                }));
+                queryClient.invalidateQueries({ queryKey: ['credits', 'stats'] });
+            } catch (err: any) {
+                if (err?.response?.status === 402) {
+                    toast.error(`Insufficient credits. Logo download requires ${PRESET_CREDIT_COST} credits.`);
+                } else {
+                    toast.error('Failed to process credits. Please try again.');
+                }
+                setDownloadingId(null);
+                return;
+            }
         }
 
-        // 2. Convert SVG → PNG and download
+        // Convert SVG → PNG and download
         try {
             const pngDataUrl = await svgToPng(svgEl, 512);
             const link = document.createElement('a');
             link.download = `${startupName || 'logo'}-${templateId}.png`;
             link.href = pngDataUrl;
             link.click();
-            toast.success('Logo downloaded! (512×512)');
+            if (!isFreeDownload) {
+                toast.success('Logo downloaded! (512×512)');
+            }
         } catch {
             toast.error('Failed to export logo. Please try again.');
         }
@@ -504,6 +788,34 @@ export function LogoPresets({
 
     return (
         <div>
+            {/* Free logo banner */}
+            {freeLogoAvailable && (
+                <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2.5 px-4 py-2.5 rounded-[10px] mb-4"
+                    style={{
+                        background: 'linear-gradient(135deg, rgba(16,185,129,0.06), rgba(5,150,105,0.06))',
+                        border: '1px solid rgba(16,185,129,0.15)',
+                    }}
+                >
+                    <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                        style={{ background: 'linear-gradient(135deg, #10B981, #059669)' }}
+                    >
+                        <Gift className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                        <span className="text-[13px] font-semibold" style={{ color: '#065F46' }}>
+                            Your first logo download is FREE!
+                        </span>
+                        <span className="text-[12px] ml-1" style={{ color: '#047857' }}>
+                            Click any logo to download it at no cost.
+                        </span>
+                    </div>
+                </motion.div>
+            )}
+
             <div className="flex items-center justify-between mb-4">
                 <p
                     className="text-[13px]"
@@ -511,7 +823,19 @@ export function LogoPresets({
                 >
                     Click any logo to download as PNG
                 </p>
-                <CreditCost cost={PRESET_CREDIT_COST} />
+                {freeLogoAvailable ? (
+                    <span
+                        className="text-[11px] font-bold px-2.5 py-1 rounded-full"
+                        style={{
+                            background: 'linear-gradient(135deg, #10B981, #059669)',
+                            color: 'white',
+                        }}
+                    >
+                        1 FREE
+                    </span>
+                ) : (
+                    <CreditCost cost={PRESET_CREDIT_COST} />
+                )}
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
@@ -532,8 +856,10 @@ export function LogoPresets({
                                 pointerEvents: isDownloading ? 'none' : 'auto',
                             }}
                             onMouseEnter={(e) => {
-                                e.currentTarget.style.borderColor = '#8B5CF6';
-                                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139,92,246,0.08)';
+                                e.currentTarget.style.borderColor = freeLogoAvailable ? '#10B981' : '#8B5CF6';
+                                e.currentTarget.style.boxShadow = freeLogoAvailable
+                                    ? '0 0 0 3px rgba(16,185,129,0.08)'
+                                    : '0 0 0 3px rgba(139,92,246,0.08)';
                             }}
                             onMouseLeave={(e) => {
                                 e.currentTarget.style.borderColor = 'var(--dash-border-solid, #E8ECF4)';
@@ -558,12 +884,25 @@ export function LogoPresets({
                                     <div className="flex flex-col items-center gap-1.5">
                                         <div
                                             className="w-10 h-10 rounded-full flex items-center justify-center"
-                                            style={{ background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)' }}
+                                            style={{
+                                                background: freeLogoAvailable
+                                                    ? 'linear-gradient(135deg, #10B981, #059669)'
+                                                    : 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+                                            }}
                                         >
-                                            <Download className="w-5 h-5 text-white" />
+                                            {freeLogoAvailable ? (
+                                                <Gift className="w-5 h-5 text-white" />
+                                            ) : (
+                                                <Download className="w-5 h-5 text-white" />
+                                            )}
                                         </div>
-                                        <span className="text-[11px] font-bold" style={{ color: '#7C3AED' }}>
-                                            {PRESET_CREDIT_COST} credits
+                                        <span
+                                            className="text-[11px] font-bold"
+                                            style={{
+                                                color: freeLogoAvailable ? '#059669' : '#7C3AED',
+                                            }}
+                                        >
+                                            {freeLogoAvailable ? 'FREE' : `${PRESET_CREDIT_COST} credits`}
                                         </span>
                                     </div>
                                 )}

@@ -268,6 +268,7 @@ export default function Dashboard() {
         problemSolved: idea.problem,
         targetAudience: idea.targetMarket,
         industry: idea.industry,
+        startupStage: 'Idea',
       },
       {
         onSuccess: (newIdea) => {
@@ -279,6 +280,7 @@ export default function Dashboard() {
             problem: newIdea.problemSolved || undefined,
             targetMarket: newIdea.targetAudience || undefined,
             industry: newIdea.industry || idea.industry || undefined,
+            startupStage: 'Idea',
           });
           // Set as active idea
           setActiveIdeaId(newIdea.id);

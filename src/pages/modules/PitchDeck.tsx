@@ -20,7 +20,6 @@ import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     Presentation,
-    Save,
     Download,
     Sparkles,
     ChevronLeft,
@@ -66,6 +65,7 @@ interface Slide {
 }
 
 import { SlideChart } from '@/components/pitch-deck/SlideChart';
+import { SlideDecorations } from '@/components/pitch-deck/SlideDecorations';
 import { ImageUploader } from '@/components/pitch-deck/ImageUploader';
 import { OnePager } from '@/components/pitch-deck/OnePager';
 
@@ -257,7 +257,12 @@ export default function PitchDeck() {
             `${deckData.slides.length}-${deckData.slides[0]?.title}` : null;
 
         if (deckData?.slides && currentDataKey !== lastDataTimestamp) {
-            setEditedSlides(deckData.slides);
+            // Normalize content: if content is an array, join to string paragraph
+            const normalizedSlides = deckData.slides.map((s: any) => ({
+                ...s,
+                content: Array.isArray(s.content) ? s.content.join('. ') : (s.content || ''),
+            }));
+            setEditedSlides(normalizedSlides);
             setLastDataTimestamp(currentDataKey);
             setCurrentSlide(0); // Reset to first slide on new data
         }
@@ -324,10 +329,6 @@ export default function PitchDeck() {
             toast.error('Failed to prepare export');
             console.error('Export preparation failed:', err);
         }
-    };
-
-    const handleSave = () => {
-        toast.success('Pitch deck saved!');
     };
 
     /**
@@ -440,10 +441,11 @@ export default function PitchDeck() {
                 <div className="flex items-center gap-3">
                     <Button
                         variant="secondary"
-                        leftIcon={<Save className="w-4 h-4" />}
-                        onClick={handleSave}
+                        leftIcon={<FileText className="w-4 h-4" />}
+                        onClick={() => setShowOnePager(true)}
+                        disabled={!hasGenerated}
                     >
-                        Save
+                        Generate One Pager
                     </Button>
                     <Button
                         variant="secondary"
@@ -507,54 +509,80 @@ export default function PitchDeck() {
             {/* Slide Preview & Editor */}
             {slides.length > 0 && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Slide Thumbnails */}
-                    <div className="lg:col-span-1 space-y-2">
-                        <h3 className="font-medium text-gray-900 mb-3">Slides</h3>
-                        <div className="space-y-2 max-h-125 overflow-y-auto pr-2">
+                    {/* Slide Thumbnails â€” mini themed previews */}
+                    <div className="lg:col-span-1 space-y-2 lg:sticky lg:top-4 lg:self-start">
+                        <h3 className="font-medium text-gray-900 mb-3 text-[14px]">Slides</h3>
+                        <div className="space-y-2 lg:max-h-[calc(100vh-120px)] overflow-y-auto pr-2">
                             {slides.map((slide, index) => (
                                 <button
                                     key={index}
                                     onClick={() => setCurrentSlide(index)}
-                                    className={`
-                                        w-full p-3 rounded-lg text-left transition-all
-                                        ${currentSlide === index
-                                            ? 'bg-blue-50 border-2 border-blue-600'
-                                            : 'bg-white border border-gray-200 hover:border-gray-300'
-                                        }
-                                    `}
+                                    className="w-full rounded-lg text-left transition-all overflow-hidden"
+                                    style={{
+                                        border: currentSlide === index
+                                            ? '2px solid #3B82F6'
+                                            : '1px solid #E5E7EB',
+                                        boxShadow: currentSlide === index
+                                            ? '0 0 0 2px rgba(59, 130, 246, 0.2)'
+                                            : 'none',
+                                    }}
                                 >
-                                    <div className="flex items-center gap-2">
-                                        <span className={`
-                                            w-6 h-6 rounded-full text-xs font-medium flex items-center justify-center
-                                            ${currentSlide === index
-                                                ? 'bg-blue-600 text-white'
-                                                : 'bg-gray-200 text-gray-600'
-                                            }
-                                        `}>
+                                    {/* Mini slide preview */}
+                                    <div
+                                        className="relative w-full px-3 py-2.5"
+                                        style={{
+                                            background: selectedTheme.bgColor,
+                                            aspectRatio: '16 / 9',
+                                        }}
+                                    >
+                                        {/* Decorative corner accent */}
+                                        <div
+                                            className="absolute top-0 right-0 w-6 h-6 rounded-bl-full opacity-20"
+                                            style={{ background: selectedTheme.accentColor }}
+                                        />
+                                        {/* Mini slide number */}
+                                        <span
+                                            className="absolute bottom-1 right-1.5 text-[8px] font-bold opacity-40"
+                                            style={{ color: selectedTheme.textColor }}
+                                        >
                                             {index + 1}
                                         </span>
-                                        <span className="text-sm font-medium text-gray-900 truncate">
+                                        {/* Mini title */}
+                                        <div
+                                            className="text-[10px] font-bold leading-tight truncate"
+                                            style={{ color: selectedTheme.headingColor }}
+                                        >
                                             {slide.title || slide.type || `Slide ${index + 1}`}
-                                        </span>
+                                        </div>
+                                        {/* Mini content preview */}
+                                        <div
+                                            className="text-[8px] leading-tight mt-0.5 line-clamp-3 opacity-60"
+                                            style={{ color: selectedTheme.textColor }}
+                                        >
+                                            {slide.content?.substring(0, 120)}
+                                        </div>
+                                        {/* Mini bullet previews */}
+                                        {slide.bullet_points && slide.bullet_points.length > 0 && (
+                                            <div className="mt-1 space-y-0.5">
+                                                {slide.bullet_points.slice(0, 3).map((point, bi) => (
+                                                    <div key={bi} className="flex items-start gap-1">
+                                                        <div
+                                                            className="w-[3px] h-[3px] rounded-full mt-[3px] shrink-0"
+                                                            style={{ background: selectedTheme.accentColor }}
+                                                        />
+                                                        <span
+                                                            className="text-[6px] leading-tight truncate"
+                                                            style={{ color: selectedTheme.textColor, opacity: 0.55 }}
+                                                        >
+                                                            {point.substring(0, 50)}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </button>
                             ))}
-                        </div>
-
-                        {/* Generate One Pager Button */}
-                        <div className="mt-4 pt-4 border-t">
-                            <Button
-                                onClick={() => setShowOnePager(true)}
-                                className="w-full"
-                                variant="secondary"
-                                size="sm"
-                                leftIcon={<FileText className="w-4 h-4" />}
-                            >
-                                Generate One Pager
-                            </Button>
-                            <p className="text-xs text-gray-500 mt-1 text-center">
-                                Investor summary
-                            </p>
                         </div>
 
                         {/* One Pager Modal */}
@@ -648,83 +676,190 @@ export default function PitchDeck() {
                                 >
                                     <span style={{ color: customTheme.headingColor }} className="font-bold text-sm">Preview Heading</span>
                                     <p style={{ color: customTheme.textColor }} className="text-xs mt-1">Sample text content</p>
-                                    <span style={{ color: customTheme.accentColor }} className="text-xs">● Accent</span>
+                                    <span style={{ color: customTheme.accentColor }} className="text-xs">â— Accent</span>
                                 </div>
                             </Card>
                         )}
 
-                        <Card className="min-h-100 relative">
-                            {/* Slide Content */}
+                        {/* â”€â”€ 16:9 Slide Preview â”€â”€ */}
+                        <div className="relative rounded-xl overflow-hidden shadow-lg" style={{ aspectRatio: '16 / 9' }}>
                             <motion.div
                                 key={currentSlide}
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                className="h-full"
+                                initial={{ opacity: 0, scale: 0.98 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.3 }}
+                                className="absolute inset-0"
                             >
                                 <div
-                                    className="h-full p-8 rounded-lg"
+                                    className="absolute inset-0 p-8 flex flex-col overflow-hidden"
                                     style={{
                                         background: selectedTheme.bgColor,
                                         border: `1px solid ${selectedTheme.borderColor}`,
                                     }}
                                 >
-                                    <h2
-                                        className="text-2xl font-bold mb-6"
-                                        style={{ color: selectedTheme.headingColor }}
-                                    >
-                                        {slides[currentSlide]?.title}
-                                    </h2>
-                                    <div
-                                        className="whitespace-pre-line"
-                                        style={{ color: selectedTheme.textColor }}
-                                    >
-                                        {slides[currentSlide]?.content}
-                                    </div>
-                                    {slides[currentSlide]?.bullet_points && (
-                                        <ul className="mt-4 space-y-2">
-                                            {slides[currentSlide].bullet_points?.map((point, i) => (
-                                                <li
-                                                    key={i}
-                                                    className="flex items-start gap-2"
-                                                    style={{ color: selectedTheme.textColor }}
-                                                >
-                                                    <span
-                                                        className="w-1.5 h-1.5 rounded-full mt-2"
-                                                        style={{ backgroundColor: selectedTheme.accentColor }}
-                                                    />
-                                                    {point}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
+                                    {/* Theme-Specific Decorative Elements */}
+                                    <SlideDecorations
+                                        themeName={selectedTheme.name}
+                                        accentColor={selectedTheme.accentColor}
+                                        isTitleSlide={currentSlide === 0 || slides[currentSlide]?.type?.toLowerCase() === 'title'}
+                                    />
 
-                                    {/* Uploaded Image */}
-                                    {slides[currentSlide]?.image && (
-                                        <div className="mt-4">
-                                            <img
-                                                src={slides[currentSlide].image}
-                                                alt="Slide image"
-                                                className="w-full max-h-48 object-contain rounded-lg"
-                                            />
-                                        </div>
-                                    )}
+
+                                    {/* â”€â”€â”€ Slide-Type-Specific Layouts â”€â”€â”€ */}
+                                    {(() => {
+                                        const slide = slides[currentSlide];
+                                        if (!slide) return null;
+                                        const slideType = slide.type?.toLowerCase() || '';
+
+                                        // === TITLE SLIDE ===
+                                        if (slideType === 'title' || currentSlide === 0) {
+                                            return (
+                                                <div className="flex-1 flex flex-col items-center justify-center text-center relative z-10">
+                                                    <div className="absolute w-48 h-48 rounded-full opacity-[0.06]" style={{ background: selectedTheme.accentColor }} />
+                                                    <h2 className="text-3xl font-extrabold mb-3 relative z-10" style={{ color: selectedTheme.headingColor }}>
+                                                        {slide.title}
+                                                    </h2>
+                                                    <div className="w-16 h-1 rounded-full mb-4" style={{ background: selectedTheme.accentColor }} />
+                                                    <p className="text-base max-w-md leading-relaxed" style={{ color: selectedTheme.textColor, opacity: 0.85 }}>
+                                                        {slide.content}
+                                                    </p>
+                                                    {slide.headline && (
+                                                        <p className="text-sm mt-3 font-medium italic" style={{ color: selectedTheme.accentColor }}>
+                                                            {slide.headline}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            );
+                                        }
+
+                                        // === TRACTION SLIDE ===
+                                        if (slideType === 'traction') {
+                                            return (
+                                                <div className="flex flex-col relative z-10 overflow-hidden">
+                                                    <h2 className="text-xl font-bold mb-3" style={{ color: selectedTheme.headingColor }}>{slide.title}</h2>
+                                                    <div className="w-10 h-0.5 rounded-full mb-3" style={{ background: selectedTheme.accentColor }} />
+                                                    {slide.content && <p className="text-xs mb-3 line-clamp-2" style={{ color: selectedTheme.textColor, opacity: 0.7 }}>{slide.content}</p>}
+                                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 content-start">
+                                                        {slide.bullet_points?.slice(0, 6).map((point, i) => (
+                                                            <div key={i} className="rounded-lg p-2 text-center" style={{ background: `${selectedTheme.accentColor}15`, border: `1px solid ${selectedTheme.accentColor}25` }}>
+                                                                <div className="text-sm font-bold" style={{ color: selectedTheme.accentColor }}>
+                                                                    {point.match(/[\d₹$%,]+[\w]*/) ? point.match(/[\d₹$%,]+[\w]*/)?.[0] : `#${i + 1}`}
+                                                                </div>
+                                                                <div className="text-[10px] mt-0.5 leading-tight line-clamp-2" style={{ color: selectedTheme.textColor, opacity: 0.8 }}>
+                                                                    {point.replace(/[\d₹$%,]+[\w]*\s*[-–:]?\s*/, '') || point}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+
+                                        // === TEAM SLIDE ===
+                                        if (slideType === 'team') {
+                                            return (
+                                                <div className="flex flex-col relative z-10 overflow-hidden">
+                                                    <h2 className="text-xl font-bold mb-3" style={{ color: selectedTheme.headingColor }}>{slide.title}</h2>
+                                                    <div className="w-10 h-0.5 rounded-full mb-3" style={{ background: selectedTheme.accentColor }} />
+                                                    {slide.content && <p className="text-xs mb-3 line-clamp-2" style={{ color: selectedTheme.textColor, opacity: 0.7 }}>{slide.content}</p>}
+                                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 content-start">
+                                                        {slide.bullet_points?.map((member, i) => {
+                                                            const parts = member.split(/[-–:]/);
+                                                            const name = parts[0]?.trim() || member;
+                                                            const role = parts.slice(1).join('-').trim() || '';
+                                                            return (
+                                                                <div key={i} className="flex items-center gap-2 rounded-lg p-2" style={{ background: `${selectedTheme.accentColor}10`, border: `1px solid ${selectedTheme.accentColor}18` }}>
+                                                                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ background: selectedTheme.accentColor }}>
+                                                                        {name.charAt(0)}
+                                                                    </div>
+                                                                    <div className="min-w-0">
+                                                                        <div className="text-xs font-semibold truncate" style={{ color: selectedTheme.headingColor }}>{name}</div>
+                                                                        {role && <div className="text-[10px] truncate" style={{ color: selectedTheme.textColor, opacity: 0.7 }}>{role}</div>}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+
+                                        // === ASK / FINANCIALS SLIDE ===
+                                        if (slideType === 'ask' || slideType === 'financials') {
+                                            return (
+                                                <div className="flex flex-col relative z-10 overflow-hidden">
+                                                    <h2 className="text-lg font-bold mb-1" style={{ color: selectedTheme.headingColor }}>{slide.title}</h2>
+                                                    <div className="w-10 h-0.5 rounded-full mb-2" style={{ background: selectedTheme.accentColor }} />
+                                                    {slide.headline && (
+                                                        <div className="text-center mb-2">
+                                                            <div className="text-2xl font-extrabold" style={{ color: selectedTheme.accentColor }}>{slide.headline}</div>
+                                                        </div>
+                                                    )}
+                                                    {slide.content && <p className="text-xs text-center mb-2 line-clamp-2" style={{ color: selectedTheme.textColor, opacity: 0.8 }}>{slide.content}</p>}
+                                                    {slide.bullet_points && slide.bullet_points.length > 0 && (
+                                                        <div className="grid grid-cols-2 gap-1.5 content-start">
+                                                            {slide.bullet_points.slice(0, 6).map((point, i) => (
+                                                                <div key={i} className="flex items-start gap-1.5 text-xs p-1.5 rounded-lg" style={{ background: `${selectedTheme.accentColor}0A` }}>
+                                                                    <span className="w-1.5 h-1.5 rounded-full mt-1 shrink-0" style={{ background: selectedTheme.accentColor }} />
+                                                                    <span className="line-clamp-2" style={{ color: selectedTheme.textColor }}>{point}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        }
+
+                                        // === DEFAULT LAYOUT ===
+                                        return (
+                                            <div className="flex flex-col relative z-10">
+                                                <h2 className="text-xl font-bold mb-1" style={{ color: selectedTheme.headingColor }}>{slide.title}</h2>
+                                                <div className="w-10 h-0.5 rounded-full mb-4" style={{ background: selectedTheme.accentColor }} />
+                                                {slide.bullet_points && slide.bullet_points.length > 0 ? (
+                                                    <div className="flex gap-6">
+                                                        {slide.content && (
+                                                            <div className="flex-1">
+                                                                <p className="text-sm leading-relaxed" style={{ color: selectedTheme.textColor, opacity: 0.85 }}>{slide.content}</p>
+                                                            </div>
+                                                        )}
+                                                        <div className={`${slide.content ? 'flex-1' : 'w-full'}`}>
+                                                            <ul className="space-y-2">
+                                                                {slide.bullet_points.map((point, i) => (
+                                                                    <li key={i} className="flex items-start gap-2.5 text-sm">
+                                                                        <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: selectedTheme.accentColor }} />
+                                                                        <span style={{ color: selectedTheme.textColor }}>{point}</span>
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-sm whitespace-pre-line leading-relaxed" style={{ color: selectedTheme.textColor }}>{slide.content}</div>
+                                                )}
+                                                {slide.image && (
+                                                    <div className="mt-3">
+                                                        <img src={slide.image} alt="Slide image" className="w-full max-h-32 object-contain rounded-lg" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
+
                                     {/* Chart Visualization */}
                                     {(() => {
                                         const chart = slides[currentSlide]?.chart;
                                         if (chart && chart.type && chart.type !== 'none' && chart.data && chart.data.length > 0) {
                                             return (
-                                                <div id={`slide-chart-${currentSlide}`} className="mt-6 p-4 rounded-lg relative" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
-                                                    {/* Edit Button */}
+                                                <div id={`slide-chart-${currentSlide}`} className="mt-3 rounded-lg relative overflow-hidden" style={{ zIndex: 10, maxHeight: '50%' }}>
                                                     <button
                                                         onClick={() => {
                                                             setEditingChartSlide(currentSlide);
-                                                            // Deep copy the chart data for local editing
                                                             setEditingChartData(chart.data.map(d => ({ ...d })));
                                                         }}
-                                                        className="absolute top-2 right-2 p-1.5 bg-white/90 hover:bg-white rounded-md shadow-sm transition-all"
+                                                        className="absolute top-1 right-1 p-1 bg-white/80 hover:bg-white rounded-md shadow-sm transition-all z-20"
                                                         title="Edit Chart Data"
                                                     >
-                                                        <Edit className="w-4 h-4 text-gray-600" />
+                                                        <Edit className="w-3.5 h-3.5 text-gray-600" />
                                                     </button>
                                                     <SlideChart
                                                         type={chart.type}
@@ -797,14 +932,14 @@ export default function PitchDeck() {
                                                                     className="p-1 text-red-500 hover:bg-red-50 rounded"
                                                                     title="Remove"
                                                                 >
-                                                                    ✕
+                                                                    âœ•
                                                                 </button>
                                                             </div>
                                                         ))}
                                                     </div>
                                                     {isPieChart && (
                                                         <p className="text-xs text-gray-500 mt-2">
-                                                            💡 Tip: Manually adjust values to keep total at 100%
+                                                            ðŸ’¡ Tip: Manually adjust values to keep total at 100%
                                                         </p>
                                                     )}
                                                     <div className="flex justify-between mt-4">
@@ -825,7 +960,6 @@ export default function PitchDeck() {
                                                                 Cancel
                                                             </Button>
                                                             <Button size="sm" onClick={() => {
-                                                                // Save changes to slides
                                                                 const baseSlides = editedSlides.length > 0 ? [...editedSlides] : slides.map(s => ({ ...s }));
                                                                 baseSlides[editingChartSlide] = {
                                                                     ...baseSlides[editingChartSlide],
@@ -847,18 +981,19 @@ export default function PitchDeck() {
                                 </div>
                             </motion.div>
 
-                            {/* Navigation */}
-                            <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
+                            {/* Navigation overlay */}
+                            <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2" style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.15))' }}>
                                 <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => goToSlide('prev')}
                                     disabled={currentSlide === 0}
                                     leftIcon={<ChevronLeft className="w-4 h-4" />}
+                                    className="text-white/80 hover:text-white"
                                 >
-                                    Previous
+                                    Prev
                                 </Button>
-                                <span className="text-sm text-gray-500">
+                                <span className="text-xs text-white/60 font-medium">
                                     {currentSlide + 1} / {slides.length}
                                 </span>
                                 <Button
@@ -867,11 +1002,12 @@ export default function PitchDeck() {
                                     onClick={() => goToSlide('next')}
                                     disabled={currentSlide === slides.length - 1}
                                     rightIcon={<ChevronRight className="w-4 h-4" />}
+                                    className="text-white/80 hover:text-white"
                                 >
                                     Next
                                 </Button>
                             </div>
-                        </Card>
+                        </div>
 
                         {/* Editor */}
                         <Card className="mt-4 p-4">
@@ -898,7 +1034,7 @@ export default function PitchDeck() {
                                         <div className="space-y-2">
                                             {slides[currentSlide].bullet_points.map((point, idx) => (
                                                 <div key={idx} className="flex items-start gap-2">
-                                                    <span className="text-blue-500 mt-2">•</span>
+                                                    <span className="w-2 h-2 rounded-full bg-blue-500 mt-2.5 shrink-0"></span>
                                                     <input
                                                         type="text"
                                                         value={point}
@@ -911,7 +1047,7 @@ export default function PitchDeck() {
                                                         className="p-2 text-red-500 hover:bg-red-50 rounded transition-colors"
                                                         title="Remove bullet point"
                                                     >
-                                                        ✕
+                                                        X
                                                     </button>
                                                 </div>
                                             ))}

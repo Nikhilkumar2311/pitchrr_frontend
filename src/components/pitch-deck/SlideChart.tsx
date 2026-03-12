@@ -92,8 +92,8 @@ export function SlideChart({ type, title, data, theme }: SlideChartProps) {
                                 data={data}
                                 cx="50%"
                                 cy="50%"
-                                innerRadius={40}
-                                outerRadius={70}
+                                innerRadius={25}
+                                outerRadius={45}
                                 paddingAngle={3}
                                 dataKey="value"
                                 label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
@@ -114,14 +114,14 @@ export function SlideChart({ type, title, data, theme }: SlideChartProps) {
             case 'bar':
                 return (
                     <ResponsiveContainer width="100%" height={200}>
-                        <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                        <BarChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
                             <XAxis
                                 dataKey="name"
-                                tick={{ fill: textColor, fontSize: 12 }}
+                                tick={{ fill: textColor, fontSize: 10 }}
                                 axisLine={{ stroke: textColor }}
                             />
                             <YAxis
-                                tick={{ fill: textColor, fontSize: 12 }}
+                                tick={{ fill: textColor, fontSize: 10 }}
                                 axisLine={{ stroke: textColor }}
                                 tickFormatter={(value) => `$${formatNumber(value)}`}
                             />
@@ -141,14 +141,14 @@ export function SlideChart({ type, title, data, theme }: SlideChartProps) {
             case 'line':
                 return (
                     <ResponsiveContainer width="100%" height={200}>
-                        <LineChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                        <LineChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
                             <XAxis
                                 dataKey="name"
-                                tick={{ fill: textColor, fontSize: 12 }}
+                                tick={{ fill: textColor, fontSize: 10 }}
                                 axisLine={{ stroke: textColor }}
                             />
                             <YAxis
-                                tick={{ fill: textColor, fontSize: 12 }}
+                                tick={{ fill: textColor, fontSize: 10 }}
                                 axisLine={{ stroke: textColor }}
                             />
                             <Tooltip
@@ -159,8 +159,8 @@ export function SlideChart({ type, title, data, theme }: SlideChartProps) {
                                 dataKey="value"
                                 stroke={accentColor}
                                 strokeWidth={3}
-                                dot={{ fill: accentColor, strokeWidth: 2, r: 4 }}
-                                activeDot={{ r: 6, fill: accentColor }}
+                                dot={{ fill: accentColor, strokeWidth: 1, r: 3 }}
+                                activeDot={{ r: 4, fill: accentColor }}
                             />
                         </LineChart>
                     </ResponsiveContainer>
@@ -169,16 +169,16 @@ export function SlideChart({ type, title, data, theme }: SlideChartProps) {
             case 'radar':
                 return (
                     <ResponsiveContainer width="100%" height={200}>
-                        <RadarChart data={data} cx="50%" cy="50%" outerRadius="70%">
+                        <RadarChart data={data} cx="50%" cy="50%" outerRadius="65%">
                             <PolarGrid stroke={textColor} strokeOpacity={0.3} />
                             <PolarAngleAxis
                                 dataKey="name"
-                                tick={{ fill: textColor, fontSize: 10 }}
+                                tick={{ fill: textColor, fontSize: 8 }}
                             />
                             <PolarRadiusAxis
                                 angle={30}
                                 domain={[0, 100]}
-                                tick={{ fill: textColor, fontSize: 10 }}
+                                tick={{ fill: textColor, fontSize: 8 }}
                             />
                             <Radar
                                 name="Your Product"
@@ -201,10 +201,10 @@ export function SlideChart({ type, title, data, theme }: SlideChartProps) {
     };
 
     return (
-        <div className="mt-4">
+        <div>
             {title && (
                 <h4
-                    className="text-sm font-medium mb-2 text-center"
+                    className="text-xs font-medium mb-1 text-center"
                     style={{ color: textColor }}
                 >
                     {title}
