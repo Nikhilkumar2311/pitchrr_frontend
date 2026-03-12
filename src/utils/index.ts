@@ -152,6 +152,11 @@ export function setStorageItem<T>(key: string, value: T): void {
     }
 }
 
+/**
+ * Fallback: convert any remaining $ to ₹ for cached data generated before prompt update
+ */
+export const toRupee = (text: string): string => text.replace(/\$/g, '₹');
+
 // File download utility
 export { downloadFile } from './download';
 

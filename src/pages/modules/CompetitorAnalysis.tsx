@@ -47,7 +47,7 @@ import {
     useExportModule,
     useExportStatus,
 } from '@/hooks';
-import { downloadFile } from '@/utils';
+import { downloadFile, toRupee } from '@/utils';
 
 interface Competitor {
     name: string;
@@ -293,7 +293,7 @@ export default function CompetitorAnalysis() {
                                                     className="text-[11px] font-medium px-2 py-0.5 rounded-full"
                                                     style={{ background: 'rgba(6,182,212,0.08)', color: '#0891B2' }}
                                                 >
-                                                    {competitor.pricing}
+                                                    {toRupee(competitor.pricing)}
                                                 </span>
                                             )}
                                         </div>

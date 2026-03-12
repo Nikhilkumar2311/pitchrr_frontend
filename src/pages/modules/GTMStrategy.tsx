@@ -51,10 +51,7 @@ import {
     useExportModule,
     useExportStatus,
 } from '@/hooks';
-import { downloadFile } from '@/utils';
-
-/** Fallback: convert any remaining $ to ₹ for cached data generated before prompt update */
-const toRupee = (text: string): string => text.replace(/\$/g, '₹');
+import { downloadFile, toRupee } from '@/utils';
 
 export default function GTMStrategy() {
     const { ideaId: urlIdeaId } = useParams<{ ideaId?: string }>();
