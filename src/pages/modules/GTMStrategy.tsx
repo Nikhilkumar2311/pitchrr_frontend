@@ -27,7 +27,6 @@ import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     Rocket,
-    Save,
     Download,
     Sparkles,
     Target,
@@ -121,8 +120,6 @@ export default function GTMStrategy() {
         exportModule({}, { onSuccess: (data) => setExportJobId(data.jobId) });
     };
 
-    const handleSave = () => { toast.success('GTM strategy saved!'); };
-
     // Phase colors for launch timeline
     const phaseColors = [
         { bg: 'rgba(249,112,102,0.06)', border: '#F97066', text: '#E05A50' },
@@ -157,15 +154,6 @@ export default function GTMStrategy() {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button
-                        onClick={handleSave}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-medium transition-all cursor-pointer"
-                        style={{ color: 'var(--dash-text-muted)', border: '1px solid var(--dash-border-solid, #E8ECF4)' }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.02)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    >
-                        <Save className="w-3.5 h-3.5" /> Save
-                    </button>
                     <button
                         onClick={exportToPDF}
                         disabled={!hasGenerated || isExporting || !!exportJobId}

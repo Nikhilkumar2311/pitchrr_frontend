@@ -21,7 +21,6 @@ import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     Palette,
-    Save,
     Download,
     Sparkles,
     Type,
@@ -190,10 +189,6 @@ export default function Branding() {
         });
     };
 
-    const handleSave = () => {
-        toast.success('Branding saved!');
-    };
-
     // ==========================================================================
     // RENDER
     // ==========================================================================
@@ -244,13 +239,6 @@ export default function Branding() {
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
-                        <Button
-                            variant="secondary"
-                            leftIcon={<Save className="w-4 h-4" />}
-                            onClick={handleSave}
-                        >
-                            Save
-                        </Button>
                         <Button
                             variant="secondary"
                             leftIcon={<Download className="w-4 h-4" />}

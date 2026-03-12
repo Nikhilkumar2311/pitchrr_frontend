@@ -22,7 +22,6 @@ import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     Users,
-    Save,
     Download,
     Sparkles,
     Loader2,
@@ -117,8 +116,6 @@ export default function CompetitorAnalysis() {
         exportModule({}, { onSuccess: (data) => setExportJobId(data.jobId) });
     };
 
-    const handleSave = () => { toast.success('Competitor analysis saved!'); };
-
     const handleLoadMore = async () => {
         setIsLoadingMore(true);
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -153,15 +150,6 @@ export default function CompetitorAnalysis() {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button
-                        onClick={handleSave}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-medium transition-all cursor-pointer"
-                        style={{ color: 'var(--dash-text-muted)', border: '1px solid var(--dash-border-solid, #E8ECF4)' }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.02)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    >
-                        <Save className="w-3.5 h-3.5" /> Save
-                    </button>
                     <button
                         onClick={exportToPDF}
                         disabled={!hasAnalyzed || isExporting || !!exportJobId}
@@ -276,21 +264,20 @@ export default function CompetitorAnalysis() {
                                         onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.03)'; }}
                                         onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.018)'; }}
                                     >
-                                        <div className="flex items-start justify-between mb-2">
-                                            <div>
+                                        <div className="flex items-start justify-between gap-3 mb-2">
+                                            <div className="min-w-0">
                                                 <h4 className="font-semibold text-[14px]" style={{ color: 'var(--dash-text)' }}>
                                                     {competitor.name}
                                                 </h4>
                                                 {(competitor.website || competitor.description) && (
-                                                    <p className="text-[12px] mt-0.5 flex items-center gap-1" style={{ color: 'var(--dash-text-muted)' }}>
-                                                        <Globe className="w-3 h-3" />
+                                                    <p className="text-[12px] mt-0.5 leading-relaxed" style={{ color: 'var(--dash-text-muted)' }}>
                                                         {competitor.website || competitor.description}
                                                     </p>
                                                 )}
                                             </div>
                                             {competitor.pricing && (
                                                 <span
-                                                    className="text-[11px] font-medium px-2 py-0.5 rounded-full"
+                                                    className="text-[11px] font-semibold px-2.5 py-1 rounded-[6px] shrink-0 whitespace-nowrap"
                                                     style={{ background: 'rgba(6,182,212,0.08)', color: '#0891B2' }}
                                                 >
                                                     {toRupee(competitor.pricing)}
