@@ -20,7 +20,7 @@ import {
     HandCoins,
     Sparkles,
     Loader2,
-    ExternalLink,
+    // ExternalLink,
     Search,
     Lightbulb,
     Sprout,
@@ -435,6 +435,7 @@ export default function Grants() {
                                     >
                                         {rec.title}
                                     </h3>
+                                    {/* TEMPORARILY COMMENTED OUT for AWS Activate approval
                                     {rec.official_url && (
                                         <a
                                             href={rec.official_url}
@@ -445,7 +446,7 @@ export default function Grants() {
                                         >
                                             <ExternalLink className="w-4 h-4" />
                                         </a>
-                                    )}
+                                    )} */}
                                 </div>
                                 {rec.category && (
                                     <span
@@ -745,7 +746,7 @@ function GrantCard({ grant }: { grant: Grant }) {
                 background: 'rgba(0,0,0,0.015)',
                 border: '1px solid var(--dash-border-solid, #E8ECF4)',
             }}
-            onClick={() => url && window.open(url, '_blank', 'noopener,noreferrer')}
+            /* onClick={() => url && window.open(url, '_blank', 'noopener,noreferrer')} */ // TEMPORARILY DISABLED for AWS Activate
             onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.06)';
                 if (url) e.currentTarget.style.borderColor = 'rgba(6,182,212,0.3)';
@@ -762,6 +763,7 @@ function GrantCard({ grant }: { grant: Grant }) {
                 >
                     {grant.title || 'Untitled Grant'}
                 </h3>
+                {/* TEMPORARILY COMMENTED OUT for AWS Activate approval
                 {url && (
                     <a
                         href={url}
@@ -773,7 +775,7 @@ function GrantCard({ grant }: { grant: Grant }) {
                     >
                         <ExternalLink className="w-4 h-4" />
                     </a>
-                )}
+                )} */}
             </div>
             <div className="flex flex-wrap gap-1 mb-2">
                 <span

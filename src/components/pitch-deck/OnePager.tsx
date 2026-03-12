@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Download, X, Loader2, Globe, Target, Zap, Shield, Lightbulb, Upload, ExternalLink, Palette } from 'lucide-react';
+import { Download, X, Loader2, Globe, Target, Zap, Shield, Lightbulb, Upload, /*ExternalLink,*/ Palette } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { useExportOnePager, useExportStatus } from '@/hooks';
-import { Link } from 'react-router-dom';
+// import { Link } from 'react-router-dom';
 
 interface Slide {
     title: string;
@@ -136,10 +136,10 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                     document.body.removeChild(a);
                 })
                 .catch(() => {
-                    // Fallback to opening in new tab if fetch fails (CORS issues)
-                    if (exportStatus.downloadUrl) {
-                        window.open(exportStatus.downloadUrl, '_blank');
-                    }
+                    // Fallback TEMPORARILY DISABLED for AWS Activate
+                    // if (exportStatus.downloadUrl) {
+                    //     window.open(exportStatus.downloadUrl, '_blank');
+                    // }
                 })
                 .finally(() => {
                     setExportJobId(null);
@@ -480,9 +480,12 @@ export function OnePager({ slides, companyName = 'Company Name', ideaId, onClose
                                         </div>
                                         <div>
                                             <div className="text-[7px] font-bold uppercase" style={{ color: selectedColor }}>Website</div>
+                                            {/* TEMPORARILY DISABLED for AWS Activate
                                             <Link to={websiteUrl} target="_blank" rel="noopener noreferrer" className="text-[7px] flex items-center gap-0.5" style={{ color: selectedColor }}>
                                                 {websiteUrl} <ExternalLink className="w-2 h-2" />
                                             </Link>
+                                            */}
+                                            <span className="text-[7px]" style={{ color: selectedColor }}>{websiteUrl}</span>
                                         </div>
                                     </div>
                                 )}
