@@ -19,8 +19,10 @@ import {
     Redo2,
     Layers,
     Image as ImageIcon,
+    Sparkles,
 } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
+import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 // Element types
@@ -48,6 +50,8 @@ interface CanvasLogoEditorProps {
     startupName: string;
     primaryColor: string;
     secondaryColor?: string;
+    aiLogos?: Array<{ url: string; style: string; prompt: string }>;
+    initialLogoUrl?: string | null;
 }
 
 // Font options
@@ -64,6 +68,8 @@ const colorPresets = [
 export function CanvasLogoEditor({
     startupName,
     primaryColor,
+    aiLogos = [],
+    initialLogoUrl,
 }: CanvasLogoEditorProps) {
     const [canvasSize] = useState({ width: 400, height: 400 });
     const [backgroundColor, setBackgroundColor] = useState(primaryColor);
@@ -142,6 +148,55 @@ export function CanvasLogoEditor({
         saveHistory(newElements);
         setSelectedId(newElement.id);
     };
+
+    // Add image element from URL
+    const addImageFromUrl = useCallback((url: string) => {
+        const img = new window.Image();
+        // Handle CORS if needed, though data URLs don't need it
+        if (!url.startsWith('data:')) {
+            img.crossOrigin = 'Anonymous';
+        }
+
+        img.onload = () => {
+            // Calculate scale to fit within canvas (max 200px)
+            const maxDim = 200;
+            const scale = Math.min(
+                1,
+                maxDim / img.width,
+                maxDim / img.height
+            );
+
+            const newElement: CanvasElement = {
+                id: generateId(),
+                type: 'image',
+                x: canvasSize.width / 2 - (img.width * scale) / 2,
+                y: canvasSize.height / 2 - (img.height * scale) / 2,
+                width: img.width * scale,
+                height: img.height * scale,
+                fill: 'transparent',
+                image: img,
+            };
+
+            setElements(prev => {
+                const newElements = [...prev, newElement];
+                saveHistory(newElements);
+                return newElements;
+            });
+            setSelectedId(newElement.id);
+        };
+        img.src = url;
+    }, [canvasSize]);
+
+    // Initialize with startup name or initial logo
+    useEffect(() => {
+        if (elements.length === 0) {
+            if (initialLogoUrl) {
+                addImageFromUrl(initialLogoUrl);
+            } else if (startupName) {
+                addTextElement(startupName);
+            }
+        }
+    }, [startupName, initialLogoUrl, addImageFromUrl, elements.length]);
 
     // Handle image upload
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -253,385 +308,440 @@ export function CanvasLogoEditor({
     const selectedElement = elements.find(el => el.id === selectedId);
 
     return (
-        <div className="space-y-4">
-            {/* Toolbar */}
-            <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-lg">
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    leftIcon={<Type className="w-4 h-4" />}
-                    onClick={() => addTextElement()}
-                >
-                    Text
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    leftIcon={<Square className="w-4 h-4" />}
-                    onClick={() => addShapeElement('rect')}
-                >
-                    Square
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    leftIcon={<CircleIcon className="w-4 h-4" />}
-                    onClick={() => addShapeElement('circle')}
-                >
-                    Circle
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    leftIcon={<ImageIcon className="w-4 h-4" />}
-                    onClick={() => fileInputRef.current?.click()}
-                >
-                    Image
-                </Button>
-                <div className="h-6 w-px bg-gray-300 mx-1" />
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    leftIcon={<Undo2 className="w-4 h-4" />}
-                    onClick={undo}
-                    disabled={historyIndex <= 0}
-                >
-                    Undo
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    leftIcon={<Redo2 className="w-4 h-4" />}
-                    onClick={redo}
-                    disabled={historyIndex >= history.length - 1}
-                >
-                    Redo
-                </Button>
-                {selectedId && (
-                    <>
-                        <div className="h-6 w-px bg-gray-300 mx-1" />
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            leftIcon={<Trash2 className="w-4 h-4" />}
-                            onClick={deleteSelected}
-                            className="text-red-600 hover:bg-red-50"
-                        >
-                            Delete
-                        </Button>
-                    </>
-                )}
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                />
-            </div>
-
-            {/* Canvas */}
-            <div className="border rounded-lg overflow-hidden bg-gray-100 flex justify-center p-4">
-                <Stage
-                    ref={stageRef}
-                    width={canvasSize.width}
-                    height={canvasSize.height}
-                    onClick={(e) => {
-                        if (e.target === e.currentTarget || e.target.getClassName() === 'Rect') {
-                            if (e.target.id() === 'background') {
-                                setSelectedId(null);
-                            }
-                        }
-                    }}
-                    className="shadow-xl rounded-lg overflow-hidden"
-                >
-                    <Layer>
-                        {/* Background */}
-                        <Rect
-                            id="background"
-                            x={0}
-                            y={0}
-                            width={canvasSize.width}
-                            height={canvasSize.height}
-                            fill={backgroundColor}
-                        />
-
-                        {/* Elements */}
-                        {elements.map((el) => {
-                            if (el.type === 'text') {
-                                return (
-                                    <Text
-                                        key={el.id}
-                                        id={el.id}
-                                        x={el.x}
-                                        y={el.y}
-                                        text={el.text}
-                                        fontSize={el.fontSize}
-                                        fontFamily={el.fontFamily}
-                                        fill={el.fill}
-                                        draggable
-                                        onClick={() => setSelectedId(el.id)}
-                                        onTap={() => setSelectedId(el.id)}
-                                        onDragEnd={(e) => handleDragEnd(e, el.id)}
-                                        onTransformEnd={(e) => handleTransformEnd(e, el.id)}
-                                    />
-                                );
-                            }
-                            if (el.type === 'rect') {
-                                return (
-                                    <Rect
-                                        key={el.id}
-                                        id={el.id}
-                                        x={el.x}
-                                        y={el.y}
-                                        width={el.width}
-                                        height={el.height}
-                                        fill={el.fill}
-                                        rotation={el.rotation}
-                                        draggable
-                                        onClick={() => setSelectedId(el.id)}
-                                        onTap={() => setSelectedId(el.id)}
-                                        onDragEnd={(e) => handleDragEnd(e, el.id)}
-                                        onTransformEnd={(e) => handleTransformEnd(e, el.id)}
-                                    />
-                                );
-                            }
-                            if (el.type === 'circle') {
-                                return (
-                                    <Circle
-                                        key={el.id}
-                                        id={el.id}
-                                        x={el.x}
-                                        y={el.y}
-                                        radius={el.radius}
-                                        fill={el.fill}
-                                        draggable
-                                        onClick={() => setSelectedId(el.id)}
-                                        onTap={() => setSelectedId(el.id)}
-                                        onDragEnd={(e) => handleDragEnd(e, el.id)}
-                                        onTransformEnd={(e) => handleTransformEnd(e, el.id)}
-                                    />
-                                );
-                            }
-                            if (el.type === 'image' && el.image) {
-                                return (
-                                    <KonvaImage
-                                        key={el.id}
-                                        id={el.id}
-                                        x={el.x}
-                                        y={el.y}
-                                        width={el.width}
-                                        height={el.height}
-                                        image={el.image}
-                                        draggable
-                                        onClick={() => setSelectedId(el.id)}
-                                        onTap={() => setSelectedId(el.id)}
-                                        onDragEnd={(e) => handleDragEnd(e, el.id)}
-                                        onTransformEnd={(e) => handleTransformEnd(e, el.id)}
-                                    />
-                                );
-                            }
-                            return null;
-                        })}
-
-                        {/* Transformer */}
-                        <Transformer
-                            ref={transformerRef}
-                            boundBoxFunc={(oldBox, newBox) => {
-                                if (newBox.width < 5 || newBox.height < 5) {
-                                    return oldBox;
-                                }
-                                return newBox;
-                            }}
-                        />
-                    </Layer>
-                </Stage>
-            </div>
-
-            {/* Properties Panel */}
-            {selectedElement && (
-                <div className="p-4 bg-gray-50 rounded-lg space-y-4">
-                    <h3 className="font-medium text-gray-900 flex items-center gap-2">
-                        <Layers className="w-4 h-4" />
-                        Element Properties
-                    </h3>
-
-                    {/* Text properties */}
-                    {selectedElement.type === 'text' && (
+        <div className="flex flex-col lg:flex-row gap-6">
+            {/* Left side: Canvas and Tools */}
+            <div className="flex-1 space-y-4">
+                {/* Toolbar */}
+                <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-lg">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        leftIcon={<Type className="w-4 h-4" />}
+                        onClick={() => addTextElement()}
+                    >
+                        Text
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        leftIcon={<Square className="w-4 h-4" />}
+                        onClick={() => addShapeElement('rect')}
+                    >
+                        Square
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        leftIcon={<CircleIcon className="w-4 h-4" />}
+                        onClick={() => addShapeElement('circle')}
+                    >
+                        Circle
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        leftIcon={<ImageIcon className="w-4 h-4" />}
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        Image
+                    </Button>
+                    <div className="h-6 w-px bg-gray-300 mx-1" />
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        leftIcon={<Undo2 className="w-4 h-4" />}
+                        onClick={undo}
+                        disabled={historyIndex <= 0}
+                    >
+                        Undo
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        leftIcon={<Redo2 className="w-4 h-4" />}
+                        onClick={redo}
+                        disabled={historyIndex >= history.length - 1}
+                    >
+                        Redo
+                    </Button>
+                    {selectedId && (
                         <>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Text</label>
-                                <Input
-                                    value={selectedElement.text || ''}
-                                    onChange={(e) => updateElement(selectedId!, { text: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Font Size</label>
-                                <input
-                                    type="range"
-                                    min="12"
-                                    max="72"
-                                    value={selectedElement.fontSize || 32}
-                                    onChange={(e) => updateElement(selectedId!, { fontSize: Number(e.target.value) })}
-                                    className="w-full"
-                                />
-                                <span className="text-sm text-gray-500">{selectedElement.fontSize || 32}px</span>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Font</label>
-                                <div className="flex flex-wrap gap-1">
-                                    {fonts.map((font) => (
-                                        <button
-                                            key={font}
-                                            onClick={() => updateElement(selectedId!, { fontFamily: font })}
-                                            className={`px-2 py-1 text-xs rounded border ${selectedElement.fontFamily === font
-                                                ? 'border-blue-500 bg-blue-50'
-                                                : 'border-gray-200'
-                                                }`}
-                                            style={{ fontFamily: font }}
-                                        >
-                                            {font}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+                            <div className="h-6 w-px bg-gray-300 mx-1" />
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                leftIcon={<Trash2 className="w-4 h-4" />}
+                                onClick={deleteSelected}
+                                className="text-red-600 hover:bg-red-50"
+                            >
+                                Delete
+                            </Button>
                         </>
                     )}
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                    />
+                </div>
 
-                    {/* Color */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
-                        <div className="flex flex-wrap gap-1">
-                            {colorPresets.map((color) => (
-                                <button
-                                    key={color}
-                                    onClick={() => updateElement(selectedId!, { fill: color })}
-                                    className={`w-6 h-6 rounded border-2 ${selectedElement.fill === color ? 'border-blue-500' : 'border-gray-200'
-                                        }`}
-                                    style={{ backgroundColor: color }}
-                                />
-                            ))}
-                            <input
-                                type="color"
-                                value={selectedElement.fill}
-                                onChange={(e) => updateElement(selectedId!, { fill: e.target.value })}
-                                className="w-6 h-6 rounded cursor-pointer"
+                {/* Canvas */}
+                <div className="border rounded-lg overflow-hidden bg-gray-100 flex justify-center p-4">
+                    <Stage
+                        ref={stageRef}
+                        width={canvasSize.width}
+                        height={canvasSize.height}
+                        onClick={(e) => {
+                            if (e.target === e.currentTarget || e.target.getClassName() === 'Rect') {
+                                if (e.target.id() === 'background') {
+                                    setSelectedId(null);
+                                }
+                            }
+                        }}
+                        className="shadow-xl rounded-lg overflow-hidden"
+                    >
+                        <Layer>
+                            {/* Background */}
+                            <Rect
+                                id="background"
+                                x={0}
+                                y={0}
+                                width={canvasSize.width}
+                                height={canvasSize.height}
+                                fill={backgroundColor}
                             />
-                        </div>
-                        <div className="mt-2 flex items-center gap-2 bg-white rounded-lg p-1.5 border w-fit">
-                            <div
-                                className="w-6 h-6 rounded border border-gray-300 flex-shrink-0"
-                                style={{ backgroundColor: selectedElement.fill }}
-                            />
-                            <input
-                                type="text"
-                                value={selectedElement.fill.toUpperCase()}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    if (val.match(/^#[0-9A-Fa-f]{0,6}$/)) {
-                                        updateElement(selectedId!, { fill: val });
+
+                            {/* Elements */}
+                            {elements.map((el) => {
+                                if (el.type === 'text') {
+                                    return (
+                                        <Text
+                                            key={el.id}
+                                            id={el.id}
+                                            x={el.x}
+                                            y={el.y}
+                                            text={el.text}
+                                            fontSize={el.fontSize}
+                                            fontFamily={el.fontFamily}
+                                            fill={el.fill}
+                                            draggable
+                                            onClick={() => setSelectedId(el.id)}
+                                            onTap={() => setSelectedId(el.id)}
+                                            onDragEnd={(e) => handleDragEnd(e, el.id)}
+                                            onTransformEnd={(e) => handleTransformEnd(e, el.id)}
+                                        />
+                                    );
+                                }
+                                if (el.type === 'rect') {
+                                    return (
+                                        <Rect
+                                            key={el.id}
+                                            id={el.id}
+                                            x={el.x}
+                                            y={el.y}
+                                            width={el.width}
+                                            height={el.height}
+                                            fill={el.fill}
+                                            rotation={el.rotation}
+                                            draggable
+                                            onClick={() => setSelectedId(el.id)}
+                                            onTap={() => setSelectedId(el.id)}
+                                            onDragEnd={(e) => handleDragEnd(e, el.id)}
+                                            onTransformEnd={(e) => handleTransformEnd(e, el.id)}
+                                        />
+                                    );
+                                }
+                                if (el.type === 'circle') {
+                                    return (
+                                        <Circle
+                                            key={el.id}
+                                            id={el.id}
+                                            x={el.x}
+                                            y={el.y}
+                                            radius={el.radius}
+                                            fill={el.fill}
+                                            draggable
+                                            onClick={() => setSelectedId(el.id)}
+                                            onTap={() => setSelectedId(el.id)}
+                                            onDragEnd={(e) => handleDragEnd(e, el.id)}
+                                            onTransformEnd={(e) => handleTransformEnd(e, el.id)}
+                                        />
+                                    );
+                                }
+                                if (el.type === 'image' && el.image) {
+                                    return (
+                                        <KonvaImage
+                                            key={el.id}
+                                            id={el.id}
+                                            x={el.x}
+                                            y={el.y}
+                                            width={el.width}
+                                            height={el.height}
+                                            image={el.image}
+                                            draggable
+                                            onClick={() => setSelectedId(el.id)}
+                                            onTap={() => setSelectedId(el.id)}
+                                            onDragEnd={(e) => handleDragEnd(e, el.id)}
+                                            onTransformEnd={(e) => handleTransformEnd(e, el.id)}
+                                        />
+                                    );
+                                }
+                                return null;
+                            })}
+
+                            {/* Transformer */}
+                            <Transformer
+                                ref={transformerRef}
+                                boundBoxFunc={(oldBox, newBox) => {
+                                    if (newBox.width < 5 || newBox.height < 5) {
+                                        return oldBox;
                                     }
+                                    return newBox;
                                 }}
-                                placeholder="#FFFFFF"
-                                className="w-20 px-2 py-1 text-xs font-mono bg-gray-50 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
+                        </Layer>
+                    </Stage>
+                </div>
+
+                {/* Properties Panel */}
+                {selectedElement && (
+                    <div className="p-4 bg-gray-50 rounded-lg space-y-4">
+                        <h3 className="font-medium text-gray-900 flex items-center gap-2">
+                            <Layers className="w-4 h-4" />
+                            Element Properties
+                        </h3>
+
+                        {/* Text properties */}
+                        {selectedElement.type === 'text' && (
+                            <>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Text</label>
+                                    <Input
+                                        value={selectedElement.text || ''}
+                                        onChange={(e) => updateElement(selectedId!, { text: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Font Size</label>
+                                    <input
+                                        type="range"
+                                        min="12"
+                                        max="72"
+                                        value={selectedElement.fontSize || 32}
+                                        onChange={(e) => updateElement(selectedId!, { fontSize: Number(e.target.value) })}
+                                        className="w-full"
+                                    />
+                                    <span className="text-sm text-gray-500">{selectedElement.fontSize || 32}px</span>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Font</label>
+                                    <div className="flex flex-wrap gap-1">
+                                        {fonts.map((font) => (
+                                            <button
+                                                key={font}
+                                                onClick={() => updateElement(selectedId!, { fontFamily: font })}
+                                                className={`px-2 py-1 text-xs rounded border ${selectedElement.fontFamily === font
+                                                    ? 'border-blue-500 bg-blue-50'
+                                                    : 'border-gray-200'
+                                                    }`}
+                                                style={{ fontFamily: font }}
+                                            >
+                                                {font}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+                        {/* Color */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
+                            <div className="flex flex-wrap gap-1">
+                                {colorPresets.map((color) => (
+                                    <button
+                                        key={color}
+                                        onClick={() => updateElement(selectedId!, { fill: color })}
+                                        className={`w-6 h-6 rounded border-2 ${selectedElement.fill === color ? 'border-blue-500' : 'border-gray-200'
+                                            }`}
+                                        style={{ backgroundColor: color }}
+                                    />
+                                ))}
+                                <input
+                                    type="color"
+                                    value={selectedElement.fill}
+                                    onChange={(e) => updateElement(selectedId!, { fill: e.target.value })}
+                                    className="w-6 h-6 rounded cursor-pointer"
+                                />
+                            </div>
+                            <div className="mt-2 flex items-center gap-2 bg-white rounded-lg p-1.5 border w-fit">
+                                <div
+                                    className="w-6 h-6 rounded border border-gray-300 flex-shrink-0"
+                                    style={{ backgroundColor: selectedElement.fill }}
+                                />
+                                <input
+                                    type="text"
+                                    value={selectedElement.fill.toUpperCase()}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val.match(/^#[0-9A-Fa-f]{0,6}$/)) {
+                                            updateElement(selectedId!, { fill: val });
+                                        }
+                                    }}
+                                    placeholder="#FFFFFF"
+                                    className="w-20 px-2 py-1 text-xs font-mono bg-gray-50 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(selectedElement.fill);
+                                        toast.success('Copied!');
+                                    }}
+                                    className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
+                                    title="Copy"
+                                >
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Background Color */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Background Color</label>
+                    <div className="flex flex-wrap gap-1">
+                        {colorPresets.map((color) => (
                             <button
-                                onClick={() => {
-                                    navigator.clipboard.writeText(selectedElement.fill);
-                                    toast.success('Copied!');
-                                }}
-                                className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
-                                title="Copy"
-                            >
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                </svg>
-                            </button>
+                                key={color}
+                                onClick={() => setBackgroundColor(color)}
+                                className={`w-7 h-7 rounded border-2 ${backgroundColor === color ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
+                                    }`}
+                                style={{ backgroundColor: color }}
+                            />
+                        ))}
+                        <input
+                            type="color"
+                            value={backgroundColor}
+                            onChange={(e) => setBackgroundColor(e.target.value)}
+                            className="w-7 h-7 rounded cursor-pointer"
+                        />
+                    </div>
+                    <div className="mt-2 flex items-center gap-2 bg-gray-50 rounded-lg p-1.5 border w-fit">
+                        <div
+                            className="w-6 h-6 rounded border border-gray-300 flex-shrink-0"
+                            style={{ backgroundColor }}
+                        />
+                        <input
+                            type="text"
+                            value={backgroundColor.toUpperCase()}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                if (val.match(/^#[0-9A-Fa-f]{0,6}$/)) {
+                                    setBackgroundColor(val);
+                                }
+                            }}
+                            placeholder="#3B82F6"
+                            className="w-20 px-2 py-1 text-xs font-mono bg-white border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <button
+                            onClick={() => {
+                                navigator.clipboard.writeText(backgroundColor);
+                                toast.success('Copied!');
+                            }}
+                            className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors"
+                            title="Copy hex code"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Export Buttons */}
+                <div className="flex gap-2">
+                    <Button
+                        variant="secondary"
+                        leftIcon={<Download className="w-4 h-4" />}
+                        onClick={() => downloadLogo(256)}
+                        className="flex-1"
+                    >
+                        256px
+                    </Button>
+                    <Button
+                        variant="primary"
+                        leftIcon={<Download className="w-4 h-4" />}
+                        onClick={() => downloadLogo(512)}
+                        className="flex-1"
+                    >
+                        512px
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        leftIcon={<Download className="w-4 h-4" />}
+                        onClick={() => downloadLogo(1024)}
+                        className="flex-1"
+                    >
+                        1024px
+                    </Button>
+                </div>
+            </div>
+
+            {/* Right side: AI Logo Gallery Sidebar */}
+            {aiLogos && aiLogos.length > 0 && (
+                <div className="w-full lg:w-[300px] shrink-0 flex flex-col gap-4">
+                    <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: 'var(--dash-border-solid, #E8ECF4)' }}>
+                        <h3
+                            className="text-[15px] font-bold flex items-center gap-2 mb-4"
+                            style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                        >
+                            <Sparkles className="w-4 h-4" style={{ color: '#8B5CF6' }} />
+                            AI Logos Gallery
+                        </h3>
+                        <p className="text-[12px] text-gray-500 mb-4 pb-4 border-b">
+                            Click any logo to add it to your canvas as an image layer.
+                        </p>
+
+                        <div className="grid grid-cols-2 gap-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                            {aiLogos.map((logo, i) => (
+                                <motion.button
+                                    key={i}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: i * 0.05 }}
+                                    onClick={() => addImageFromUrl(logo.url)}
+                                    className="relative flex flex-col items-center gap-1 group w-full text-left"
+                                >
+                                    <div
+                                        className="w-full aspect-square rounded-[8px] border overflow-hidden transition-all bg-white flex items-center justify-center p-2"
+                                        style={{ borderColor: 'var(--dash-border-solid, #E8ECF4)' }}
+                                    >
+                                        <img
+                                            src={logo.url}
+                                            alt={logo.style}
+                                            className="w-full h-full object-contain mix-blend-multiply transition-transform group-hover:scale-105"
+                                        />
+
+                                        {/* Hover Overlay */}
+                                        <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-[8px]">
+                                            <div className="bg-white px-2 py-1 rounded text-[10px] font-medium shadow-sm border text-gray-700 pointer-events-none">
+                                                Add to Canvas
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span className="text-[11px] font-medium text-gray-600 capitalize w-full text-center truncate">
+                                        {logo.style}
+                                    </span>
+                                </motion.button>
+                            ))}
                         </div>
                     </div>
                 </div>
             )}
-
-            {/* Background Color */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Background Color</label>
-                <div className="flex flex-wrap gap-1">
-                    {colorPresets.map((color) => (
-                        <button
-                            key={color}
-                            onClick={() => setBackgroundColor(color)}
-                            className={`w-7 h-7 rounded border-2 ${backgroundColor === color ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
-                                }`}
-                            style={{ backgroundColor: color }}
-                        />
-                    ))}
-                    <input
-                        type="color"
-                        value={backgroundColor}
-                        onChange={(e) => setBackgroundColor(e.target.value)}
-                        className="w-7 h-7 rounded cursor-pointer"
-                    />
-                </div>
-                <div className="mt-2 flex items-center gap-2 bg-gray-50 rounded-lg p-1.5 border w-fit">
-                    <div
-                        className="w-6 h-6 rounded border border-gray-300 flex-shrink-0"
-                        style={{ backgroundColor }}
-                    />
-                    <input
-                        type="text"
-                        value={backgroundColor.toUpperCase()}
-                        onChange={(e) => {
-                            const val = e.target.value;
-                            if (val.match(/^#[0-9A-Fa-f]{0,6}$/)) {
-                                setBackgroundColor(val);
-                            }
-                        }}
-                        placeholder="#3B82F6"
-                        className="w-20 px-2 py-1 text-xs font-mono bg-white border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                        onClick={() => {
-                            navigator.clipboard.writeText(backgroundColor);
-                            toast.success('Copied!');
-                        }}
-                        className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors"
-                        title="Copy hex code"
-                    >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
-            {/* Export Buttons */}
-            <div className="flex gap-2">
-                <Button
-                    variant="secondary"
-                    leftIcon={<Download className="w-4 h-4" />}
-                    onClick={() => downloadLogo(256)}
-                    className="flex-1"
-                >
-                    256px
-                </Button>
-                <Button
-                    variant="primary"
-                    leftIcon={<Download className="w-4 h-4" />}
-                    onClick={() => downloadLogo(512)}
-                    className="flex-1"
-                >
-                    512px
-                </Button>
-                <Button
-                    variant="secondary"
-                    leftIcon={<Download className="w-4 h-4" />}
-                    onClick={() => downloadLogo(1024)}
-                    className="flex-1"
-                >
-                    1024px
-                </Button>
-            </div>
         </div>
     );
 }

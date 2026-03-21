@@ -74,6 +74,7 @@ export default function Branding() {
     const [selectedTone, setSelectedTone] = useState('Professional');
     const [selectedColorPreset, setSelectedColorPreset] = useState(colorPresets[0]);
     const [editorMode, setEditorMode] = useState<'presets' | 'advanced'>('presets');
+    const [initialCanvasLogo, setInitialCanvasLogo] = useState<string | null>(null);
 
     // Get current idea from store for backward compatibility
     const { currentIdea, activeIdeaId: storedActiveIdeaId, setActiveIdeaId } = useIdeaStore();
@@ -367,7 +368,7 @@ export default function Branding() {
                                     Generating Brand Identity...
                                 </h3>
                                 <p className="text-[13px]" style={{ color: 'var(--dash-text-muted)' }}>
-                                    This usually takes 30-60 seconds
+                                    This usually takes 1-2 minutes (generating logos with AI)
                                 </p>
                             </div>
                         </div>
@@ -439,12 +440,20 @@ export default function Branding() {
                                     startupName={startupName}
                                     primaryColor={branding?.color_palette?.primary || selectedColorPreset.primary}
                                     secondaryColor={branding?.color_palette?.secondary || selectedColorPreset.secondary}
+                                    headingFont={branding?.typography?.heading_font || 'Inter'}
+                                    aiLogos={branding?.ai_logos || []}
+                                    onEditInCanvas={(logoUrl) => {
+                                        setInitialCanvasLogo(logoUrl);
+                                        setEditorMode('advanced');
+                                    }}
                                 />
                             ) : (
                                 <CanvasLogoEditor
                                     startupName={startupName}
                                     primaryColor={branding?.color_palette?.primary || selectedColorPreset.primary}
                                     secondaryColor={branding?.color_palette?.secondary || selectedColorPreset.secondary}
+                                    aiLogos={branding?.ai_logos || []}
+                                    initialLogoUrl={initialCanvasLogo}
                                 />
                             )}
                         </div>
