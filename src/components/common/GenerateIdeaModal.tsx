@@ -9,7 +9,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, ArrowRight, ArrowLeft, Check } from 'lucide-react';
+import { X, Sparkles, ArrowRight, ArrowLeft, Check, Type } from 'lucide-react';
 import { Button, Textarea } from '@/components/ui';
 import { CreditCost } from '@/components/common';
 import { useQueryClient } from '@tanstack/react-query';
@@ -30,57 +30,147 @@ interface GeneratedIdea {
     industry?: string;
 }
 
-// Questions to gather user preferences
-const questions = [
-    {
-        id: 'interests',
-        title: 'What are your interests?',
-        description: 'Select areas you are passionate about or have experience in.',
-        type: 'multiselect' as const,
-        options: [
-            'Technology', 'Healthcare', 'Education', 'Finance', 'E-commerce',
-            'Entertainment', 'Food & Beverage', 'Travel', 'Real Estate', 'Sustainability',
-            'Fashion', 'Fitness', 'Social Impact', 'B2B Services', 'Gaming'
-        ],
-    },
-    {
-        id: 'skills',
-        title: 'What are your skills?',
-        description: 'What can you bring to your startup?',
-        type: 'multiselect' as const,
-        options: [
-            'Software Development', 'Design/UX', 'Marketing', 'Sales',
-            'Operations', 'Finance/Accounting', 'Content Creation', 'Data Analysis',
-            'Product Management', 'Leadership', 'Domain Expertise', 'Networking'
-        ],
-    },
-    {
-        id: 'problemArea',
-        title: 'Any problem you want to solve?',
-        description: 'Describe a frustration or inefficiency you\'ve noticed (optional)',
-        type: 'textarea' as const,
-        placeholder: 'e.g., "I find it hard to track my fitness goals across multiple apps..."',
-    },
-    {
-        id: 'resources',
-        title: 'What resources do you have?',
-        description: 'This helps us suggest realistic ideas',
-        type: 'multiselect' as const,
-        options: [
-            'Limited budget (bootstrapping)', 'Some savings to invest',
-            'Access to investors', 'Technical team', 'Industry connections',
-            'Full-time commitment', 'Part-time/Side project'
-        ],
-    },
-];
+// Startup type question (always the same)
+const startupTypeQuestion = {
+    id: 'startupType',
+    title: 'What kind of startup do you want to build?',
+    description: 'Choose the type that best describes your vision.',
+    type: 'singleselect' as const,
+    required: true,
+    options: [
+        'Digital Product / SaaS',
+        'Physical Product',
+        'Hybrid / Both',
+        'Other',
+    ],
+    optionDescriptions: {
+        'Digital Product / SaaS': 'Software, apps, platforms — no physical inventory',
+        'Physical Product': 'Tangible goods, manufacturing, hardware',
+        'Hybrid / Both': 'A mix of digital and physical offerings',
+        'Other': 'Something different — tell us more',
+    } as Record<string, string>,
+};
+
+// Dynamic follow-up options based on startup type
+const interestsByType: Record<string, string[]> = {
+    'Digital Product / SaaS': [
+        'AI / Machine Learning', 'SaaS / Cloud', 'FinTech', 'EdTech', 'HealthTech',
+        'E-commerce', 'Social Media', 'Cybersecurity', 'Developer Tools', 'MarTech',
+        'Gaming', 'Productivity', 'Data Analytics', 'Blockchain / Web3', 'Other'
+    ],
+    'Physical Product': [
+        'Consumer Electronics', 'Food & Beverage', 'Fashion & Apparel', 'Home & Living',
+        'Health & Wellness', 'Beauty & Personal Care', 'Fitness Equipment', 'Sustainability',
+        'Pet Products', 'Baby & Kids', 'Agriculture', 'Automotive', 'Other'
+    ],
+    'Hybrid / Both': [
+        'IoT / Smart Devices', 'Health & Wellness', 'E-commerce', 'Food & Beverage',
+        'Fashion & Apparel', 'FinTech', 'EdTech', 'Fitness', 'Sustainability',
+        'Home & Living', 'Automotive', 'Travel', 'B2B Services', 'Other'
+    ],
+    default: [
+        'Technology', 'Healthcare', 'Education', 'Finance', 'E-commerce',
+        'Entertainment', 'Food & Beverage', 'Travel', 'Real Estate', 'Sustainability',
+        'Fashion', 'Fitness', 'Social Impact', 'B2B Services', 'Gaming', 'Other'
+    ],
+};
+
+const skillsByType: Record<string, string[]> = {
+    'Digital Product / SaaS': [
+        'Software Development', 'UI/UX Design', 'Cloud / DevOps', 'Data Science',
+        'Product Management', 'Digital Marketing', 'Sales', 'Content Creation',
+        'Growth Hacking', 'Community Building', 'Domain Expertise', 'Other'
+    ],
+    'Physical Product': [
+        'Product Design', 'Manufacturing', 'Supply Chain', 'Sales & Distribution',
+        'Branding & Marketing', 'Quality Assurance', 'Finance/Accounting',
+        'Operations', 'Domain Expertise', 'Retail', 'Networking', 'Other'
+    ],
+    'Hybrid / Both': [
+        'Software Development', 'Product Design', 'Hardware Engineering', 'Marketing',
+        'Sales', 'Operations', 'Supply Chain', 'Data Analysis',
+        'Product Management', 'Leadership', 'Domain Expertise', 'Other'
+    ],
+    default: [
+        'Software Development', 'Design/UX', 'Marketing', 'Sales',
+        'Operations', 'Finance/Accounting', 'Content Creation', 'Data Analysis',
+        'Product Management', 'Leadership', 'Domain Expertise', 'Networking', 'Other'
+    ],
+};
+
+const resourcesByType: Record<string, string[]> = {
+    'Digital Product / SaaS': [
+        'Limited budget (bootstrapping)', 'Some savings to invest',
+        'Access to investors / VCs', 'Technical co-founder', 'Cloud credits',
+        'Full-time commitment', 'Part-time/Side project', 'Other'
+    ],
+    'Physical Product': [
+        'Limited budget (bootstrapping)', 'Manufacturing contacts',
+        'Savings / Seed capital', 'Access to investors', 'Warehouse / Inventory space',
+        'Distribution network', 'Full-time commitment', 'Part-time/Side project', 'Other'
+    ],
+    'Hybrid / Both': [
+        'Limited budget (bootstrapping)', 'Some savings to invest',
+        'Access to investors', 'Technical team', 'Manufacturing contacts',
+        'Industry connections', 'Full-time commitment', 'Part-time/Side project', 'Other'
+    ],
+    default: [
+        'Limited budget (bootstrapping)', 'Some savings to invest',
+        'Access to investors', 'Technical team', 'Industry connections',
+        'Full-time commitment', 'Part-time/Side project', 'Other'
+    ],
+};
+
+// Build the questions array dynamically based on startup type
+function getQuestions(startupType: string) {
+    const key = (startupType && startupType !== 'Other' && interestsByType[startupType])
+        ? startupType : 'default';
+
+    return [
+        startupTypeQuestion,
+        {
+            id: 'interests',
+            title: 'What are your interests?',
+            description: 'Select areas you are passionate about or have experience in.',
+            type: 'multiselect' as const,
+            options: interestsByType[key],
+        },
+        {
+            id: 'skills',
+            title: 'What are your skills?',
+            description: 'What can you bring to your startup?',
+            type: 'multiselect' as const,
+            options: skillsByType[key],
+        },
+        {
+            id: 'problemArea',
+            title: 'Any problem you want to solve?',
+            description: 'Describe a frustration or inefficiency you\'ve noticed (optional)',
+            type: 'textarea' as const,
+            placeholder: 'e.g., "I find it hard to track my fitness goals across multiple apps..."',
+        },
+        {
+            id: 'resources',
+            title: 'What resources do you have?',
+            description: 'This helps us suggest realistic ideas',
+            type: 'multiselect' as const,
+            options: resourcesByType[key],
+        },
+    ];
+}
 
 export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: GenerateIdeaModalProps) {
     const queryClient = useQueryClient();
     const [currentStep, setCurrentStep] = useState(0);
     const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
+    const [otherTexts, setOtherTexts] = useState<Record<string, string>>({});
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedIdeas, setGeneratedIdeas] = useState<GeneratedIdea[]>([]);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
+    // Build questions dynamically based on selected startup type
+    const selectedType = (answers.startupType as string) || '';
+    const questions = getQuestions(selectedType);
 
     const currentQuestion = questions[currentStep];
     const isLastStep = currentStep === questions.length - 1;
@@ -102,15 +192,51 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
 
     const handleOptionToggle = (option: string) => {
         const current = (answers[currentQuestion.id] as string[]) || [];
-        if (current.includes(option)) {
-            setAnswers({ ...answers, [currentQuestion.id]: current.filter(o => o !== option) });
+        if (option === 'Other') {
+            // Toggle Other selection
+            if (current.includes('Other')) {
+                setAnswers({ ...answers, [currentQuestion.id]: current.filter(o => o !== 'Other') });
+                setOtherTexts({ ...otherTexts, [currentQuestion.id]: '' });
+            } else {
+                setAnswers({ ...answers, [currentQuestion.id]: [...current, 'Other'] });
+            }
         } else {
-            setAnswers({ ...answers, [currentQuestion.id]: [...current, option] });
+            if (current.includes(option)) {
+                setAnswers({ ...answers, [currentQuestion.id]: current.filter(o => o !== option) });
+            } else {
+                setAnswers({ ...answers, [currentQuestion.id]: [...current, option] });
+            }
         }
+    };
+
+    const handleSingleSelect = (option: string) => {
+        if (option === 'Other') {
+            setAnswers({ ...answers, [currentQuestion.id]: 'Other' });
+        } else {
+            setAnswers({ ...answers, [currentQuestion.id]: option });
+            setOtherTexts({ ...otherTexts, [currentQuestion.id]: '' });
+        }
+    };
+
+    const handleOtherTextChange = (questionId: string, value: string) => {
+        setOtherTexts({ ...otherTexts, [questionId]: value });
     };
 
     const handleTextChange = (value: string) => {
         setAnswers({ ...answers, [currentQuestion.id]: value });
+    };
+
+    // Check if current step is valid for proceeding
+    const isCurrentStepValid = () => {
+        const q = questions[currentStep];
+        if (!(q as any).required) return true;
+        const answer = answers[q.id];
+        if (!answer) return false;
+        if (q.type === 'singleselect') {
+            if (answer === 'Other') return (otherTexts[q.id] || '').trim().length > 0;
+            return typeof answer === 'string' && answer.length > 0;
+        }
+        return true;
     };
 
     const handleNext = () => {
@@ -127,6 +253,19 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
         }
     };
 
+    // Resolve the final value for a question — if "Other" was selected, use the custom text
+    const resolveAnswer = (questionId: string) => {
+        const answer = answers[questionId];
+        const otherText = otherTexts[questionId] || '';
+        if (typeof answer === 'string') {
+            return answer === 'Other' ? otherText : answer;
+        }
+        if (Array.isArray(answer)) {
+            return answer.map(a => a === 'Other' ? otherText : a).filter(Boolean);
+        }
+        return answer;
+    };
+
     const generateIdeas = async () => {
         setIsGenerating(true);
 
@@ -136,10 +275,13 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
 
             // Call Core Service to generate ideas using AI
             const { data } = await api.post('/ideas/generate', {
-                interests: answers.interests || [],
-                skills: answers.skills || [],
+                startupType: resolveAnswer('startupType') || '',
+                interests: resolveAnswer('interests') || [],
+                skills: resolveAnswer('skills') || [],
                 problemArea: answers.problemArea || '',
-                resources: answers.resources || [],
+                resources: resolveAnswer('resources') || [],
+            }, {
+                timeout: 90000, // 90s timeout for AI generation (longer due to creative prompt)
             });
 
             // Invalidate credits cache to refresh balance after deduction
@@ -205,6 +347,7 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
     const resetAndClose = () => {
         setCurrentStep(0);
         setAnswers({});
+        setOtherTexts({});
         setGeneratedIdeas([]);
         setSelectedIndex(null);
         setIsGenerating(false);
@@ -496,49 +639,219 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                                     {currentQuestion.description}
                                 </p>
 
-                                {currentQuestion.type === 'multiselect' && (
-                                    <div className="flex flex-wrap gap-2">
-                                        {currentQuestion.options?.map(option => {
-                                            const isOptionSelected = ((answers[currentQuestion.id] as string[]) || []).includes(option);
-                                            return (
-                                                <button
-                                                    key={option}
-                                                    onClick={() => handleOptionToggle(option)}
-                                                    className="transition-all duration-150 cursor-pointer"
-                                                    style={{
-                                                        padding: '7px 14px',
-                                                        borderRadius: 8,
-                                                        fontSize: 13,
-                                                        fontWeight: 500,
-                                                        fontFamily: "var(--dash-font-body, 'Inter', sans-serif)",
-                                                        background: isOptionSelected
-                                                            ? 'linear-gradient(135deg, #4F7DF3, #7A5CFF)'
-                                                            : 'rgba(0,0,0,0.03)',
-                                                        color: isOptionSelected ? '#fff' : 'var(--dash-text-secondary, #475569)',
-                                                        border: isOptionSelected
-                                                            ? '1.5px solid transparent'
-                                                            : '1.5px solid var(--dash-border-solid, #E8ECF4)',
-                                                        boxShadow: isOptionSelected
-                                                            ? '0 2px 8px rgba(79,125,243,0.25)'
-                                                            : 'none',
-                                                    }}
-                                                    onMouseEnter={(e) => {
-                                                        if (!isOptionSelected) {
-                                                            e.currentTarget.style.background = 'rgba(0,0,0,0.05)';
-                                                            e.currentTarget.style.borderColor = '#D1D5DB';
-                                                        }
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        if (!isOptionSelected) {
-                                                            e.currentTarget.style.background = 'rgba(0,0,0,0.03)';
-                                                            e.currentTarget.style.borderColor = 'var(--dash-border-solid, #E8ECF4)';
-                                                        }
-                                                    }}
+                                {/* Single-select (startup type) */}
+                                {currentQuestion.type === 'singleselect' && (
+                                    <div className="space-y-2">
+                                        <div className="grid grid-cols-1 gap-2">
+                                            {currentQuestion.options?.map(option => {
+                                                const isOptionSelected = answers[currentQuestion.id] === option;
+                                                const desc = (currentQuestion as any).optionDescriptions?.[option];
+                                                return (
+                                                    <button
+                                                        key={option}
+                                                        onClick={() => handleSingleSelect(option)}
+                                                        className="text-left transition-all duration-150 cursor-pointer"
+                                                        style={{
+                                                            padding: '12px 16px',
+                                                            borderRadius: 10,
+                                                            fontFamily: "var(--dash-font-body, 'Inter', sans-serif)",
+                                                            background: isOptionSelected
+                                                                ? 'rgba(79,125,243,0.04)'
+                                                                : 'rgba(0,0,0,0.015)',
+                                                            border: isOptionSelected
+                                                                ? '1.5px solid rgba(79,125,243,0.25)'
+                                                                : '1.5px solid var(--dash-border-solid, #E8ECF4)',
+                                                            boxShadow: isOptionSelected
+                                                                ? '0 2px 8px rgba(79,125,243,0.1)'
+                                                                : 'none',
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            if (!isOptionSelected) {
+                                                                e.currentTarget.style.background = 'rgba(0,0,0,0.025)';
+                                                                e.currentTarget.style.borderColor = '#D1D5DB';
+                                                            }
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            if (!isOptionSelected) {
+                                                                e.currentTarget.style.background = 'rgba(0,0,0,0.015)';
+                                                                e.currentTarget.style.borderColor = 'var(--dash-border-solid, #E8ECF4)';
+                                                            }
+                                                        }}
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <div
+                                                                className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all duration-150"
+                                                                style={{
+                                                                    border: isOptionSelected
+                                                                        ? '2px solid #4F7DF3'
+                                                                        : '2px solid #CBD5E1',
+                                                                    background: isOptionSelected
+                                                                        ? 'linear-gradient(135deg, #4F7DF3, #7A5CFF)'
+                                                                        : 'transparent',
+                                                                }}
+                                                            >
+                                                                {isOptionSelected && (
+                                                                    <div className="w-2 h-2 rounded-full" style={{ background: 'white' }} />
+                                                                )}
+                                                            </div>
+                                                            <div>
+                                                                <span
+                                                                    className="text-[13px] font-semibold block"
+                                                                    style={{ color: isOptionSelected ? '#4F7DF3' : 'var(--dash-text, #0F172A)' }}
+                                                                >
+                                                                    {option}
+                                                                </span>
+                                                                {desc && (
+                                                                    <span
+                                                                        className="text-[11px] block mt-0.5"
+                                                                        style={{ color: 'var(--dash-text-muted, #64748B)' }}
+                                                                    >
+                                                                        {desc}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* Other text input for singleselect */}
+                                        <AnimatePresence>
+                                            {answers[currentQuestion.id] === 'Other' && (
+                                                <motion.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    transition={{ duration: 0.2 }}
+                                                    className="overflow-hidden"
                                                 >
-                                                    {option}
-                                                </button>
-                                            );
-                                        })}
+                                                    <div className="flex items-center gap-2 mt-2">
+                                                        <Type style={{ width: 16, height: 16, color: '#94A3B8', flexShrink: 0 }} />
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Please specify your startup type..."
+                                                            value={otherTexts[currentQuestion.id] || ''}
+                                                            onChange={e => handleOtherTextChange(currentQuestion.id, e.target.value)}
+                                                            autoFocus
+                                                            className="w-full transition-all duration-150"
+                                                            style={{
+                                                                padding: '8px 12px',
+                                                                borderRadius: 8,
+                                                                fontSize: 13,
+                                                                fontFamily: "var(--dash-font-body, 'Inter', sans-serif)",
+                                                                background: 'rgba(0,0,0,0.02)',
+                                                                border: '1.5px solid var(--dash-border-solid, #E8ECF4)',
+                                                                color: 'var(--dash-text, #0F172A)',
+                                                                outline: 'none',
+                                                            }}
+                                                            onFocus={(e) => {
+                                                                e.currentTarget.style.borderColor = '#4F7DF3';
+                                                                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(79,125,243,0.1)';
+                                                            }}
+                                                            onBlur={(e) => {
+                                                                e.currentTarget.style.borderColor = 'var(--dash-border-solid, #E8ECF4)';
+                                                                e.currentTarget.style.boxShadow = 'none';
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                )}
+
+                                {/* Multi-select (interests, skills, resources) */}
+                                {currentQuestion.type === 'multiselect' && (
+                                    <div className="space-y-2">
+                                        <div className="flex flex-wrap gap-2">
+                                            {currentQuestion.options?.map(option => {
+                                                const isOptionSelected = ((answers[currentQuestion.id] as string[]) || []).includes(option);
+                                                return (
+                                                    <button
+                                                        key={option}
+                                                        onClick={() => handleOptionToggle(option)}
+                                                        className="transition-all duration-150 cursor-pointer"
+                                                        style={{
+                                                            padding: '7px 14px',
+                                                            borderRadius: 8,
+                                                            fontSize: 13,
+                                                            fontWeight: 500,
+                                                            fontFamily: "var(--dash-font-body, 'Inter', sans-serif)",
+                                                            background: isOptionSelected
+                                                                ? (option === 'Other'
+                                                                    ? 'linear-gradient(135deg, #F59E0B, #EF4444)'
+                                                                    : 'linear-gradient(135deg, #4F7DF3, #7A5CFF)')
+                                                                : 'rgba(0,0,0,0.03)',
+                                                            color: isOptionSelected ? '#fff' : 'var(--dash-text-secondary, #475569)',
+                                                            border: isOptionSelected
+                                                                ? '1.5px solid transparent'
+                                                                : '1.5px solid var(--dash-border-solid, #E8ECF4)',
+                                                            boxShadow: isOptionSelected
+                                                                ? '0 2px 8px rgba(79,125,243,0.25)'
+                                                                : 'none',
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            if (!isOptionSelected) {
+                                                                e.currentTarget.style.background = 'rgba(0,0,0,0.05)';
+                                                                e.currentTarget.style.borderColor = '#D1D5DB';
+                                                            }
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            if (!isOptionSelected) {
+                                                                e.currentTarget.style.background = 'rgba(0,0,0,0.03)';
+                                                                e.currentTarget.style.borderColor = 'var(--dash-border-solid, #E8ECF4)';
+                                                            }
+                                                        }}
+                                                    >
+                                                        {option}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* Other text input for multiselect */}
+                                        <AnimatePresence>
+                                            {((answers[currentQuestion.id] as string[]) || []).includes('Other') && (
+                                                <motion.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    transition={{ duration: 0.2 }}
+                                                    className="overflow-hidden"
+                                                >
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <Type style={{ width: 16, height: 16, color: '#94A3B8', flexShrink: 0 }} />
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Please specify..."
+                                                            value={otherTexts[currentQuestion.id] || ''}
+                                                            onChange={e => handleOtherTextChange(currentQuestion.id, e.target.value)}
+                                                            autoFocus
+                                                            className="w-full transition-all duration-150"
+                                                            style={{
+                                                                padding: '8px 12px',
+                                                                borderRadius: 8,
+                                                                fontSize: 13,
+                                                                fontFamily: "var(--dash-font-body, 'Inter', sans-serif)",
+                                                                background: 'rgba(0,0,0,0.02)',
+                                                                border: '1.5px solid var(--dash-border-solid, #E8ECF4)',
+                                                                color: 'var(--dash-text, #0F172A)',
+                                                                outline: 'none',
+                                                            }}
+                                                            onFocus={(e) => {
+                                                                e.currentTarget.style.borderColor = '#4F7DF3';
+                                                                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(79,125,243,0.1)';
+                                                            }}
+                                                            onBlur={(e) => {
+                                                                e.currentTarget.style.borderColor = 'var(--dash-border-solid, #E8ECF4)';
+                                                                e.currentTarget.style.boxShadow = 'none';
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
                                 )}
 
@@ -570,7 +883,7 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                                     generateIdeas();
                                 }}>
                                     Generate Again
-                                    <CreditCost cost={2} />
+                                    <CreditCost cost={2} className="ml-2" />
                                 </Button>
                                 <Button
                                     onClick={handleUseIdea}
@@ -582,21 +895,23 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                             </>
                         ) : (
                             <>
-                                <Button
-                                    variant="ghost"
-                                    onClick={handleBack}
-                                    disabled={currentStep === 0}
-                                    leftIcon={<ArrowLeft className="w-4 h-4" />}
-                                >
-                                    Back
-                                </Button>
+                                {currentStep > 0 && (
+                                    <Button
+                                        variant="ghost"
+                                        onClick={handleBack}
+                                        leftIcon={<ArrowLeft className="w-4 h-4" />}
+                                    >
+                                        Back
+                                    </Button>
+                                )}
+                                {currentStep === 0 && <div />}
                                 <Button
                                     onClick={handleNext}
-                                    disabled={isGenerating}
+                                    disabled={isGenerating || !isCurrentStepValid()}
                                     rightIcon={isLastStep ? <Sparkles className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
                                 >
                                     {isLastStep ? 'Generate Ideas' : 'Next'}
-                                    {isLastStep && <CreditCost cost={2} />}
+                                    {isLastStep && <CreditCost cost={2} className="ml-2" />}
                                 </Button>
                             </>
                         )}
