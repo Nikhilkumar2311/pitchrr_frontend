@@ -25,6 +25,9 @@ import {
   Sparkles,
   Loader2,
   ChevronRight,
+  FileText,
+  Upload,
+  X,
 } from "lucide-react";
 import {
   Card,
@@ -143,6 +146,10 @@ export default function Dashboard() {
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [isIdeasListOpen, setIsIdeasListOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [summaryLogo, setSummaryLogo] = useState<string | null>(null);
+  const [summaryLogoName, setSummaryLogoName] = useState<string | null>(null);
   const [moduleProgress, setModuleProgress] = useState<Record<string, number>>(
     {}
   );
@@ -333,6 +340,67 @@ export default function Dashboard() {
     }
   }, [activeIdeaId]);
 
+  // Startup Summary handler
+  const handleGenerateSummary = useCallback(async () => {
+    if (!activeIdeaId) {
+      toast.error("No idea found. Please create one first.");
+      return;
+    }
+    setIsGeneratingSummary(true);
+    setIsSummaryModalOpen(false);
+    try {
+      const { data } = await api.post(`/export/startup-summary/${activeIdeaId}`, {
+        logoBase64: summaryLogo || undefined,
+      });
+      const jobId = data.jobId;
+
+      // Update credits cache
+      if (data.newBalance !== undefined) {
+        queryClient.setQueryData(["credits", "stats"], (old: any) => ({
+          ...old,
+          balance: data.newBalance,
+        }));
+      }
+
+      // Poll for completion
+      const pollStatus = async () => {
+        const { data: status } = await api.get(`/export/status/${jobId}`);
+        if (status.state === "completed" && status.downloadUrl) {
+          await downloadFile(status.downloadUrl, "startup_summary.pdf");
+          toast.success("Startup summary downloaded!");
+          setIsGeneratingSummary(false);
+        } else if (status.state === "failed") {
+          toast.error(
+            "Summary generation failed: " + (status.failedReason || "Unknown error")
+          );
+          setIsGeneratingSummary(false);
+        } else {
+          setTimeout(pollStatus, 2000);
+        }
+      };
+      pollStatus();
+    } catch (err) {
+      toast.error("Failed to generate startup summary");
+      setIsGeneratingSummary(false);
+    }
+  }, [activeIdeaId, summaryLogo]);
+
+  // Logo upload handler
+  const handleLogoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Logo must be under 2MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSummaryLogo(reader.result as string);
+      setSummaryLogoName(file.name);
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
   // Show skeleton while loading
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -444,6 +512,23 @@ export default function Dashboard() {
                 <span className="flex items-center gap-2">
                   <span>Generate Idea</span>
                   <CreditCost cost={2} />
+                </span>
+              </Button>
+              <Button
+                variant="secondary"
+                leftIcon={
+                  isGeneratingSummary ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <FileText className="w-4 h-4" />
+                  )
+                }
+                onClick={() => setIsSummaryModalOpen(true)}
+                disabled={isGeneratingSummary || !activeIdeaId}
+              >
+                <span className="flex items-center gap-2">
+                  <span>{isGeneratingSummary ? "Generating..." : "Startup Summary"}</span>
+                  {!isGeneratingSummary && <CreditCost cost={2} />}
                 </span>
               </Button>
               <Button
@@ -866,6 +951,195 @@ export default function Dashboard() {
         }}
         onCreateNew={() => setIsGenerateModalOpen(true)}
       />
+
+      {/* Startup Summary Modal */}
+      {isSummaryModalOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-50"
+            style={{
+              background: 'rgba(15, 23, 42, 0.4)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+            }}
+            onClick={() => setIsSummaryModalOpen(false)}
+          />
+          {/* Modal */}
+          <div
+            className="fixed inset-0 z-50 grid place-items-center p-4"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsSummaryModalOpen(false);
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              transition={{ type: "spring", damping: 28, stiffness: 350 }}
+              className="relative w-full max-w-md overflow-hidden"
+              style={{
+                background: 'white',
+                borderRadius: 'var(--dash-radius, 14px)',
+                boxShadow: '0 24px 48px rgba(0,0,0,0.12), 0 8px 16px rgba(0,0,0,0.06)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div
+                className="flex items-center justify-between px-6 py-4"
+                style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}
+              >
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-8 h-8 rounded-[8px] flex items-center justify-center"
+                    style={{ background: 'linear-gradient(135deg, #4F7DF3, #7A5CFF)' }}
+                  >
+                    <FileText className="w-4 h-4 text-white" />
+                  </div>
+                  <h2
+                    className="text-[15px] font-semibold"
+                    style={{
+                      color: 'var(--dash-text, #0F172A)',
+                      fontFamily: 'var(--dash-font-heading, Sora, sans-serif)',
+                    }}
+                  >
+                    Generate Startup Summary
+                  </h2>
+                </div>
+                <button
+                  onClick={() => setIsSummaryModalOpen(false)}
+                  className="p-1.5 rounded-lg transition-colors cursor-pointer"
+                  style={{ color: '#94A3B8' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = '#64748B';
+                    e.currentTarget.style.background = 'rgba(0,0,0,0.04)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = '#94A3B8';
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="px-6 py-5 space-y-4">
+                <p
+                  className="text-[13px] leading-relaxed"
+                  style={{ color: 'var(--dash-text-secondary, #64748B)' }}
+                >
+                  Generate a professional PDF summary of{' '}
+                  <strong style={{ color: 'var(--dash-text, #0F172A)' }}>
+                    {displayIdea?.title || 'your startup'}
+                  </strong>. 
+                  This includes all your generated modules — idea validation, branding, marketing, GTM, and more.
+                </p>
+
+                {/* Logo Upload */}
+                <div>
+                  <label
+                    className="text-[12px] font-semibold block mb-2"
+                    style={{ color: 'var(--dash-text, #0F172A)' }}
+                  >
+                    Upload Your Logo <span style={{ color: '#94A3B8', fontWeight: 400 }}>(optional)</span>
+                  </label>
+                  {summaryLogo ? (
+                    <div
+                      className="flex items-center gap-3 p-3 rounded-[10px]"
+                      style={{
+                        background: 'rgba(79,125,243,0.04)',
+                        border: '1px solid rgba(79,125,243,0.12)',
+                      }}
+                    >
+                      <img
+                        src={summaryLogo}
+                        alt="Logo preview"
+                        className="w-10 h-10 rounded-[6px] object-contain"
+                        style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.06)' }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[12px] font-medium truncate" style={{ color: 'var(--dash-text)' }}>
+                          {summaryLogoName}
+                        </div>
+                        <div className="text-[11px]" style={{ color: '#94A3B8' }}>Will appear on cover page</div>
+                      </div>
+                      <button
+                        onClick={() => { setSummaryLogo(null); setSummaryLogoName(null); }}
+                        className="p-1 rounded cursor-pointer"
+                        style={{ color: '#94A3B8' }}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label
+                      className="flex items-center justify-center gap-2 py-3 px-4 rounded-[10px] cursor-pointer transition-all"
+                      style={{
+                        border: '1.5px dashed rgba(79,125,243,0.2)',
+                        background: 'rgba(79,125,243,0.02)',
+                        color: '#4F7DF3',
+                        fontSize: '12px',
+                        fontWeight: 500,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(79,125,243,0.05)';
+                        e.currentTarget.style.borderColor = 'rgba(79,125,243,0.3)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(79,125,243,0.02)';
+                        e.currentTarget.style.borderColor = 'rgba(79,125,243,0.2)';
+                      }}
+                    >
+                      <Upload className="w-4 h-4" />
+                      <span>Upload logo (PNG, JPG, SVG — max 2MB)</span>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/svg+xml"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                  <p className="text-[11px] mt-1.5" style={{ color: '#94A3B8' }}>
+                    Your logo will replace the default Pitchrr logo on the cover page
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div
+                className="flex items-center justify-between px-6 py-4"
+                style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}
+              >
+                <CreditCost cost={2} size="md" />
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="secondary"
+                    onClick={() => setIsSummaryModalOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleGenerateSummary}
+                    rightIcon={<FileText className="w-4 h-4" />}
+                    style={{
+                      background: 'linear-gradient(135deg, #4F7DF3, #7A5CFF)',
+                    }}
+                  >
+                    Generate Summary
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </>
+      )}
     </>
   );
 }
