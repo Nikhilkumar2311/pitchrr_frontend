@@ -49,6 +49,7 @@ import {
 import { downloadFile } from '@/utils';
 import { CanvasLogoEditor } from '@/components/branding/CanvasLogoEditor';
 import { LogoPresets } from '@/components/branding/LogoPresets';
+import { StartupCard } from '@/components/branding/StartupCard';
 
 /**
  * Brand tone options
@@ -672,6 +673,22 @@ export default function Branding() {
                             ))}
                         </div>
                     </motion.div>
+                )}
+
+                {/* Startup Card Generator */}
+                {hasGenerated && branding && (
+                    <StartupCard
+                        startupName={startupName}
+                        primaryColor={branding?.color_palette?.primary || selectedColorPreset.primary}
+                        secondaryColor={branding?.color_palette?.secondary || selectedColorPreset.secondary}
+                        accentColor={branding?.color_palette?.accent}
+                        headingFont={branding?.typography?.heading_font || 'Inter'}
+                        bodyFont={branding?.typography?.body_font || 'Inter'}
+                        tagline={branding?.taglines?.[0] || ''}
+                        logoUrl={branding?.ai_logos?.[0]?.url}
+                        brandValues={branding?.brand_voice?.keywords || []}
+                        positioning={branding?.brand_voice?.description || ''}
+                    />
                 )}
             </motion.div>
         </div>
