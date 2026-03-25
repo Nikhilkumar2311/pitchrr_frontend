@@ -559,7 +559,7 @@ export default function PitchDeck() {
                                             className="text-[8px] leading-tight mt-0.5 line-clamp-3 opacity-60"
                                             style={{ color: selectedTheme.textColor }}
                                         >
-                                            {slide.content?.substring(0, 120)}
+                                            {typeof slide.content === 'string' ? slide.content.substring(0, 120) : Array.isArray(slide.content) ? (slide.content as string[]).join('. ').substring(0, 120) : ''}
                                         </div>
                                         {/* Mini bullet previews */}
                                         {slide.bullet_points && slide.bullet_points.length > 0 && (
@@ -574,7 +574,7 @@ export default function PitchDeck() {
                                                             className="text-[6px] leading-tight truncate"
                                                             style={{ color: selectedTheme.textColor, opacity: 0.55 }}
                                                         >
-                                                            {point.substring(0, 50)}
+                                                            {String(point).substring(0, 50)}
                                                         </span>
                                                     </div>
                                                 ))}
