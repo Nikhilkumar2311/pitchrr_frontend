@@ -4,7 +4,7 @@
  */
 
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, LogOut, Menu, X, Compass } from "lucide-react";
 import { useUIStore } from "@/store";
 import { useUser, useClerk } from "@clerk/clerk-react";
 import { UserAvatar } from "@/components/common/UserAvatar";
@@ -15,6 +15,7 @@ const navLinks = [
     { label: "How it Works", href: "#how-it-works" },
     { label: "Features", href: "#features" },
     { label: "Pricing", href: "#pricing" },
+    { label: "Explore", href: "/explore", isRoute: true },
 ];
 
 export function Header() {
@@ -58,27 +59,34 @@ export function Header() {
 
                     {/* Desktop Navigation - Center */}
                     <div className="hidden lg:flex items-center gap-1">
-                        {navLinks.map((link) => (
-                            <a
-                                key={link.label}
-                                href={link.href}
-                                className="px-3.5 py-1.5 text-[13px] font-medium rounded-lg transition-colors duration-200"
-                                style={{
-                                    fontFamily: "var(--font-body)",
-                                    color: "var(--color-text-secondary)",
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.color = "var(--color-text-primary)";
-                                    e.currentTarget.style.background = "rgba(0,0,0,0.03)";
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.color = "var(--color-text-secondary)";
-                                    e.currentTarget.style.background = "transparent";
-                                }}
-                            >
-                                {link.label}
-                            </a>
-                        ))}
+                        {navLinks.map((link) => {
+                            const NavTag = (link as any).isRoute ? Link : 'a';
+                            const navProps = (link as any).isRoute
+                                ? { to: link.href }
+                                : { href: link.href };
+                            return (
+                                <NavTag
+                                    key={link.label}
+                                    {...navProps as any}
+                                    className="px-3.5 py-1.5 text-[13px] font-medium rounded-lg transition-colors duration-200"
+                                    style={{
+                                        fontFamily: "var(--font-body)",
+                                        color: link.label === "Explore" ? "var(--color-primary-blue)" : "var(--color-text-secondary)",
+                                    }}
+                                    onMouseEnter={(e: any) => {
+                                        e.currentTarget.style.color = "var(--color-text-primary)";
+                                        e.currentTarget.style.background = "rgba(0,0,0,0.03)";
+                                    }}
+                                    onMouseLeave={(e: any) => {
+                                        e.currentTarget.style.color = link.label === "Explore" ? "var(--color-primary-blue)" : "var(--color-text-secondary)";
+                                        e.currentTarget.style.background = "transparent";
+                                    }}
+                                >
+                                    {link.label === "Explore" && <Compass className="w-3.5 h-3.5 inline mr-1" />}
+                                    {link.label}
+                                </NavTag>
+                            );
+                        })}
                     </div>
 
                     {/* Desktop Right Actions */}

@@ -118,3 +118,14 @@ body {
     background-size: 2000px 100%;
     animation: shimmer 2s infinite linear;
 }
+
+/* Comment/Post highlight flash — uses box-shadow to avoid inline style conflicts */
+@keyframes commentFlash {
+    0% { box-shadow: 0 0 0 3px rgba(79, 125, 243, 0.4), 0 0 20px rgba(79, 125, 243, 0.15); }
+    100% { box-shadow: 0 0 0 0px rgba(79, 125, 243, 0), 0 0 0px rgba(79, 125, 243, 0); }
+}
+
+.comment-highlight-flash {
+    animation: commentFlash 2s ease-out forwards;
+    border-radius: 0.75rem;
+}

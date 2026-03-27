@@ -62,6 +62,9 @@ const Grants = lazy(() => import('@/pages/modules/Grants'));
 const StartupChatbot = lazy(() => import('@/pages/modules/StartupChatbot'));
 const Services = lazy(() => import('@/pages/modules/Services'));
 
+// Lazy load explore/community page
+const Explore = lazy(() => import('@/pages/Explore'));
+
 // Lazy load store pages
 const CreditsStore = lazy(() => import('@/pages/store/CreditsStore'));
 
@@ -149,6 +152,15 @@ const router = createBrowserRouter([
             {
                 path: '/about',
                 element: <LazyPage><AboutUs /></LazyPage>,
+            },
+            // Community Explore (public)
+            {
+                path: '/explore',
+                element: <LazyPage><Explore /></LazyPage>,
+            },
+            {
+                path: '/explore/post/:postId',
+                element: <LazyPage><Explore /></LazyPage>,
             },
             {
                 path: '/sso-callback',
