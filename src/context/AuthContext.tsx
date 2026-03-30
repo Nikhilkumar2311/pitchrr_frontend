@@ -19,7 +19,7 @@ import {
     useRef,
     type ReactNode,
 } from 'react';
-import api from '@/services/api';
+// import api from '@/services/api';
 
 // User shape matching what our backend returns
 export interface AuthUser {
