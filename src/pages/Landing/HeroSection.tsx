@@ -7,7 +7,7 @@
 
 import { forwardRef } from "react";
 import { useUIStore } from "@/store";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Lightbulb, Sparkles } from "lucide-react";
 import { VelocityScroll } from "@/components/ui/VelocityScroll";

@@ -26,6 +26,12 @@ export function AutoPostPanel({ isOpen, onClose }: AutoPostPanelProps) {
 
   const handleToggle = async () => {
     if (!settings) return;
+
+    if (!settings.enabled && !settings.ideaId) {
+      toast.error('Please select a startup idea first');
+      return;
+    }
+
     try {
       await updateSettings.mutateAsync({
         enabled: !settings.enabled,

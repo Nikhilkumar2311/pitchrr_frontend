@@ -15,7 +15,7 @@ import {
   MessageSquare,
   ArrowRight,
 } from "lucide-react";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/context/AuthContext";
 
 /**
  * The 7 modules shown in the features section

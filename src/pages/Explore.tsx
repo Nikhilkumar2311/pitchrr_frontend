@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Compass, TrendingUp, Clock, Loader2, Sparkles, Zap, PenLine } from 'lucide-react';
-import { useUser } from '@clerk/clerk-react';
+import { useAuth } from '@/context/AuthContext';
 import { useParams } from 'react-router-dom';
 import { useFeed } from '@/hooks/useCommunity';
 import { PostCard } from '@/components/community/PostCard';
@@ -12,7 +12,7 @@ import { Footer } from '@/layout/Footer';
 import '@/styles/landing.css';
 
 export default function ExplorePage() {
-  const { user } = useUser();
+  const { user } = useAuth();
   const { postId: sharedPostId } = useParams<{ postId?: string }>();
   const [tab, setTab] = useState<'latest' | 'trending'>('latest');
   const [showCreateModal, setShowCreateModal] = useState(false);

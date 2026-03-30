@@ -245,3 +245,30 @@ export function useMyAchievements() {
   });
 }
 
+export interface MyPostsDashboardData {
+  posts: CommunityPost[];
+  totals: {
+    totalPosts: number;
+    totalLikes: number;
+    totalDislikes: number;
+    totalComments: number;
+    totalShares: number;
+  };
+  dailyAnalytics: {
+    date: string;
+    likes: number;
+    comments: number;
+    shares: number;
+    posts: number;
+  }[];
+}
+
+export function useMyPostsDashboard() {
+  return useQuery<MyPostsDashboardData>({
+    queryKey: ['my-posts-dashboard'],
+    queryFn: async () => {
+      const res = await api.get('/community/my-posts');
+      return res.data;
+    },
+  });
+}

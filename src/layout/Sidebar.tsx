@@ -15,13 +15,14 @@ import {
   Users,
   MessageSquare,
   HandCoins,
+  BarChart3,
   LogOut,
   X,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 import { useUIStore } from "@/store";
-import { useClerk } from "@clerk/clerk-react";
+import { useAuth } from "@/context/AuthContext";
 import { useParams } from "react-router-dom";
 
 const navItems = [
@@ -38,11 +39,12 @@ const navItems = [
   { icon: Users, label: "Competitor Analysis", path: "/dashboard/competitors" },
   { icon: HandCoins, label: "Grants & Funding", path: "/dashboard/grants" },
   { icon: MessageSquare, label: "AI Chatbot", path: "/dashboard/chat" },
+  { icon: BarChart3, label: "My Posts", path: "/dashboard/my-posts" },
 ];
 
 export function Sidebar() {
   const location = useLocation();
-  const { signOut } = useClerk();
+  const { logout: signOut } = useAuth();
   const {
     isSidebarOpen,
     isSidebarCollapsed,

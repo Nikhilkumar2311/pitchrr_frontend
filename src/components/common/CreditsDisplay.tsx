@@ -6,7 +6,7 @@
 
 import { Link } from 'react-router-dom';
 import { Coins, Plus } from 'lucide-react';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth } from '@/context/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 
