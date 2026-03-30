@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Copy, Check, ExternalLink } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useSharePost } from '@/hooks/useCommunity';
 import toast from 'react-hot-toast';
 
@@ -52,7 +53,12 @@ const SHARE_PLATFORMS = [
 
 export function ShareModal({ isOpen, onClose, postId, postContent }: ShareModalProps) {
   const [copied, setCopied] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const sharePost = useSharePost();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const postUrl = `${window.location.origin}/explore/post/${postId}`;
   const shareText = postContent.substring(0, 100) + (postContent.length > 100 ? '...' : '');
@@ -70,14 +76,16 @@ export function ShareModal({ isOpen, onClose, postId, postContent }: ShareModalP
     window.open(platform.getUrl(postUrl, shareText), '_blank', 'width=600,height=400');
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
           style={{ background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(6px)' }}
           onClick={onClose}
         >
@@ -162,6 +170,7 @@ export function ShareModal({ isOpen, onClose, postId, postContent }: ShareModalP
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
