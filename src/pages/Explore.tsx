@@ -8,7 +8,6 @@ import { PostCard } from '@/components/community/PostCard';
 import { CreatePostModal } from '@/components/community/CreatePostModal';
 import { AutoPostPanel } from '@/components/community/AutoPostPanel';
 import { Header } from '@/layout/Header';
-import { Footer } from '@/layout/Footer';
 import '@/styles/landing.css';
 
 export default function ExplorePage() {
@@ -250,8 +249,6 @@ export default function ExplorePage() {
         isOpen={showAutoPost}
         onClose={() => setShowAutoPost(false)}
       />
-
-      <Footer />
     </div>
   );
 }
