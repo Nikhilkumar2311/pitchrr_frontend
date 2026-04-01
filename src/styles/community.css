@@ -428,23 +428,24 @@ select:focus {
 @media (max-width: 768px) {
   .community-layout {
     grid-template-columns: 1fr;
-    padding: 72px 12px 80px;
+    padding: 88px 12px 80px;
     gap: 0;
   }
   .community-layout > aside {
     display: none !important;
   }
   .community-layout > main {
-    height: calc(100vh - 72px - 60px);
+    height: calc(100vh - 88px - 60px);
     padding-bottom: 20px;
+    padding-top: 8px;
   }
 
   /* Post composer adjustments */
   .post-composer-collapsed {
-    margin: 0 0 12px;
+    margin: 8px 0 12px;
   }
   .post-composer-expanded {
-    margin: 0 0 12px;
+    margin: 8px 0 12px;
   }
 
   /* Post card: reduce padding on mobile */

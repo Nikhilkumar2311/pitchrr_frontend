@@ -25,7 +25,7 @@ function timeAgo(dateString: string): string {
 
 const statusColors: Record<string, { bg: string; text: string; label: string }> = {
   PUBLISHED: { bg: '#ECFDF5', text: '#059669', label: 'Published' },
-  PENDING_REVIEW: { bg: '#FFF7ED', text: '#D97706', label: 'Pending' },
+  PENDING_REVIEW: { bg: '#FFF7ED', text: '#D97706', label: 'Under Review' },
   REJECTED: { bg: '#FEF2F2', text: '#DC2626', label: 'Rejected' },
   ARCHIVED: { bg: '#F3F4F6', text: '#6B7280', label: 'Archived' },
 };
@@ -85,8 +85,8 @@ function ExpandablePost({ post, navigate, deleteMutation }: any) {
           )}
         </div>
 
-        {/* Stats */}
-        <div className="flex items-center gap-3 sm:gap-4 shrink-0 self-end sm:self-auto">
+        {/* Stats + Actions row */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 self-end sm:self-center" onClick={e => e.stopPropagation()}>
           <div className="flex items-center gap-1 text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
             <ThumbsUp className="w-3 h-3" style={{ color: '#4F7DF3' }} />
             <span className="font-semibold">{post.likeCount}</span>
@@ -99,10 +99,9 @@ function ExpandablePost({ post, navigate, deleteMutation }: any) {
             <Share2 className="w-3 h-3" style={{ color: '#8B5CF6' }} />
             <span className="font-semibold">{post.shareCount}</span>
           </div>
-        </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto" onClick={e => e.stopPropagation()}>
+          <div className="w-px h-4 bg-gray-200 mx-0.5" />
+
           <button
             onClick={() => navigate(`/explore/post/${post.id}`)}
             className="p-1.5 rounded-lg hover:bg-blue-50 transition-colors"
@@ -117,8 +116,14 @@ function ExpandablePost({ post, navigate, deleteMutation }: any) {
           >
             <Trash2 className="w-3.5 h-3.5" style={{ color: '#EF4444' }} />
           </button>
-          <div className="w-px h-4 bg-gray-200 mx-1 border-none" />
-          <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+
+          <div className="w-px h-4 bg-gray-200 mx-0.5" />
+
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            title={expanded ? 'Collapse' : 'Expand comments'}
+          >
             {expanded ? (
               <ChevronUp className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
             ) : (
@@ -332,46 +337,44 @@ export default function MyPosts() {
           boxShadow: 'var(--shadow-soft)',
         }}
       >
-        <div className="flex items-center justify-between mb-5">
-          <div>
+        <div className="flex flex-col gap-3 mb-5">
+          {/* Title row */}
+          <div className="flex items-center justify-between">
             <h3
               className="text-sm font-bold"
               style={{ fontFamily: 'var(--font-heading)', color: 'var(--color-text-primary)' }}
             >
               Engagement Analytics
             </h3>
-            <div className="flex items-center gap-2 mt-1 relative">
-              <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
-                Performance overview:
-              </p>
-              <div className="relative group">
-                <select
-                  value={timeRange}
-                  onChange={(e) => setTimeRange(Number(e.target.value) as 30 | 14 | 7)}
-                  className="appearance-none text-[10px] font-semibold cursor-pointer pl-2 pr-6 py-1 rounded-md transition-colors"
-                  style={{
-                    background: 'rgba(79, 125, 243, 0.1)',
-                    color: '#4F7DF3',
-                    border: '1px solid rgba(79, 125, 243, 0.2)',
-                  }}
-                >
-                  <option value={7}>Last 7 days</option>
-                  <option value={14}>Last 14 days</option>
-                  <option value={30}>Last 30 days</option>
-                </select>
-                <ChevronDown className="w-3 h-3 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#4F7DF3' }} />
-              </div>
+            <div className="relative group">
+              <select
+                value={timeRange}
+                onChange={(e) => setTimeRange(Number(e.target.value) as 30 | 14 | 7)}
+                className="appearance-none text-[10px] font-semibold cursor-pointer pl-2 pr-6 py-1 rounded-md transition-colors"
+                style={{
+                  background: 'rgba(79, 125, 243, 0.1)',
+                  color: '#4F7DF3',
+                  border: '1px solid rgba(79, 125, 243, 0.2)',
+                }}
+              >
+                <option value={7}>Last 7 days</option>
+                <option value={14}>Last 14 days</option>
+                <option value={30}>Last 30 days</option>
+              </select>
+              <ChevronDown className="w-3 h-3 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#4F7DF3' }} />
             </div>
           </div>
-          <div className="flex items-center gap-3">
+
+          {/* Legend row */}
+          <div className="flex items-center gap-4">
             {[
               { label: 'Likes', color: '#4F7DF3' },
               { label: 'Comments', color: '#D97706' },
               { label: 'Shares', color: '#8B5CF6' },
             ].map(l => (
               <div key={l.label} className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full" style={{ background: l.color }} />
-                <span className="text-[9px] font-medium" style={{ color: 'var(--color-text-muted)' }}>
+                <div className="w-2.5 h-2.5 rounded-full" style={{ background: l.color }} />
+                <span className="text-[10px] font-medium" style={{ color: 'var(--color-text-muted)' }}>
                   {l.label}
                 </span>
               </div>
@@ -474,7 +477,7 @@ export default function MyPosts() {
               {[
                 { key: 'ALL', label: 'All' },
                 { key: 'PUBLISHED', label: 'Published', color: '#059669' },
-                { key: 'PENDING_REVIEW', label: 'Pending', color: '#D97706' },
+                { key: 'PENDING_REVIEW', label: 'Under Review', color: '#D97706' },
                 { key: 'REJECTED', label: 'Rejected', color: '#DC2626' },
               ].map((f) => (
                 <button
