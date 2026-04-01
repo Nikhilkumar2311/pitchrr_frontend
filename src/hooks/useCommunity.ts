@@ -315,6 +315,17 @@ export function useIsFollowing(userId?: string) {
   });
 }
 
+export function useMyFollowing(userId?: string) {
+  return useQuery<{ following: string[] }>({
+    queryKey: ['my-following', userId],
+    queryFn: async () => {
+      const res = await api.get(`/community/user/${userId}/following`);
+      return res.data;
+    },
+    enabled: !!userId,
+  });
+}
+
 // ============================================================================
 // Bookmark Hooks
 // ============================================================================

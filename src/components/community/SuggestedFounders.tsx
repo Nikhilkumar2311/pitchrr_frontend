@@ -1,17 +1,41 @@
 import { UserPlus } from 'lucide-react';
 import { useState } from 'react';
-
-const MOCK_FOUNDERS = [
-  { id: 'f1', name: 'Arjun Mehta', startup: 'FinStack AI', avatar: null, industry: 'Fintech' },
-  { id: 'f2', name: 'Priya Sharma', startup: 'EduNext', avatar: null, industry: 'EdTech' },
-  { id: 'f3', name: 'Rohan Gupta', startup: 'HealthPulse', avatar: null, industry: 'HealthTech' },
-  { id: 'f4', name: 'Ananya Desai', startup: 'GreenCharge', avatar: null, industry: 'CleanTech' },
-];
+import { useFollowUser } from '@/hooks/useCommunity';
+import { Link } from 'react-router-dom';
+import type { CommunityPost } from '@/hooks/useCommunity';
 
 const COLORS = ['#4F7DF3', '#8B5CF6', '#059669', '#D97706', '#EC4899'];
 
-export function SuggestedFounders() {
+interface SuggestedFoundersProps {
+  posts?: CommunityPost[];
+  currentUserId?: string;
+}
+
+export function SuggestedFounders({ posts = [], currentUserId }: SuggestedFoundersProps) {
   const [followed, setFollowed] = useState<Record<string, boolean>>({});
+  const followMutation = useFollowUser();
+
+  // Extract unique founders from posts, excluding current user
+  const founders = posts.reduce<{ id: string; name: string; avatar: string | null; startup: string | null; industry: string | null }[]>((acc, post) => {
+    if (post.userId === currentUserId) return acc;
+    if (acc.find((f) => f.id === post.userId)) return acc;
+    if (acc.length >= 4) return acc;
+    acc.push({
+      id: post.userId,
+      name: post.userName || 'Anonymous',
+      avatar: post.userAvatar,
+      startup: post.ideaTitle,
+      industry: post.industry,
+    });
+    return acc;
+  }, []);
+
+  if (founders.length === 0) return null;
+
+  const handleFollow = (userId: string) => {
+    setFollowed(prev => ({ ...prev, [userId]: !prev[userId] }));
+    followMutation.mutate(userId);
+  };
 
   return (
     <div className="sidebar-card">
@@ -22,40 +46,40 @@ export function SuggestedFounders() {
         </span>
       </div>
       <div className="sidebar-card-body space-y-3">
-        {MOCK_FOUNDERS.map((founder, i) => (
+        {founders.map((founder, i) => (
           <div key={founder.id} className="flex items-center gap-3">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
-              style={{ background: COLORS[i % COLORS.length] }}
-            >
-              {founder.name[0]}
-            </div>
+            <Link to={`/profile/${founder.id}`}>
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 cursor-pointer hover:ring-2 hover:ring-blue-200 transition-all"
+                style={{
+                  background: founder.avatar
+                    ? `url(${founder.avatar}) center/cover`
+                    : COLORS[i % COLORS.length],
+                }}
+              >
+                {!founder.avatar && founder.name[0]?.toUpperCase()}
+              </div>
+            </Link>
             <div className="flex-1 min-w-0">
-              <p
-                className="text-xs font-semibold truncate"
+              <Link
+                to={`/profile/${founder.id}`}
+                className="text-xs font-semibold truncate block hover:underline"
                 style={{ color: 'var(--color-text-primary)', fontFamily: 'var(--font-body)' }}
               >
                 {founder.name}
-              </p>
+              </Link>
               <p className="text-[10px] truncate" style={{ color: 'var(--color-text-muted)' }}>
-                {founder.startup} · {founder.industry}
+                {[founder.startup, founder.industry].filter(Boolean).join(' · ') || 'Founder'}
               </p>
             </div>
             <button
-              onClick={() => setFollowed(prev => ({ ...prev, [founder.id]: !prev[founder.id] }))}
+              onClick={() => handleFollow(founder.id)}
               className={`follow-btn ${followed[founder.id] ? 'following' : ''}`}
             >
               {followed[founder.id] ? 'Following' : 'Follow'}
             </button>
           </div>
         ))}
-
-        <button
-          className="text-[10px] font-semibold w-full text-center py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-          style={{ color: 'var(--color-primary-blue)' }}
-        >
-          See all →
-        </button>
       </div>
     </div>
   );

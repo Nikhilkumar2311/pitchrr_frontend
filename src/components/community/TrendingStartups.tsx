@@ -1,10 +1,5 @@
 import { Flame, ArrowUp } from 'lucide-react';
-
-const MOCK_STARTUPS = [
-  { rank: 1, name: 'FinStack AI', industry: 'Fintech', upvotes: 285 },
-  { rank: 2, name: 'EduNext', industry: 'EdTech', upvotes: 214 },
-  { rank: 3, name: 'HealthPulse', industry: 'HealthTech', upvotes: 189 },
-];
+import type { CommunityPost } from '@/hooks/useCommunity';
 
 const INDUSTRY_COLORS: Record<string, string> = {
   Fintech: '#4F7DF3',
@@ -12,9 +7,42 @@ const INDUSTRY_COLORS: Record<string, string> = {
   HealthTech: '#059669',
   CleanTech: '#10B981',
   DevTools: '#D97706',
+  SaaS: '#EC4899',
+  'AI/ML': '#6366F1',
+  Web3: '#F59E0B',
+  Marketplace: '#14B8A6',
+  Technology: '#3B82F6',
 };
 
-export function TrendingStartups() {
+interface TrendingStartupsProps {
+  posts?: CommunityPost[];
+}
+
+export function TrendingStartups({ posts = [] }: TrendingStartupsProps) {
+  // Aggregate startups by ideaTitle from real posts data
+  const startupMap = new Map<string, { name: string; industry: string; upvotes: number }>();
+
+  posts.forEach((post) => {
+    if (!post.ideaTitle) return;
+    const existing = startupMap.get(post.ideaTitle);
+    if (existing) {
+      existing.upvotes += post.likeCount;
+    } else {
+      startupMap.set(post.ideaTitle, {
+        name: post.ideaTitle,
+        industry: post.industry || 'Startup',
+        upvotes: post.likeCount,
+      });
+    }
+  });
+
+  // Sort by upvotes and take top 3
+  const startups = Array.from(startupMap.values())
+    .sort((a, b) => b.upvotes - a.upvotes)
+    .slice(0, 3);
+
+  if (startups.length === 0) return null;
+
   return (
     <div className="sidebar-card">
       <div className="sidebar-card-header">
@@ -24,13 +52,13 @@ export function TrendingStartups() {
         </span>
       </div>
       <div className="sidebar-card-body space-y-2.5">
-        {MOCK_STARTUPS.map((startup) => (
-          <div key={startup.rank} className="flex items-center gap-3 py-1">
+        {startups.map((startup, index) => (
+          <div key={startup.name} className="flex items-center gap-3 py-1">
             <span
               className="text-xs font-bold w-5 text-center"
-              style={{ color: startup.rank <= 3 ? '#f59e0b' : 'var(--color-text-muted)' }}
+              style={{ color: index < 3 ? '#f59e0b' : 'var(--color-text-muted)' }}
             >
-              #{startup.rank}
+              #{index + 1}
             </span>
             <div className="flex-1 min-w-0">
               <p

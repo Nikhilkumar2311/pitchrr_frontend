@@ -1,9 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Sparkles, PenLine, Bookmark, Users, X } from 'lucide-react';
+import { Loader2, Sparkles, PenLine, Bookmark, Users } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { useFeed, useMyBookmarks } from '@/hooks/useCommunity';
+import { useFeed, useMyBookmarks, useMyFollowing } from '@/hooks/useCommunity';
 import { PostCard } from '@/components/community/PostCard';
 import { CreatePostModal } from '@/components/community/CreatePostModal';
 import { AutoPostPanel } from '@/components/community/AutoPostPanel';
@@ -33,10 +33,10 @@ export default function ExplorePage() {
   const [showAutoPost, setShowAutoPost] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('feed');
-  const [activeTopic, setActiveTopic] = useState<string | null>(null);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useFeed(tab);
   const { data: savedData, isLoading: savedLoading } = useMyBookmarks();
+  const { data: followingData } = useMyFollowing(user?.id);
 
   // Sync nav with tab
   const handleNavChange = (key: string) => {
@@ -49,13 +49,11 @@ export default function ExplorePage() {
 
     if (key === 'saved') {
       setViewMode('saved');
-      setActiveTopic(null);
       return;
     }
 
     if (key === 'following') {
       setViewMode('following');
-      setActiveTopic(null);
       return;
     }
 
@@ -83,10 +81,9 @@ export default function ExplorePage() {
   const allPosts = data?.pages.flatMap((page) => page.posts) ?? [];
   const savedPosts = savedData?.pages?.flatMap((page) => page.posts) ?? [];
 
-  // Apply topic filter
-  const filteredPosts = activeTopic
-    ? allPosts.filter((p) => p.industry?.toLowerCase() === activeTopic.toLowerCase())
-    : allPosts;
+  // Following feed: filter allPosts to show only posts from followed users
+  const followingIds = followingData?.following ?? [];
+  const followingPosts = allPosts.filter((p) => followingIds.includes(p.userId));
 
   // Auto-scroll to shared post when loaded
   useEffect(() => {
@@ -115,7 +112,10 @@ export default function ExplorePage() {
   };
 
   // Determine which posts to show based on viewMode
-  const displayPosts = viewMode === 'saved' ? savedPosts : filteredPosts;
+  const displayPosts =
+    viewMode === 'saved' ? savedPosts :
+    viewMode === 'following' ? followingPosts :
+    allPosts;
   const displayLoading = viewMode === 'saved' ? savedLoading : isLoading;
   const isFeedView = viewMode === 'feed';
 
@@ -123,8 +123,8 @@ export default function ExplorePage() {
   const emptyConfig: Record<ViewMode, { icon: React.ReactNode; title: string; subtitle: string }> = {
     feed: {
       icon: <Sparkles className="w-7 h-7" style={{ color: 'var(--color-primary-blue)' }} />,
-      title: activeTopic ? `No posts in ${activeTopic}` : 'No posts yet',
-      subtitle: activeTopic ? 'Try a different topic or clear the filter.' : 'Be the first to share your startup journey!',
+      title: 'No posts yet',
+      subtitle: 'Be the first to share your startup journey!',
     },
     saved: {
       icon: <Bookmark className="w-7 h-7" style={{ color: 'var(--color-primary-blue)' }} />,
@@ -152,8 +152,8 @@ export default function ExplorePage() {
         rightSidebar={
           <div className="space-y-4">
             <AIPromptIdeas onSelectPrompt={handlePromptSelect} />
-            <SuggestedFounders />
-            <TrendingStartups />
+            <SuggestedFounders posts={allPosts} currentUserId={user?.id} />
+            <TrendingStartups posts={allPosts} />
           </div>
         }
       >
@@ -164,28 +164,6 @@ export default function ExplorePage() {
           </div>
         )}
 
-        {/* Active Topic Filter Indicator */}
-        {activeTopic && isFeedView && (
-          <div
-            className="flex items-center gap-2 mb-4 px-4 py-2.5 rounded-xl"
-            style={{
-              background: 'rgba(79, 125, 243, 0.06)',
-              border: '1px solid rgba(79, 125, 243, 0.15)',
-            }}
-          >
-            <span className="text-xs font-semibold" style={{ color: 'var(--color-primary-blue)' }}>
-              Filtering by: {activeTopic}
-            </span>
-            <button
-              onClick={() => setActiveTopic(null)}
-              className="ml-auto p-1 rounded-lg hover:bg-white/60 transition-colors"
-              style={{ color: 'var(--color-text-muted)' }}
-            >
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        )}
-
         {/* Feed */}
         {displayLoading ? (
           <div className="flex items-center justify-center py-24">
@@ -193,7 +171,7 @@ export default function ExplorePage() {
           </div>
         ) : displayPosts.length === 0 ? (
           <motion.div
-            key={viewMode + '-empty-' + (activeTopic || '')}
+            key={viewMode + '-empty'}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="text-center py-24"
@@ -213,7 +191,7 @@ export default function ExplorePage() {
             <p className="text-sm mb-6" style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-body)' }}>
               {emptyConfig[viewMode].subtitle}
             </p>
-            {isFeedView && !activeTopic && user && (
+            {isFeedView && user && (
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowBigUp, MessageCircle, Share2, Trash2, Bot,
-  ChevronDown, ChevronUp, Bookmark, MoreHorizontal, Repeat2,
+  ArrowBigUp, MessageCircle, Share2, Bot,
+  ChevronDown, ChevronUp, Bookmark
 } from 'lucide-react';
-import { type CommunityPost, useReactToPost, useDeletePost, useToggleBookmark, useFollowUser, useIsFollowing } from '@/hooks/useCommunity';
+import { type CommunityPost, useReactToPost, useToggleBookmark, useFollowUser, useIsFollowing } from '@/hooks/useCommunity';
 import { CommentSection } from './CommentSection';
 import { ShareModal } from './ShareModal';
 import { Link } from 'react-router-dom';
@@ -30,11 +30,9 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
   const [showComments, setShowComments] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
   const [localFollowed, setLocalFollowed] = useState<boolean | null>(null);
 
   const reactMutation = useReactToPost();
-  const deleteMutation = useDeletePost();
   const bookmarkMutation = useToggleBookmark();
   const followMutation = useFollowUser();
 
@@ -136,42 +134,6 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
               {isFollowed ? 'Following' : 'Follow'}
             </button>
           )}
-
-          {/* Menu */}
-          <div className="relative">
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-              style={{ color: 'var(--color-text-muted)' }}
-            >
-              <MoreHorizontal className="w-4 h-4" />
-            </button>
-            {showMenu && (
-              <div
-                className="absolute right-0 top-8 w-36 rounded-xl shadow-lg border py-1 z-20"
-                style={{ background: 'white', borderColor: 'var(--color-border)' }}
-              >
-                {isOwner && (
-                  <button
-                    onClick={() => { deleteMutation.mutate(post.id); setShowMenu(false); }}
-                    className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs hover:bg-red-50 transition-colors"
-                    style={{ color: '#EF4444' }}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    Delete Post
-                  </button>
-                )}
-                <button
-                  onClick={() => { handleBookmark(); setShowMenu(false); }}
-                  className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-50 transition-colors"
-                  style={{ color: 'var(--color-text-secondary)' }}
-                >
-                  <Bookmark className="w-3.5 h-3.5" />
-                  {isBookmarked ? 'Unsave' : 'Save Post'}
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
@@ -207,11 +169,6 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
           <MessageCircle className="w-4 h-4" />
           {post.commentCount > 0 && <span>{post.commentCount}</span>}
           {showComments ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-        </button>
-
-        {/* Repost (UI-only) */}
-        <button className="post-action-btn">
-          <Repeat2 className="w-4 h-4" />
         </button>
 
         {/* Spacer */}

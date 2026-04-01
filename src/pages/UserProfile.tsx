@@ -2,14 +2,16 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Loader2, ExternalLink, Globe, ArrowLeft,
+  Loader2, ExternalLink, Globe, ArrowLeft, Pencil, X, Save, Zap,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import {
-  useUserProfile, useUserPosts, useFollowUser, useIsFollowing,
+  useUserProfile, useUserPosts, useFollowUser, useIsFollowing, useUpdateProfile,
 } from '@/hooks/useCommunity';
 import { PostCard } from '@/components/community/PostCard';
 import { Header } from '@/layout/Header';
+import { AutoPostPanel } from '@/components/community/AutoPostPanel';
+import toast from 'react-hot-toast';
 import '@/styles/landing.css';
 import '@/styles/community.css';
 
@@ -17,14 +19,53 @@ export default function UserProfile() {
   const { userId } = useParams<{ userId: string }>();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
+  const [isEditing, setIsEditing] = useState(false);
+  const [showAutoPost, setShowAutoPost] = useState(false);
 
   const { data: profile, isLoading } = useUserProfile(userId);
   const { data: postsData, isLoading: postsLoading } = useUserPosts(userId);
   const { data: followStatus } = useIsFollowing(userId);
   const followMutation = useFollowUser();
+  const updateProfile = useUpdateProfile();
 
   const isOwnProfile = user?.id === userId;
   const allPosts = postsData?.pages?.flatMap((p) => p.posts) ?? [];
+
+  // Edit form state
+  const [editForm, setEditForm] = useState({
+    bio: '',
+    headline: '',
+    website: '',
+    twitter: '',
+    linkedin: '',
+  });
+
+  const startEditing = () => {
+    setEditForm({
+      bio: profile?.bio || '',
+      headline: profile?.headline || '',
+      website: profile?.website || '',
+      twitter: profile?.twitter || '',
+      linkedin: profile?.linkedin || '',
+    });
+    setIsEditing(true);
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      await updateProfile.mutateAsync({
+        bio: editForm.bio.trim() || undefined,
+        headline: editForm.headline.trim() || undefined,
+        website: editForm.website.trim() || undefined,
+        twitter: editForm.twitter.trim() || undefined,
+        linkedin: editForm.linkedin.trim() || undefined,
+      });
+      toast.success('Profile updated!');
+      setIsEditing(false);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to update profile');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -108,7 +149,7 @@ export default function UserProfile() {
                 >
                   {profile.userName}
                 </h1>
-                {profile.headline && (
+                {profile.headline && !isEditing && (
                   <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
                     {profile.headline}
                   </p>
@@ -127,19 +168,169 @@ export default function UserProfile() {
                 )}
               </div>
 
-              {!isOwnProfile && user && (
-                <button
-                  onClick={() => userId && followMutation.mutate(userId)}
-                  className={`follow-btn ${followStatus?.isFollowing ? 'following' : ''}`}
-                  style={{ marginTop: '4px' }}
-                >
-                  {followStatus?.isFollowing ? 'Following' : 'Follow'}
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {isOwnProfile && !isEditing && (
+                  <button
+                    onClick={startEditing}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-all hover:bg-blue-50"
+                    style={{
+                      color: 'var(--color-primary-blue)',
+                      border: '1px solid rgba(79, 125, 243, 0.2)',
+                      fontFamily: 'var(--font-body)',
+                    }}
+                  >
+                    <Pencil className="w-3 h-3" />
+                    Edit Profile
+                  </button>
+                )}
+                {!isOwnProfile && user && (
+                  <button
+                    onClick={() => userId && followMutation.mutate(userId)}
+                    className={`follow-btn ${followStatus?.isFollowing ? 'following' : ''}`}
+                    style={{ marginTop: '4px' }}
+                  >
+                    {followStatus?.isFollowing ? 'Following' : 'Follow'}
+                  </button>
+                )}
+              </div>
             </div>
 
-            {/* Bio */}
-            {profile.bio && (
+            {/* Edit Form */}
+            <AnimatePresence>
+              {isEditing && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-4 space-y-3 overflow-hidden"
+                >
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-[10px] font-semibold mb-1 block" style={{ color: 'var(--color-text-muted)' }}>
+                        Headline
+                      </label>
+                      <input
+                        value={editForm.headline}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, headline: e.target.value }))}
+                        placeholder="e.g. Founder & CEO at StartupX"
+                        className="w-full rounded-xl px-3 py-2.5 text-xs outline-none transition-all focus:ring-2"
+                        style={{
+                          background: 'var(--color-bg-light)',
+                          border: '1px solid var(--color-border)',
+                          color: 'var(--color-text-primary)',
+                          fontFamily: 'var(--font-body)',
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-semibold mb-1 block" style={{ color: 'var(--color-text-muted)' }}>
+                        Bio
+                      </label>
+                      <textarea
+                        value={editForm.bio}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, bio: e.target.value }))}
+                        placeholder="Tell us about yourself and your startup journey..."
+                        rows={3}
+                        maxLength={500}
+                        className="w-full resize-none rounded-xl px-3 py-2.5 text-xs outline-none transition-all focus:ring-2"
+                        style={{
+                          background: 'var(--color-bg-light)',
+                          border: '1px solid var(--color-border)',
+                          color: 'var(--color-text-primary)',
+                          fontFamily: 'var(--font-body)',
+                        }}
+                      />
+                      <span className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>
+                        {editForm.bio.length}/500
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-[10px] font-semibold mb-1 block" style={{ color: 'var(--color-text-muted)' }}>
+                          Website
+                        </label>
+                        <input
+                          value={editForm.website}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, website: e.target.value }))}
+                          placeholder="https://..."
+                          className="w-full rounded-xl px-3 py-2.5 text-xs outline-none transition-all focus:ring-2"
+                          style={{
+                            background: 'var(--color-bg-light)',
+                            border: '1px solid var(--color-border)',
+                            color: 'var(--color-text-primary)',
+                            fontFamily: 'var(--font-body)',
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold mb-1 block" style={{ color: 'var(--color-text-muted)' }}>
+                          Twitter / X
+                        </label>
+                        <input
+                          value={editForm.twitter}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, twitter: e.target.value }))}
+                          placeholder="@handle"
+                          className="w-full rounded-xl px-3 py-2.5 text-xs outline-none transition-all focus:ring-2"
+                          style={{
+                            background: 'var(--color-bg-light)',
+                            border: '1px solid var(--color-border)',
+                            color: 'var(--color-text-primary)',
+                            fontFamily: 'var(--font-body)',
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold mb-1 block" style={{ color: 'var(--color-text-muted)' }}>
+                          LinkedIn
+                        </label>
+                        <input
+                          value={editForm.linkedin}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, linkedin: e.target.value }))}
+                          placeholder="https://linkedin.com/in/..."
+                          className="w-full rounded-xl px-3 py-2.5 text-xs outline-none transition-all focus:ring-2"
+                          style={{
+                            background: 'var(--color-bg-light)',
+                            border: '1px solid var(--color-border)',
+                            color: 'var(--color-text-primary)',
+                            fontFamily: 'var(--font-body)',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleSaveProfile}
+                      disabled={updateProfile.isPending}
+                      className="btn-gradient flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs disabled:opacity-50"
+                    >
+                      {updateProfile.isPending ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Save className="w-3 h-3" />
+                      )}
+                      Save Changes
+                    </motion.button>
+                    <button
+                      onClick={() => setIsEditing(false)}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium hover:bg-gray-100 transition-colors"
+                      style={{ color: 'var(--color-text-muted)' }}
+                    >
+                      <X className="w-3 h-3" />
+                      Cancel
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Bio (show only when not editing) */}
+            {profile.bio && !isEditing && (
               <p
                 className="text-sm leading-relaxed mt-3"
                 style={{ color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}
@@ -148,8 +339,8 @@ export default function UserProfile() {
               </p>
             )}
 
-            {/* Social Links */}
-            {(profile.website || profile.twitter || profile.linkedin) && (
+            {/* Social Links (show only when not editing) */}
+            {!isEditing && (profile.website || profile.twitter || profile.linkedin) && (
               <div className="flex items-center gap-3 mt-3">
                 {profile.website && (
                   <a
@@ -214,6 +405,25 @@ export default function UserProfile() {
           </div>
         </motion.div>
 
+        {/* Action Bar (own profile only) */}
+        {isOwnProfile && (
+          <div className="flex items-center gap-3 mb-5">
+            <button
+              onClick={() => setShowAutoPost(true)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-semibold transition-all hover:bg-violet-50"
+              style={{
+                color: 'var(--color-primary-violet)',
+                border: '1px solid rgba(139, 92, 246, 0.2)',
+                background: 'rgba(139, 92, 246, 0.04)',
+                fontFamily: 'var(--font-body)',
+              }}
+            >
+              <Zap className="w-3.5 h-3.5" />
+              Auto-Post Settings
+            </button>
+          </div>
+        )}
+
         {/* Tabs */}
         <div className="flex items-center gap-2 mb-5">
           <button
@@ -260,6 +470,12 @@ export default function UserProfile() {
           </div>
         )}
       </div>
+
+      {/* Auto-Post Panel */}
+      <AutoPostPanel
+        isOpen={showAutoPost}
+        onClose={() => setShowAutoPost(false)}
+      />
     </div>
   );
 }
