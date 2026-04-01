@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Loader2, ExternalLink, Globe, ArrowLeft, Pencil, X, Save, Zap,
+  Loader2, ExternalLink, Globe, ArrowLeft, Pencil, X, Save, Zap, Camera,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import {
-  useUserProfile, useUserPosts, useFollowUser, useIsFollowing, useUpdateProfile,
+  useUserProfile, useUserPosts, useFollowUser, useIsFollowing, useUpdateProfile, useUpdateCoreProfile,
 } from '@/hooks/useCommunity';
 import { PostCard } from '@/components/community/PostCard';
 import { Header } from '@/layout/Header';
@@ -21,12 +21,15 @@ export default function UserProfile() {
   const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
   const [isEditing, setIsEditing] = useState(false);
   const [showAutoPost, setShowAutoPost] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: profile, isLoading } = useUserProfile(userId);
   const { data: postsData, isLoading: postsLoading } = useUserPosts(userId);
   const { data: followStatus } = useIsFollowing(userId);
   const followMutation = useFollowUser();
   const updateProfile = useUpdateProfile();
+  const updateCoreProfile = useUpdateCoreProfile();
 
   const isOwnProfile = user?.id === userId;
   const allPosts = postsData?.pages?.flatMap((p) => p.posts) ?? [];
@@ -48,11 +51,56 @@ export default function UserProfile() {
       twitter: profile?.twitter || '',
       linkedin: profile?.linkedin || '',
     });
+    setAvatarPreview(null);
     setIsEditing(true);
+  };
+
+  // Handle avatar file selection
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image must be less than 2MB');
+      return;
+    }
+
+    // Read and resize the image
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        // Create a canvas to resize
+        const canvas = document.createElement('canvas');
+        const size = 128; // Output 128x128 avatar
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d')!;
+
+        // Center crop
+        const minDim = Math.min(img.width, img.height);
+        const sx = (img.width - minDim) / 2;
+        const sy = (img.height - minDim) / 2;
+        ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        setAvatarPreview(dataUrl);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSaveProfile = async () => {
     try {
+      // Update community profile (bio, headline, social links)
       await updateProfile.mutateAsync({
         bio: editForm.bio.trim() || undefined,
         headline: editForm.headline.trim() || undefined,
@@ -60,12 +108,24 @@ export default function UserProfile() {
         twitter: editForm.twitter.trim() || undefined,
         linkedin: editForm.linkedin.trim() || undefined,
       });
+
+      // Update core profile (avatar) if changed
+      if (avatarPreview) {
+        await updateCoreProfile.mutateAsync({
+          avatarUrl: avatarPreview,
+        });
+      }
+
       toast.success('Profile updated!');
       setIsEditing(false);
+      setAvatarPreview(null);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Failed to update profile');
     }
   };
+
+  // Determine the avatar to display
+  const displayAvatar = avatarPreview || profile?.userAvatar || user?.imageUrl;
 
   if (isLoading) {
     return (
@@ -130,15 +190,43 @@ export default function UserProfile() {
 
           <div className="px-6 pb-6 -mt-10">
             {/* Avatar */}
-            <div
-              className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white ring-4 ring-white"
-              style={{
-                background: profile.userAvatar
-                  ? `url(${profile.userAvatar}) center/cover`
-                  : 'var(--color-gradient)',
-              }}
-            >
-              {!profile.userAvatar && (profile.userName?.[0]?.toUpperCase() || 'U')}
+            <div className="relative inline-block">
+              <div
+                className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white ring-4 ring-white overflow-hidden"
+                style={{
+                  background: displayAvatar
+                    ? 'transparent'
+                    : 'var(--color-gradient)',
+                }}
+              >
+                {displayAvatar ? (
+                  <img
+                    src={displayAvatar}
+                    alt={profile.userName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  profile.userName?.[0]?.toUpperCase() || 'U'
+                )}
+              </div>
+
+              {/* Avatar change overlay (own profile + editing) */}
+              {isOwnProfile && isEditing && (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute inset-0 w-20 h-20 rounded-full flex items-center justify-center bg-black/40 text-white opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                  title="Change avatar"
+                >
+                  <Camera className="w-5 h-5" />
+                </button>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="hidden"
+              />
             </div>
 
             <div className="flex items-start justify-between mt-3">
@@ -204,6 +292,13 @@ export default function UserProfile() {
                   exit={{ opacity: 0, height: 0 }}
                   className="mt-4 space-y-3 overflow-hidden"
                 >
+                  {/* Avatar preview hint */}
+                  {avatarPreview && (
+                    <p className="text-[10px] font-medium" style={{ color: '#059669' }}>
+                      ✓ New avatar selected — will be saved when you click "Save Changes"
+                    </p>
+                  )}
+
                   <div className="space-y-3">
                     <div>
                       <label className="text-[10px] font-semibold mb-1 block" style={{ color: 'var(--color-text-muted)' }}>
@@ -213,7 +308,7 @@ export default function UserProfile() {
                         value={editForm.headline}
                         onChange={(e) => setEditForm(prev => ({ ...prev, headline: e.target.value }))}
                         placeholder="e.g. Founder & CEO at StartupX"
-                        className="w-full rounded-xl px-3 py-2.5 text-xs outline-none transition-all focus:ring-2"
+                        className="w-full rounded-xl px-3 py-2.5 text-xs outline-none transition-all"
                         style={{
                           background: 'var(--color-bg-light)',
                           border: '1px solid var(--color-border)',
@@ -233,7 +328,7 @@ export default function UserProfile() {
                         placeholder="Tell us about yourself and your startup journey..."
                         rows={3}
                         maxLength={500}
-                        className="w-full resize-none rounded-xl px-3 py-2.5 text-xs outline-none transition-all focus:ring-2"
+                        className="w-full resize-none rounded-xl px-3 py-2.5 text-xs outline-none transition-all"
                         style={{
                           background: 'var(--color-bg-light)',
                           border: '1px solid var(--color-border)',
@@ -255,7 +350,7 @@ export default function UserProfile() {
                           value={editForm.website}
                           onChange={(e) => setEditForm(prev => ({ ...prev, website: e.target.value }))}
                           placeholder="https://..."
-                          className="w-full rounded-xl px-3 py-2.5 text-xs outline-none transition-all focus:ring-2"
+                          className="w-full rounded-xl px-3 py-2.5 text-xs outline-none transition-all"
                           style={{
                             background: 'var(--color-bg-light)',
                             border: '1px solid var(--color-border)',
@@ -272,7 +367,7 @@ export default function UserProfile() {
                           value={editForm.twitter}
                           onChange={(e) => setEditForm(prev => ({ ...prev, twitter: e.target.value }))}
                           placeholder="@handle"
-                          className="w-full rounded-xl px-3 py-2.5 text-xs outline-none transition-all focus:ring-2"
+                          className="w-full rounded-xl px-3 py-2.5 text-xs outline-none transition-all"
                           style={{
                             background: 'var(--color-bg-light)',
                             border: '1px solid var(--color-border)',
@@ -289,7 +384,7 @@ export default function UserProfile() {
                           value={editForm.linkedin}
                           onChange={(e) => setEditForm(prev => ({ ...prev, linkedin: e.target.value }))}
                           placeholder="https://linkedin.com/in/..."
-                          className="w-full rounded-xl px-3 py-2.5 text-xs outline-none transition-all focus:ring-2"
+                          className="w-full rounded-xl px-3 py-2.5 text-xs outline-none transition-all"
                           style={{
                             background: 'var(--color-bg-light)',
                             border: '1px solid var(--color-border)',
@@ -306,10 +401,10 @@ export default function UserProfile() {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={handleSaveProfile}
-                      disabled={updateProfile.isPending}
+                      disabled={updateProfile.isPending || updateCoreProfile.isPending}
                       className="btn-gradient flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs disabled:opacity-50"
                     >
-                      {updateProfile.isPending ? (
+                      {(updateProfile.isPending || updateCoreProfile.isPending) ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
                       ) : (
                         <Save className="w-3 h-3" />
@@ -317,7 +412,7 @@ export default function UserProfile() {
                       Save Changes
                     </motion.button>
                     <button
-                      onClick={() => setIsEditing(false)}
+                      onClick={() => { setIsEditing(false); setAvatarPreview(null); }}
                       className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium hover:bg-gray-100 transition-colors"
                       style={{ color: 'var(--color-text-muted)' }}
                     >

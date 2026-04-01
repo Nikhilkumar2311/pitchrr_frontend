@@ -2,6 +2,15 @@
    Pitchrr Community Page Design System
    ============================================ */
 
+/* --- Focus / Active State for Inputs --- */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none !important;
+  border-color: var(--color-primary-blue) !important;
+  box-shadow: 0 0 0 3px rgba(79, 125, 243, 0.15) !important;
+}
+
 /* --- Global scrollbar hiding --- */
 * {
   scrollbar-width: none;

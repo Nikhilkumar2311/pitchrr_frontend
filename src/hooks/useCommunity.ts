@@ -407,6 +407,20 @@ export function useUpdateProfile() {
   });
 }
 
+export function useUpdateCoreProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { name?: string; avatarUrl?: string }) => {
+      const res = await api.post('/users/me', data);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+    },
+  });
+}
+
 export function useUserPosts(userId?: string) {
   return useInfiniteQuery<{ posts: CommunityPost[]; nextCursor: string | null; hasMore: boolean }>({
     queryKey: ['user-posts', userId],
