@@ -55,7 +55,7 @@ const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const IdeaValidation = lazy(() => import('@/pages/modules/IdeaValidation'));
 const MarketingStrategy = lazy(() => import('@/pages/modules/MarketingStrategy'));
 const Branding = lazy(() => import('@/pages/modules/Branding'));
-const PitchDeck = lazy(() => import('@/pages/modules/PitchDeck'));
+const PitchDeckList = lazy(() => import('@/pages/modules/deck-editor/PitchDeckList'));
 const GTMStrategy = lazy(() => import('@/pages/modules/GTMStrategy'));
 const CompetitorAnalysis = lazy(() => import('@/pages/modules/CompetitorAnalysis'));
 const Grants = lazy(() => import('@/pages/modules/Grants'));
@@ -114,6 +114,9 @@ function RootLayout() {
  * It enables data loading and other advanced features.
  */
 import { AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
+
+// Lazy load Deck Editor (Canva-like slide builder)
+const DeckEditorPage = lazy(() => import('@/pages/modules/deck-editor/DeckEditorPage'));
 
 const router = createBrowserRouter([
     {
@@ -233,14 +236,14 @@ const router = createBrowserRouter([
                         path: 'branding/:ideaId',
                         element: <LazyPage><Branding /></LazyPage>,
                     },
-                    // Module 4: Pitch Deck
+                    // Module 4: Pitch Deck (list + editor)
                     {
                         path: 'pitch',
-                        element: <LazyPage><PitchDeck /></LazyPage>,
+                        element: <LazyPage><PitchDeckList /></LazyPage>,
                     },
                     {
-                        path: 'pitch/:ideaId',
-                        element: <LazyPage><PitchDeck /></LazyPage>,
+                        path: 'pitch/:deckId',
+                        element: <LazyPage><DeckEditorPage /></LazyPage>,
                     },
                     // Module 5: GTM Strategy
                     {

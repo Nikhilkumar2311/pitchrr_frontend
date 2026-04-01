@@ -8,3 +8,9 @@
 export { useUIStore } from './uiStore';
 export { useIdeaStore, getStoredActiveIdeaId } from './ideaStore';
 export type { StartupIdea } from './ideaStore';
+export { useDeckEditorStore } from './useDeckEditorStore';
+export {
+  createTextElement,
+  createImageElement,
+  createShapeElement,
+} from './useDeckEditorStore';

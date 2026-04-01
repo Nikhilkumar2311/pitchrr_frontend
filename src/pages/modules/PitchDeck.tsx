@@ -16,7 +16,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     Presentation,
@@ -27,6 +27,7 @@ import {
     Edit,
     Loader2,
     FileText,
+    Pencil,
 } from 'lucide-react';
 import {
     Card,
@@ -46,8 +47,10 @@ import {
     useGenerateModule,
     useExportModule,
     useExportStatus,
+    useCreateDeck,
 } from '@/hooks';
 import { downloadFile } from '@/utils';
+import { convertAIToDeckDocument } from '@/utils/deckConverter';
 import { useIdeaStore, getStoredActiveIdeaId } from '@/store';
 
 interface Slide {
@@ -186,6 +189,7 @@ const themes: Theme[] = [
 
 export default function PitchDeck() {
     const { ideaId: urlIdeaId } = useParams<{ ideaId?: string }>();
+    const navigate = useNavigate();
 
     // Current slide index and theme
     const [currentSlide, setCurrentSlide] = useState(0);
@@ -231,6 +235,9 @@ export default function PitchDeck() {
     } = useModuleData(activeIdeaId, 'pitch_deck');
 
     const { mutate: generateModule, isPending: isTriggering } = useGenerateModule(activeIdeaId || '');
+
+    // Deck editor: create deck from AI slides
+    const { mutate: createDeck, isPending: isCreatingDeck } = useCreateDeck();
 
     // ==========================================================================
     // DERIVED STATE
@@ -288,6 +295,40 @@ export default function PitchDeck() {
         setEditedSlides([]);
         setLastDataTimestamp(null);
         generateModule('pitch_deck');
+    };
+
+    /**
+     * Convert AI slides to editor format, save to DB, navigate to editor.
+     */
+    const handleOpenInEditor = () => {
+        if (!deckData?.slides || slides.length === 0) {
+            toast.error('No slides to edit. Generate a pitch deck first.');
+            return;
+        }
+
+        const deckTitle = ideaData?.title
+            ? `${ideaData.title} - Pitch Deck`
+            : 'AI Pitch Deck';
+
+        // Convert AI format → editor DeckDocument
+        const deckDocument = convertAIToDeckDocument(
+            { slides: slides },
+            deckTitle,
+        );
+
+        // Save to DB and navigate to editor
+        createDeck(
+            {
+                title: deckDocument.title,
+                data: deckDocument,
+                ideaId: activeIdeaId,
+            },
+            {
+                onSuccess: (savedDeck) => {
+                    navigate(`/dashboard/pitch/${savedDeck.id}`);
+                },
+            },
+        );
     };
 
     // Export hooks (ZIP for pitch deck)
@@ -458,6 +499,15 @@ export default function PitchDeck() {
                             {exportJobId ? 'Exporting...' : 'Export PPT'}
                             {!exportJobId && <CreditCost cost={5} />}
                         </span>
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        leftIcon={<Pencil className="w-4 h-4" />}
+                        onClick={handleOpenInEditor}
+                        disabled={!hasGenerated || isCreatingDeck}
+                        isLoading={isCreatingDeck}
+                    >
+                        {isCreatingDeck ? 'Opening...' : 'Open in Editor'}
                     </Button>
                 </div>
             </div>

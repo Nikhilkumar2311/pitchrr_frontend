@@ -48,3 +48,15 @@ export {
 } from './useCredits';
 export type { CreditPack, CreditStats, CreateOrderResponse, VerifyPaymentResponse } from './useCredits';
 
+// API Hooks - Deck Editor
+export {
+    useUserDecks,
+    useDecksByIdea,
+    useDeck,
+    useCreateDeck,
+    useSaveDeck,
+    useDeleteDeck,
+    deckEditorKeys,
+} from './useDeckEditor';
+export type { DeckListItem, DeckRecord } from './useDeckEditor';
+
