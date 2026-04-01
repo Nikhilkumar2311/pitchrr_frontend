@@ -1,24 +1,68 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Compass, TrendingUp, Clock, Loader2, Sparkles, Zap, PenLine } from 'lucide-react';
+import { Loader2, Sparkles, PenLine, Bookmark, Users, X } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { useParams } from 'react-router-dom';
-import { useFeed } from '@/hooks/useCommunity';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useFeed, useMyBookmarks } from '@/hooks/useCommunity';
 import { PostCard } from '@/components/community/PostCard';
 import { CreatePostModal } from '@/components/community/CreatePostModal';
 import { AutoPostPanel } from '@/components/community/AutoPostPanel';
+import { CommunityLayout } from '@/components/community/CommunityLayout';
+import { LeftSidebar } from '@/components/community/LeftSidebar';
+import { PostComposer } from '@/components/community/PostComposer';
+import { SuggestedFounders } from '@/components/community/SuggestedFounders';
+import { TrendingStartups } from '@/components/community/TrendingStartups';
+import { AIPromptIdeas } from '@/components/community/AIPromptIdeas';
+import { MobileBottomNav } from '@/components/community/MobileBottomNav';
 import { Header } from '@/layout/Header';
 import '@/styles/landing.css';
+import '@/styles/community.css';
+
+type ViewMode = 'feed' | 'saved' | 'following';
 
 export default function ExplorePage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { postId: sharedPostId } = useParams<{ postId?: string }>();
-  const [tab, setTab] = useState<'latest' | 'trending'>('latest');
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState<'latest' | 'trending'>(
+    (searchParams.get('tab') as 'latest' | 'trending') || 'latest'
+  );
+  const [activeNav, setActiveNav] = useState('latest');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAutoPost, setShowAutoPost] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('feed');
+  const [activeTopic, setActiveTopic] = useState<string | null>(null);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useFeed(tab);
+  const { data: savedData, isLoading: savedLoading } = useMyBookmarks();
+
+  // Sync nav with tab
+  const handleNavChange = (key: string) => {
+    setActiveNav(key);
+
+    if (key === 'drafts') {
+      navigate('/dashboard/my-posts');
+      return;
+    }
+
+    if (key === 'saved') {
+      setViewMode('saved');
+      setActiveTopic(null);
+      return;
+    }
+
+    if (key === 'following') {
+      setViewMode('following');
+      setActiveTopic(null);
+      return;
+    }
+
+    setViewMode('feed');
+    if (key === 'latest') setTab('latest');
+    if (key === 'trending') setTab('trending');
+  };
 
   // Infinite scroll observer
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -37,6 +81,12 @@ export default function ExplorePage() {
   );
 
   const allPosts = data?.pages.flatMap((page) => page.posts) ?? [];
+  const savedPosts = savedData?.pages?.flatMap((page) => page.posts) ?? [];
+
+  // Apply topic filter
+  const filteredPosts = activeTopic
+    ? allPosts.filter((p) => p.industry?.toLowerCase() === activeTopic.toLowerCase())
+    : allPosts;
 
   // Auto-scroll to shared post when loaded
   useEffect(() => {
@@ -48,140 +98,102 @@ export default function ExplorePage() {
         el.classList.add('comment-highlight-flash');
         setTimeout(() => el.classList.remove('comment-highlight-flash'), 2000);
         setHasScrolled(true);
-      }, 600); // Wait for entrance animation
+      }, 600);
     }
   }, [sharedPostId, isLoading, allPosts.length, hasScrolled]);
 
+  // AI prompt click handler
+  const handlePromptSelect = (prompt: string) => {
+    setShowCreateModal(true);
+    setTimeout(() => {
+      const textarea = document.querySelector<HTMLTextAreaElement>('.create-post-textarea');
+      if (textarea) {
+        textarea.value = prompt;
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }, 300);
+  };
+
+  // Determine which posts to show based on viewMode
+  const displayPosts = viewMode === 'saved' ? savedPosts : filteredPosts;
+  const displayLoading = viewMode === 'saved' ? savedLoading : isLoading;
+  const isFeedView = viewMode === 'feed';
+
+  // Empty state config per view
+  const emptyConfig: Record<ViewMode, { icon: React.ReactNode; title: string; subtitle: string }> = {
+    feed: {
+      icon: <Sparkles className="w-7 h-7" style={{ color: 'var(--color-primary-blue)' }} />,
+      title: activeTopic ? `No posts in ${activeTopic}` : 'No posts yet',
+      subtitle: activeTopic ? 'Try a different topic or clear the filter.' : 'Be the first to share your startup journey!',
+    },
+    saved: {
+      icon: <Bookmark className="w-7 h-7" style={{ color: 'var(--color-primary-blue)' }} />,
+      title: 'No saved posts',
+      subtitle: 'Bookmark posts using the bookmark icon and they\'ll appear here.',
+    },
+    following: {
+      icon: <Users className="w-7 h-7" style={{ color: 'var(--color-primary-blue)' }} />,
+      title: 'No posts from followed founders',
+      subtitle: 'Follow founders to see their posts in this feed.',
+    },
+  };
+
   return (
-    <div className="landing-page w-full mx-auto overflow-x-hidden" style={{ background: 'var(--color-bg-light)' }}>
+    <div className="landing-page w-full mx-auto" style={{ background: 'var(--color-bg-light)', overflow: 'hidden' }}>
       <Header />
 
-      {/* Hero */}
-      <section
-        className="pt-32 pb-10 px-4 relative overflow-hidden"
-        style={{ background: 'var(--color-bg-light)' }}
+      <CommunityLayout
+        leftSidebar={
+          <LeftSidebar
+            activeNav={activeNav}
+            onNavChange={handleNavChange}
+          />
+        }
+        rightSidebar={
+          <div className="space-y-4">
+            <AIPromptIdeas onSelectPrompt={handlePromptSelect} />
+            <SuggestedFounders />
+            <TrendingStartups />
+          </div>
+        }
       >
-        {/* Ambient gradient blobs */}
-        <div
-          className="absolute top-20 -left-32 w-72 h-72 rounded-full blur-3xl opacity-30 pointer-events-none"
-          style={{ background: 'var(--color-primary-blue)' }}
-        />
-        <div
-          className="absolute top-40 -right-32 w-72 h-72 rounded-full blur-3xl opacity-20 pointer-events-none"
-          style={{ background: 'var(--color-primary-violet)' }}
-        />
+        {/* Inline Post Composer (only on feed view) */}
+        {isFeedView && (
+          <div className="mb-5">
+            <PostComposer onOpenAutoPost={() => setShowAutoPost(true)} />
+          </div>
+        )}
 
-        <div className="max-w-3xl mx-auto text-center relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
+        {/* Active Topic Filter Indicator */}
+        {activeTopic && isFeedView && (
+          <div
+            className="flex items-center gap-2 mb-4 px-4 py-2.5 rounded-xl"
+            style={{
+              background: 'rgba(79, 125, 243, 0.06)',
+              border: '1px solid rgba(79, 125, 243, 0.15)',
+            }}
           >
-            <div
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold mb-5"
-              style={{
-                background: 'var(--color-bg-accent)',
-                color: 'var(--color-primary-blue)',
-                border: '1px solid rgba(79, 125, 243, 0.15)',
-                fontFamily: 'var(--font-body)',
-              }}
-            >
-              <Compass className="w-3.5 h-3.5" />
-              Community
-            </div>
-
-            <h1
-              className="text-4xl md:text-5xl font-bold mb-4"
-              style={{
-                fontFamily: 'var(--font-heading)',
-                letterSpacing: '-0.02em',
-                color: 'var(--color-text-primary)',
-              }}
-            >
-              Explore{' '}
-              <span className="gradient-text">Community</span>
-            </h1>
-
-            <p
-              className="text-base md:text-lg max-w-xl mx-auto leading-relaxed mb-8"
-              style={{
-                fontFamily: 'var(--font-body)',
-                color: 'var(--color-text-muted)',
-              }}
-            >
-              See what founders are building, share your journey, and connect with the startup ecosystem.
-            </p>
-
-            {/* Action buttons — centered below heading */}
-            {user && (
-              <div className="flex items-center justify-center gap-3">
-                <motion.button
-                  whileHover={{ scale: 1.03, y: -1 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => setShowCreateModal(true)}
-                  className="btn-gradient flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm"
-                >
-                  <PenLine className="w-4 h-4" />
-                  Write a Post
-                </motion.button>
-
-                <motion.button
-                  whileHover={{ scale: 1.03, y: -1 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => setShowAutoPost(true)}
-                  className="btn-outline flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm"
-                >
-                  <Zap className="w-4 h-4" />
-                  Auto-Post
-                </motion.button>
-              </div>
-            )}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Sticky Feed Bar */}
-      <div
-        className="sticky top-[72px] z-30 py-3 px-4"
-        style={{
-          background: 'rgba(248, 250, 255, 0.85)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          borderBottom: '1px solid var(--color-border)',
-        }}
-      >
-        <div className="max-w-2xl mx-auto flex items-center justify-center gap-2">
-          {[
-            { key: 'latest' as const, label: 'Latest', icon: Clock },
-            { key: 'trending' as const, label: 'Trending', icon: TrendingUp },
-          ].map((t) => (
+            <span className="text-xs font-semibold" style={{ color: 'var(--color-primary-blue)' }}>
+              Filtering by: {activeTopic}
+            </span>
             <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-semibold transition-all"
-              style={{
-                background: tab === t.key ? 'white' : 'transparent',
-                color: tab === t.key ? 'var(--color-primary-blue)' : 'var(--color-text-muted)',
-                boxShadow: tab === t.key ? 'var(--shadow-soft)' : 'none',
-                border: tab === t.key ? '1px solid var(--color-border)' : '1px solid transparent',
-                fontFamily: 'var(--font-body)',
-              }}
+              onClick={() => setActiveTopic(null)}
+              className="ml-auto p-1 rounded-lg hover:bg-white/60 transition-colors"
+              style={{ color: 'var(--color-text-muted)' }}
             >
-              <t.icon className="w-3.5 h-3.5" />
-              {t.label}
+              <X className="w-3 h-3" />
             </button>
-          ))}
-        </div>
-      </div>
+          </div>
+        )}
 
-      {/* Feed */}
-      <section className="max-w-2xl mx-auto px-4 py-8" style={{ minHeight: '50vh' }}>
-        {isLoading ? (
+        {/* Feed */}
+        {displayLoading ? (
           <div className="flex items-center justify-center py-24">
             <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'var(--color-primary-blue)' }} />
           </div>
-        ) : allPosts.length === 0 ? (
+        ) : displayPosts.length === 0 ? (
           <motion.div
+            key={viewMode + '-empty-' + (activeTopic || '')}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="text-center py-24"
@@ -190,18 +202,18 @@ export default function ExplorePage() {
               className="w-16 h-16 mx-auto mb-5 rounded-2xl flex items-center justify-center"
               style={{ background: 'var(--color-bg-accent)' }}
             >
-              <Sparkles className="w-7 h-7" style={{ color: 'var(--color-primary-blue)' }} />
+              {emptyConfig[viewMode].icon}
             </div>
             <h3
               className="text-lg font-semibold mb-2"
               style={{ fontFamily: 'var(--font-heading)', color: 'var(--color-text-primary)' }}
             >
-              No posts yet
+              {emptyConfig[viewMode].title}
             </h3>
             <p className="text-sm mb-6" style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-body)' }}>
-              Be the first to share your startup journey!
+              {emptyConfig[viewMode].subtitle}
             </p>
-            {user && (
+            {isFeedView && !activeTopic && user && (
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
@@ -216,7 +228,7 @@ export default function ExplorePage() {
         ) : (
           <div className="space-y-5">
             <AnimatePresence>
-              {allPosts.map((post, index) => (
+              {displayPosts.map((post, index) => (
                 <motion.div
                   key={post.id}
                   data-post-id={post.id}
@@ -230,14 +242,19 @@ export default function ExplorePage() {
               ))}
             </AnimatePresence>
 
-            <div ref={sentinelRef} className="py-6 flex justify-center">
-              {isFetchingNextPage && (
-                <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--color-primary-blue)' }} />
-              )}
-            </div>
+            {isFeedView && (
+              <div ref={sentinelRef} className="py-6 flex justify-center">
+                {isFetchingNextPage && (
+                  <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--color-primary-blue)' }} />
+                )}
+              </div>
+            )}
           </div>
         )}
-      </section>
+      </CommunityLayout>
+
+      {/* Mobile Bottom Nav */}
+      <MobileBottomNav onCreatePost={() => setShowCreateModal(true)} />
 
       {/* Modals */}
       <CreatePostModal

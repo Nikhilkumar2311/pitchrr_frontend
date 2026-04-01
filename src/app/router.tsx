@@ -64,6 +64,7 @@ const Services = lazy(() => import('@/pages/modules/Services'));
 // Lazy load explore/community page
 const Explore = lazy(() => import('@/pages/Explore'));
 const MyPosts = lazy(() => import('@/pages/MyPosts'));
+const UserProfile = lazy(() => import('@/pages/UserProfile'));
 
 // Lazy load store pages
 const CreditsStore = lazy(() => import('@/pages/store/CreditsStore'));
@@ -166,6 +167,11 @@ const router = createBrowserRouter([
             {
                 path: '/auth/callback',
                 element: <LazyPage><AuthCallback /></LazyPage>,
+            },
+            // Public user profile
+            {
+                path: '/profile/:userId',
+                element: <LazyPage><UserProfile /></LazyPage>,
             },
 
             // PROTECTED ROUTES (authentication required)
