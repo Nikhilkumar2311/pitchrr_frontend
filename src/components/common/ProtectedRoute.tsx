@@ -3,20 +3,10 @@
  * 
  * Wraps routes that require authentication.
  * Redirects to login page if user is not logged in.
- * 
- * HOW IT WORKS:
- * 1. Check if user is authenticated (from Zustand store)
- * 2. If yes → render the child components (the page)
- * 3. If no → redirect to /login
- * 
- * USAGE:
- * <ProtectedRoute>
- *   <DashboardPage />
- * </ProtectedRoute>
  */
 
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth } from '@/context/AuthContext';
 import type { ReactNode } from 'react';
 
 interface ProtectedRouteProps {
@@ -24,11 +14,10 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-    // Get auth status from Clerk
     const { isLoaded, isSignedIn } = useAuth();
     const location = useLocation();
 
-    // Show loading state while Clerk loads
+    // Show loading state while auth loads
     if (!isLoaded) {
         return (
             <div className="flex items-center justify-center min-h-screen">

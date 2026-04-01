@@ -1,14 +1,20 @@
 /**
- * AuthModal - Custom Headless Auth UI using Clerk
+ * AuthModal - Custom Auth UI (replacing Clerk)
+ * 
+ * Views: signin, signup, verify-email, forgot-password, reset-password-code
+ * Uses our custom AuthContext for all auth operations.
  */
 
 import React, { useState } from 'react';
-import { useSignIn, useSignUp } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 import { Modal, Button, Input } from '@/components/ui';
 import { useUIStore } from '@/store';
 import { ArrowRight, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+// Core API URL for Google OAuth redirect
+const API_BASE = import.meta.env.VITE_CORE_API_URL || 'http://localhost:3001/api/v1';
 
 // Google Icon Component
 const GoogleIcon = ({ className }: { className?: string }) => (
@@ -23,11 +29,8 @@ const GoogleIcon = ({ className }: { className?: string }) => (
 export function AuthModal() {
     const navigate = useNavigate();
     const { isAuthModalOpen, setAuthModalOpen, authModalView, setAuthModalView } = useUIStore();
+    const { login, register, verifyEmail, resendOtp, forgotPassword, resetPassword } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
-
-    // Clerk hooks
-    const { isLoaded: isSignInLoaded, signIn, setActive: setSignInActive } = useSignIn();
-    const { isLoaded: isSignUpLoaded, signUp, setActive: setSignUpActive } = useSignUp();
 
     // Form states
     const [formData, setFormData] = useState({
@@ -37,6 +40,7 @@ export function AuthModal() {
         code: '',
     });
     const [showPassword, setShowPassword] = useState(false);
+    const [passwordError, setPasswordError] = useState('');
 
     const resetForm = () => {
         setFormData({ firstName: '', email: '', password: '', code: '' });
@@ -46,67 +50,19 @@ export function AuthModal() {
 
     const handleClose = () => {
         setAuthModalOpen(false);
-        setTimeout(resetForm, 300); // Reset after animation
+        setTimeout(resetForm, 300);
     };
 
-    // Sync view with store, but allow local override if needed for transitions?
-    // Actually, simply using the store value is best for 'controlled' behavior.
     const view = authModalView;
     const setView = setAuthModalView;
 
     // --- OAuth handling ---
-    const handleOAuth = async (provider: 'oauth_google') => {
-        if (!isSignInLoaded || !isSignUpLoaded) return;
-        try {
-            if (view === 'signup') {
-                await signUp.authenticateWithRedirect({
-                    strategy: provider,
-                    redirectUrl: '/sso-callback',
-                    redirectUrlComplete: '/dashboard',
-                });
-            } else {
-                await signIn.authenticateWithRedirect({
-                    strategy: provider,
-                    redirectUrl: '/sso-callback',
-                    redirectUrlComplete: '/dashboard',
-                });
-            }
-        } catch (err: any) {
-            console.error('[AuthModal] OAuth error:', err);
-            toast.error(err.errors?.[0]?.message || 'Google login failed');
-        }
+    const handleOAuth = () => {
+        // Redirect to our backend Google OAuth endpoint
+        window.location.href = `${API_BASE}/auth/google`;
     };
 
-    // --- Sign In handling ---
-    const handleSignIn = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!isSignInLoaded) return;
-        setIsLoading(true);
-
-        try {
-            const result = await signIn.create({
-                identifier: formData.email,
-                password: formData.password,
-            });
-
-            if (result.status === 'complete') {
-                await setSignInActive({ session: result.createdSessionId });
-                toast.success('Welcome back!');
-                handleClose();
-                navigate('/dashboard');
-            } else {
-                console.error(`Sign-in status: ${result.status}. Please try again.`);
-            }
-        } catch (err: any) {
-            toast.error(err.errors?.[0]?.message || 'Login failed');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // --- Sign Up handling ---
-    const [passwordError, setPasswordError] = useState('');
-
+    // --- Password validation ---
     const validatePassword = (pwd: string) => {
         const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
         if (!regex.test(pwd)) {
@@ -115,35 +71,55 @@ export function AuthModal() {
         return '';
     };
 
+    // --- Sign In handling ---
+    const handleSignIn = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+
+        try {
+            const result = await login(formData.email, formData.password);
+
+            if (result.success) {
+                toast.success('Welcome back!');
+                handleClose();
+                navigate('/dashboard');
+            } else if (result.needsVerification) {
+                toast('Please verify your email first. Code sent!', { icon: '📧' });
+                setView('verify-email');
+            } else {
+                toast.error(result.error || 'Login failed');
+            }
+        } catch (err: any) {
+            toast.error('Login failed');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // --- Sign Up handling ---
     const handleSignUp = async (e: React.FormEvent) => {
         e.preventDefault();
         setPasswordError('');
 
-        // Validate Password
         const pError = validatePassword(formData.password);
         if (pError) {
             setPasswordError(pError);
             return;
         }
 
-        if (!isSignUpLoaded) return;
         setIsLoading(true);
 
         try {
-            await signUp.create({
-                firstName: formData.firstName,
-                emailAddress: formData.email,
-                password: formData.password,
-            });
+            const result = await register(formData.firstName, formData.email, formData.password);
 
-            // Start email verification
-            await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
-
-            toast.success('Code sent! Check your email.');
-            setView('verify-email');
+            if (result.success) {
+                toast.success('Code sent! Check your email.');
+                setView('verify-email');
+            } else {
+                toast.error(result.error || 'Signup failed');
+            }
         } catch (err: any) {
-            // Clerk might return password policy errors too, handle them
-            toast.error(err.errors?.[0]?.message || 'Signup failed');
+            toast.error('Signup failed');
         } finally {
             setIsLoading(false);
         }
@@ -152,46 +128,51 @@ export function AuthModal() {
     // --- Verify Email handling ---
     const handleVerify = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!isSignUpLoaded) return;
         setIsLoading(true);
 
         try {
-            const result = await signUp.attemptEmailAddressVerification({
-                code: formData.code,
-            });
+            const result = await verifyEmail(formData.email, formData.code);
 
-            if (result.status === 'complete') {
-                await setSignUpActive({ session: result.createdSessionId });
+            if (result.success) {
                 toast.success('Account verified!');
                 handleClose();
                 navigate('/dashboard');
             } else {
-                toast.error('Verification failed. Please try again.');
+                toast.error(result.error || 'Invalid code');
             }
         } catch (err: any) {
-            toast.error(err.errors?.[0]?.message || 'Invalid code');
+            toast.error('Verification failed');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    // --- Resend OTP ---
+    const handleResendOtp = async () => {
+        const result = await resendOtp(formData.email);
+        if (result.success) {
+            toast.success('New code sent!');
+        } else {
+            toast.error(result.error || 'Failed to resend');
         }
     };
 
     // --- Forgot Password handling ---
     const handleForgotPassword = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!isSignInLoaded) return;
         setIsLoading(true);
 
         try {
-            await signIn.create({
-                strategy: 'reset_password_email_code',
-                identifier: formData.email,
-            });
+            const result = await forgotPassword(formData.email);
 
-            toast.success('Reset code sent to your email');
-            setView('reset-password-code');
+            if (result.success) {
+                toast.success('Reset code sent to your email');
+                setView('reset-password-code');
+            } else {
+                toast.error(result.error || 'Failed to send reset code');
+            }
         } catch (err: any) {
-            console.error(err);
-            toast.error(err.errors?.[0]?.message || 'Failed to send reset code');
+            toast.error('Failed to send reset code');
         } finally {
             setIsLoading(false);
         }
@@ -200,9 +181,7 @@ export function AuthModal() {
     // --- Reset Password handling ---
     const handleResetPassword = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!isSignInLoaded) return;
 
-        // Reuse validation
         const pError = validatePassword(formData.password);
         if (pError) {
             setPasswordError(pError);
@@ -212,24 +191,17 @@ export function AuthModal() {
         setIsLoading(true);
 
         try {
-            const result = await signIn.attemptFirstFactor({
-                strategy: 'reset_password_email_code',
-                code: formData.code,
-                password: formData.password,
-            });
+            const result = await resetPassword(formData.email, formData.code, formData.password);
 
-            if (result.status === 'complete') {
-                await setSignInActive({ session: result.createdSessionId });
+            if (result.success) {
                 toast.success('Password reset successfully!');
-                handleClose();
-                navigate('/dashboard');
+                setView('signin');
+                setFormData({ ...formData, password: '', code: '' });
             } else {
-                console.log(result);
-                toast.error('Failed to reset password. Please try again.');
+                toast.error(result.error || 'Invalid code or password');
             }
         } catch (err: any) {
-            console.error(err);
-            toast.error(err.errors?.[0]?.message || 'Invalid code or password');
+            toast.error('Reset failed');
         } finally {
             setIsLoading(false);
         }
@@ -250,6 +222,7 @@ export function AuthModal() {
                         {view === 'signup' && 'Create Account'}
                         {view === 'forgot-password' && 'Reset Password'}
                         {view === 'verify-email' && 'Verify Email'}
+                        {view === 'reset-password-code' && 'Reset Password'}
                     </h2>
                     <p className="text-gray-400 text-sm mt-2 font-medium">
                         {view === 'signin' && 'Enter your details to access your dashboard'}
@@ -267,7 +240,7 @@ export function AuthModal() {
                             variant="secondary"
                             className="w-full h-12 border-gray-100 shadow-sm text-gray-600 hover:bg-gray-50 transition-all font-semibold"
                             leftIcon={<GoogleIcon className="w-5 h-5" />}
-                            onClick={() => handleOAuth('oauth_google')}
+                            onClick={handleOAuth}
                             isLoading={isLoading}
                         >
                             Continue with Google
@@ -283,7 +256,6 @@ export function AuthModal() {
                     </div>
                 )}
 
-
                 {/* Forms */}
                 <form
                     className="space-y-4"
@@ -298,8 +270,8 @@ export function AuthModal() {
                 >
                     {view === 'signup' && (
                         <Input
-                            label="First Name"
-                            placeholder="John"
+                            label="Full Name"
+                            placeholder="John Doe"
                             value={formData.firstName}
                             onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                             required
@@ -388,6 +360,31 @@ export function AuthModal() {
                     </Button>
                 </form>
 
+                {/* Resend OTP link for verify-email and reset-password views */}
+                {(view === 'verify-email' || view === 'reset-password-code') && (
+                    <div className="mt-3 text-center">
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                if (view === 'verify-email') {
+                                    handleResendOtp();
+                                } else {
+                                    // Re-send forgot password OTP
+                                    const result = await forgotPassword(formData.email);
+                                    if (result.success) {
+                                        toast.success('New reset code sent!');
+                                    } else {
+                                        toast.error(result.error || 'Failed to resend');
+                                    }
+                                }
+                            }}
+                            className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                        >
+                            Didn't receive the code? Resend
+                        </button>
+                    </div>
+                )}
+
                 {/* Footer Links */}
                 <div className="mt-8 text-center border-t border-gray-100 pt-6">
                     {view === 'signin' ? (
@@ -430,11 +427,7 @@ export function AuthModal() {
                         </p>
                     )}
                 </div>
-
-                {/* Check for Captcha */}
-                <div id="clerk-captcha" />
             </div>
         </Modal>
     );
 }
-

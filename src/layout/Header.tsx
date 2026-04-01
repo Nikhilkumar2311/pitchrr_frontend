@@ -6,7 +6,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, LogOut, Menu, X, Compass } from "lucide-react";
 import { useUIStore } from "@/store";
-import { useUser, useClerk } from "@clerk/clerk-react";
+import { useAuth } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { useFeedback } from "@/context/FeedbackContext";
 import { useState } from "react";
@@ -20,8 +20,7 @@ const navLinks = [
 
 export function Header() {
     const { setAuthModalOpen, setAuthModalView } = useUIStore();
-    const { user, isLoaded } = useUser();
-    const { signOut } = useClerk();
+    const { user, isLoaded, logout: signOut } = useAuth();
     const { openFeedback } = useFeedback();
     const location = useLocation();
     const [mobileOpen, setMobileOpen] = useState(false);

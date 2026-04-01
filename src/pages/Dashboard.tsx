@@ -10,7 +10,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
 import {
   Lightbulb,
@@ -133,7 +133,7 @@ const statusDotColor: Record<ModuleStatus, string> = {
 };
 
 export default function Dashboard() {
-  const { user } = useUser();
+  const { user } = useAuth();
   const {
     setIdea,
     currentIdea,

@@ -4,23 +4,14 @@
  * This file wraps the app with all necessary providers:
  * 1. React Query - for server state management
  * 2. Toast notifications - for user feedback
- * 
- * WHAT IS A PROVIDER?
- * A provider is a React component that makes something available
- * to all components inside it. Think of it as a "context" that
- * child components can access.
- * 
- * WHY SEPARATE THIS FILE?
- * - Keeps main.tsx clean
- * - Easy to add more providers
- * - Clear separation of concerns
+ * 3. Helmet - for SEO
  */
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { HelmetProvider } from 'react-helmet-async';
 import { useEffect, useRef, type ReactNode } from 'react';
-import { useAuth, useUser } from '@clerk/clerk-react';
+import { useAuth } from '@/context/AuthContext';
 import { setTokenGetter } from '@/services/api';
 import { setUserId } from '@/utils/analytics';
 import { useIdeaStore } from '@/store';
@@ -64,11 +55,10 @@ interface ProvidersProps {
 }
 
 export function Providers({ children }: ProvidersProps) {
-    const { getToken } = useAuth();
-    const { user, isSignedIn } = useUser();
+    const { getToken, user, isSignedIn } = useAuth();
     const wasSignedIn = useRef(false);
 
-    // Connect Clerk token to our axios instance
+    // Connect our auth token to the axios instance
     useEffect(() => {
         setTokenGetter(() => getToken());
     }, [getToken]);
