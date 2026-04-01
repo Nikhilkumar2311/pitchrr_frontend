@@ -9,6 +9,7 @@ import { useState } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
+import '@/styles/community.css';
 
 function timeAgo(dateString: string): string {
   const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
@@ -43,7 +44,7 @@ function ExpandablePost({ post, navigate, deleteMutation }: any) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         onClick={() => setExpanded(!expanded)}
-        className="flex items-start gap-4 px-5 py-4 hover:bg-gray-50/50 transition-colors cursor-pointer"
+        className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-4 hover:bg-gray-50/50 transition-colors cursor-pointer"
       >
         {/* Content */}
         <div className="flex-1 min-w-0">
@@ -85,7 +86,7 @@ function ExpandablePost({ post, navigate, deleteMutation }: any) {
         </div>
 
         {/* Stats */}
-        <div className="flex items-center gap-4 shrink-0">
+        <div className="flex items-center gap-3 sm:gap-4 shrink-0 self-end sm:self-auto">
           <div className="flex items-center gap-1 text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
             <ThumbsUp className="w-3 h-3" style={{ color: '#4F7DF3' }} />
             <span className="font-semibold">{post.likeCount}</span>
@@ -101,7 +102,7 @@ function ExpandablePost({ post, navigate, deleteMutation }: any) {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto" onClick={e => e.stopPropagation()}>
           <button
             onClick={() => navigate(`/explore/post/${post.id}`)}
             className="p-1.5 rounded-lg hover:bg-blue-50 transition-colors"
@@ -197,6 +198,7 @@ export default function MyPosts() {
   const deleteMutation = useDeletePost();
   const navigate = useNavigate();
   const [timeRange, setTimeRange] = useState<30 | 14 | 7>(30);
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
   if (isLoading) {
     return (
@@ -255,9 +257,9 @@ export default function MyPosts() {
   ];
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-5 sm:space-y-6" style={{ paddingBottom: '80px' }}>
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="my-posts-header flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h1
             className="text-2xl font-bold"
@@ -285,7 +287,7 @@ export default function MyPosts() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="my-posts-stats grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {statCards.map((stat, i) => (
           <motion.div
             key={stat.label}
@@ -460,18 +462,55 @@ export default function MyPosts() {
           boxShadow: 'var(--shadow-soft)',
         }}
       >
-        <div className="p-5 pb-3">
-          <h3
-            className="text-sm font-bold"
-            style={{ fontFamily: 'var(--font-heading)', color: 'var(--color-text-primary)' }}
-          >
-            All Posts ({posts.length})
-          </h3>
+        <div className="p-4 sm:p-5 pb-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <h3
+              className="text-sm font-bold"
+              style={{ fontFamily: 'var(--font-heading)', color: 'var(--color-text-primary)' }}
+            >
+              All Posts ({posts.length})
+            </h3>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {[
+                { key: 'ALL', label: 'All' },
+                { key: 'PUBLISHED', label: 'Published', color: '#059669' },
+                { key: 'PENDING_REVIEW', label: 'Pending', color: '#D97706' },
+                { key: 'REJECTED', label: 'Rejected', color: '#DC2626' },
+              ].map((f) => (
+                <button
+                  key={f.key}
+                  onClick={() => setStatusFilter(f.key)}
+                  className="px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all"
+                  style={{
+                    background: statusFilter === f.key ? (f.color ? `${f.color}15` : 'rgba(79,125,243,0.1)') : 'transparent',
+                    color: statusFilter === f.key ? (f.color || 'var(--color-primary-blue)') : 'var(--color-text-muted)',
+                    border: `1px solid ${statusFilter === f.key ? (f.color ? `${f.color}30` : 'rgba(79,125,243,0.2)') : 'var(--color-border)'}`,
+                  }}
+                >
+                  {f.label}
+                  {f.key !== 'ALL' && (
+                    <span className="ml-1 opacity-60">
+                      {posts.filter((p: any) => p.status === f.key).length}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
         <div className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
-          {posts.map((post) => (
-            <ExpandablePost key={post.id} post={post} navigate={navigate} deleteMutation={deleteMutation} />
-          ))}
+          {posts
+            .filter((post: any) => statusFilter === 'ALL' || post.status === statusFilter)
+            .map((post: any) => (
+              <ExpandablePost key={post.id} post={post} navigate={navigate} deleteMutation={deleteMutation} />
+            ))}
+          {posts.filter((post: any) => statusFilter === 'ALL' || post.status === statusFilter).length === 0 && (
+            <div className="p-8 text-center">
+              <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                No {statusFilter === 'ALL' ? '' : statusFilter.toLowerCase().replace('_', ' ')} posts.
+              </p>
+            </div>
+          )}
         </div>
       </motion.div>
     </div>

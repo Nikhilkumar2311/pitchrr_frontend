@@ -409,3 +409,82 @@ select:focus {
   pointer-events: none;
   z-index: 0;
 }
+
+/* ============================================================
+   MOBILE RESPONSIVE OVERRIDES
+   ============================================================ */
+
+/* Tablet: hide right sidebar */
+@media (max-width: 1024px) {
+  .community-layout {
+    grid-template-columns: 240px 1fr;
+  }
+  .community-layout > aside:last-child {
+    display: none;
+  }
+}
+
+/* Mobile: single column, hide both sidebars */
+@media (max-width: 768px) {
+  .community-layout {
+    grid-template-columns: 1fr;
+    padding: 72px 12px 80px;
+    gap: 0;
+  }
+  .community-layout > aside {
+    display: none !important;
+  }
+  .community-layout > main {
+    height: calc(100vh - 72px - 60px);
+    padding-bottom: 20px;
+  }
+
+  /* Post composer adjustments */
+  .post-composer-collapsed {
+    margin: 0 0 12px;
+  }
+  .post-composer-expanded {
+    margin: 0 0 12px;
+  }
+
+  /* Post card: reduce padding on mobile */
+  .post-card {
+    border-radius: 16px;
+    padding: 12px;
+  }
+}
+
+/* MyPosts page - mobile responsive */
+@media (max-width: 768px) {
+  /* MyPosts page header */
+  .my-posts-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  /* Stat cards: 2-column grid */
+  .my-posts-stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  /* Chart: reduce height */
+  .my-posts-chart .recharts-responsive-container {
+    height: 180px !important;
+  }
+
+  /* Post list items: stack vertically */
+  .my-posts-list-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .my-posts-list-item .post-stats {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .my-posts-list-item .post-actions {
+    align-self: flex-end;
+  }
+}
