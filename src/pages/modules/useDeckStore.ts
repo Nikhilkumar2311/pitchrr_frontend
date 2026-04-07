@@ -14,7 +14,7 @@ interface DeckState {
   setDeck: (deck: Deck) => void;
 }
 
-export const useDeckStore = create<DeckState>((set, get) => ({
+export const useDeckStore = create<DeckState>((set) => ({
   slides: [
     {
       id: uuidv4(),
@@ -48,7 +48,7 @@ export const useDeckStore = create<DeckState>((set, get) => ({
       const slide = slides[state.activeSlideIndex];
 
       slide.elements = slide.elements.map((el) =>
-        el.id === id ? { ...el, ...updates } : el,
+        el.id === id ? ({ ...el, ...updates } as SlideElement) : el,
       );
 
       return { slides };
