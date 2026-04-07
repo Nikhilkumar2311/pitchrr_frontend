@@ -1,10 +1,9 @@
 /**
- * TextNode — Konva Text Element Renderer
+ * TextNode — Konva Text Element with In-Place Editing
  *
- * Renders a text element on the canvas with:
- * - Drag to move
- * - Transform (resize/rotate) via parent Transformer
- * - Double-click to enter inline text editing (HTML <textarea> overlay)
+ * - Double-click to edit text directly on the canvas
+ * - The Konva text hides, and a transparent HTML textarea appears in its place
+ * - On blur or Ctrl+Enter, the edit is saved
  */
 
 import { useRef, useCallback } from 'react';
@@ -22,7 +21,7 @@ interface TextNodeProps {
 
 export function TextNode({
   element,
-  isSelected,
+  isSelected: _isSelected,
   onSelect,
   onNodeRef,
 }: TextNodeProps) {
@@ -57,7 +56,6 @@ export function TextNode({
     const scaleX = node.scaleX();
     const scaleY = node.scaleY();
 
-    // Reset scale and apply to width/height
     node.scaleX(1);
     node.scaleY(1);
 
@@ -83,35 +81,49 @@ export function TextNode({
     const stageBox = stage.container().getBoundingClientRect();
     const scale = stage.scaleX();
 
-    // Create textarea overlay
+    // Hide the Konva text while editing
+    textNode.hide();
+    textNode.getLayer()?.batchDraw();
+
+    // Create transparent textarea overlay positioned exactly on the text
     const textarea = document.createElement('textarea');
     document.body.appendChild(textarea);
 
     textarea.value = element.content;
-    textarea.style.position = 'fixed';
-    textarea.style.top = `${stageBox.top + textPosition.y * scale}px`;
-    textarea.style.left = `${stageBox.left + textPosition.x * scale}px`;
-    textarea.style.width = `${textNode.width() * scale + 4}px`;
-    textarea.style.minHeight = `${textNode.height() * scale + 4}px`;
-    textarea.style.fontSize = `${element.fontSize * scale}px`;
-    textarea.style.fontFamily = element.fontFamily;
-    textarea.style.fontWeight = element.fontWeight;
-    textarea.style.fontStyle = element.fontStyle;
-    textarea.style.textAlign = element.textAlign;
-    textarea.style.color = element.fill;
-    textarea.style.lineHeight = String(element.lineHeight);
-    textarea.style.letterSpacing = `${element.letterSpacing}px`;
-    textarea.style.border = '2px solid #3B82F6';
-    textarea.style.borderRadius = '4px';
-    textarea.style.padding = `${element.padding * scale}px`;
-    textarea.style.margin = '0';
-    textarea.style.overflow = 'hidden';
-    textarea.style.background = 'rgba(255,255,255,0.95)';
-    textarea.style.outline = 'none';
-    textarea.style.resize = 'none';
-    textarea.style.transformOrigin = 'left top';
-    textarea.style.zIndex = '10000';
-    textarea.style.boxShadow = '0 4px 20px rgba(0,0,0,0.15)';
+
+    // Position exactly over the Konva text
+    Object.assign(textarea.style, {
+      position: 'fixed',
+      top: `${stageBox.top + textPosition.y * scale}px`,
+      left: `${stageBox.left + textPosition.x * scale}px`,
+      width: `${textNode.width() * scale + 4}px`,
+      minHeight: `${textNode.height() * scale + 4}px`,
+      fontSize: `${element.fontSize * scale}px`,
+      fontFamily: element.fontFamily,
+      fontWeight: element.fontWeight,
+      fontStyle: element.fontStyle,
+      textAlign: element.textAlign,
+      color: element.fill,
+      lineHeight: String(element.lineHeight),
+      letterSpacing: `${element.letterSpacing}px`,
+      padding: `${element.padding * scale}px`,
+      margin: '0',
+      overflow: 'hidden',
+      outline: 'none',
+      resize: 'none',
+      transformOrigin: 'left top',
+      zIndex: '10000',
+      // Truly transparent — no visible border/bg, just a blinking cursor
+      background: 'none',
+      backgroundColor: 'transparent',
+      border: '2px solid rgba(99,102,241,0.5)',
+      borderRadius: '2px',
+      boxShadow: '0 0 0 2px rgba(99,102,241,0.12)',
+      // Reset browser defaults
+      WebkitAppearance: 'none',
+      MozAppearance: 'none',
+      appearance: 'none',
+    });
 
     textarea.focus();
 
@@ -119,7 +131,14 @@ export function TextNode({
       pushHistory();
       const newContent = textarea.value;
       updateElement(element.id, { content: newContent });
-      document.body.removeChild(textarea);
+
+      // Show the Konva text again
+      textNode.show();
+      textNode.getLayer()?.batchDraw();
+
+      if (document.body.contains(textarea)) {
+        document.body.removeChild(textarea);
+      }
       setTextEditing(false);
     };
 
@@ -127,7 +146,12 @@ export function TextNode({
     textarea.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         textarea.removeEventListener('blur', removeTextarea);
-        document.body.removeChild(textarea);
+        // Show the Konva text again without saving
+        textNode.show();
+        textNode.getLayer()?.batchDraw();
+        if (document.body.contains(textarea)) {
+          document.body.removeChild(textarea);
+        }
         setTextEditing(false);
       }
       // Ctrl+Enter to confirm
@@ -168,7 +192,6 @@ export function TextNode({
       onTransformEnd={handleTransformEnd}
       onDblClick={handleDblClick}
       onDblTap={handleDblClick}
-      // Visual feedback
       perfectDrawEnabled={false}
     />
   );

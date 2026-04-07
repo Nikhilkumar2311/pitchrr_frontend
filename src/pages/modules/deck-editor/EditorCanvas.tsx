@@ -1,22 +1,15 @@
 /**
- * EditorCanvas — Main Konva Canvas for the Pitch Deck Editor
+ * EditorCanvas — Konva Canvas with Premium Shadow
  *
- * Responsibilities:
- * - Renders the active slide with all elements via react-konva Stage/Layer
- * - Handles element selection, drag, and transform
- * - Auto-scales the canvas to fit the available container
- * - Draws the slide background (solid color or gradient)
- * - Renders a Transformer around the selected element
- *
- * SCALING:
- *   The canvas is designed at 960×540 (16:9) but rendered at whatever
- *   size the container provides, using stage.scale().
+ * Renders the active slide on a canvas with multi-layer shadow,
+ * themed to match the workspace (light or dark).
  */
 
 import { useRef, useCallback, useState, useEffect } from 'react';
-import { Stage, Layer, Rect, Group } from 'react-konva';
+import { Stage, Layer, Rect } from 'react-konva';
 import type Konva from 'konva';
 import { useDeckEditorStore } from '@/store/useDeckEditorStore';
+import { useEditorTheme } from './editorTheme';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/types/deck-editor.types';
 import { TextNode, ImageNode, ShapeNode, TransformerWrapper } from './elements';
 
@@ -25,95 +18,64 @@ interface EditorCanvasProps {
 }
 
 export default function EditorCanvas({ containerRef }: EditorCanvasProps) {
+  const t = useEditorTheme((s) => s.tokens);
   const {
-    deck,
-    activeSlideIndex,
-    selectedElementId,
-    isTextEditing,
-    selectElement,
-    clearSelection,
-    updateElement,
-    pushHistory,
+    deck, activeSlideIndex, selectedElementId, isTextEditing,
+    selectElement, clearSelection,
   } = useDeckEditorStore();
 
   const stageRef = useRef<Konva.Stage>(null);
   const nodeRefs = useRef<Map<string, Konva.Node | null>>(new Map());
-
-  // Canvas scaling
   const [stageSize, setStageSize] = useState({ width: CANVAS_WIDTH, height: CANVAS_HEIGHT });
   const [scale, setScale] = useState(1);
 
-  // Calculate scale to fit container
   useEffect(() => {
     const calculateScale = () => {
       const container = containerRef.current;
       if (!container) return;
-
-      const containerWidth = container.clientWidth - 32; // padding
-      const containerHeight = container.clientHeight - 32;
-
-      const scaleX = containerWidth / CANVAS_WIDTH;
-      const scaleY = containerHeight / CANVAS_HEIGHT;
-      const newScale = Math.min(scaleX, scaleY, 1.2); // Cap max zoom at 1.2x
-
-      setScale(newScale);
-      setStageSize({
-        width: CANVAS_WIDTH * newScale,
-        height: CANVAS_HEIGHT * newScale,
-      });
+      const cw = container.clientWidth - 48;
+      const ch = container.clientHeight - 48;
+      const s = Math.min(cw / CANVAS_WIDTH, ch / CANVAS_HEIGHT, 1.2);
+      setScale(s);
+      setStageSize({ width: CANVAS_WIDTH * s, height: CANVAS_HEIGHT * s });
     };
-
     calculateScale();
-
-    const resizeObserver = new ResizeObserver(calculateScale);
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
-    }
-
-    return () => resizeObserver.disconnect();
+    const ro = new ResizeObserver(calculateScale);
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
   }, [containerRef]);
 
-  // Active slide
   const slide = deck.slides[activeSlideIndex];
   if (!slide) return null;
 
-  // Sort elements by zIndex for rendering order
   const sortedElements = [...slide.elements].sort((a, b) => a.zIndex - b.zIndex);
 
-  // Store node refs for Transformer
   const handleNodeRef = useCallback((id: string, node: Konva.Node | null) => {
     nodeRefs.current.set(id, node);
   }, []);
 
-  // Get selected node ref
-  const getSelectedNodeRef = (): React.RefObject<Konva.Node | null> => {
-    return {
-      current: selectedElementId ? nodeRefs.current.get(selectedElementId) || null : null,
-    };
-  };
+  const getSelectedNodeRef = (): React.RefObject<Konva.Node | null> => ({
+    current: selectedElementId ? nodeRefs.current.get(selectedElementId) || null : null,
+  });
 
-  // Click on empty space → deselect
-  const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
+  const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
     const target = e.target;
-    // If clicked on the stage or the background rect, deselect
     if (target === e.currentTarget || target.attrs?.id === 'slide-background') {
       clearSelection();
     }
   };
 
-  // Parse background (support gradients)
+  const handleStageTap = (e: Konva.KonvaEventObject<TouchEvent>) => {
+    const target = e.target;
+    if (target === e.currentTarget || target.attrs?.id === 'slide-background') {
+      clearSelection();
+    }
+  };
+
   const isGradient = slide.background.includes('gradient');
 
-  // For gradient fill, we parse it for Konva
   const getBackgroundFill = () => {
-    if (isGradient) {
-      // Parse CSS gradient to Konva gradient
-      // Simple linear gradient: "linear-gradient(135deg, #color1 0%, #color2 100%)"
-      const colors = slide.background.match(/#[0-9a-fA-F]{6}/g);
-      if (colors && colors.length >= 2) {
-        return undefined; // Use fillLinearGradient props instead
-      }
-    }
+    if (isGradient) return undefined;
     return slide.background;
   };
 
@@ -121,7 +83,6 @@ export default function EditorCanvas({ containerRef }: EditorCanvasProps) {
     if (!isGradient) return {};
     const colors = slide.background.match(/#[0-9a-fA-F]{6}/g);
     if (!colors || colors.length < 2) return {};
-
     return {
       fillLinearGradientStartPoint: { x: 0, y: 0 },
       fillLinearGradientEndPoint: { x: CANVAS_WIDTH, y: CANVAS_HEIGHT },
@@ -130,18 +91,8 @@ export default function EditorCanvas({ containerRef }: EditorCanvasProps) {
   };
 
   return (
-    <div
-      className="flex items-center justify-center"
-      style={{ minHeight: '100%' }}
-    >
-      <div
-        className="relative"
-        style={{
-          boxShadow: '0 8px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
-          borderRadius: '8px',
-          overflow: 'hidden',
-        }}
-      >
+    <div className="flex items-center justify-center" style={{ minHeight: '100%' }}>
+      <div className="relative" style={{ boxShadow: t.canvasShadow, borderRadius: '8px', overflow: 'hidden' }}>
         <Stage
           ref={stageRef}
           width={stageSize.width}
@@ -149,70 +100,22 @@ export default function EditorCanvas({ containerRef }: EditorCanvasProps) {
           scaleX={scale}
           scaleY={scale}
           onClick={handleStageClick}
-          onTap={handleStageClick}
+          onTap={handleStageTap}
           style={{ cursor: isTextEditing ? 'text' : 'default' }}
         >
           <Layer>
-            {/* Slide Background */}
-            <Rect
-              id="slide-background"
-              x={0}
-              y={0}
-              width={CANVAS_WIDTH}
-              height={CANVAS_HEIGHT}
-              fill={getBackgroundFill()}
-              {...getGradientProps()}
-              listening={true}
-            />
-
-            {/* Elements */}
-            {sortedElements
-              .filter((el) => el.visible)
-              .map((element) => {
-                const isSelected = element.id === selectedElementId;
-
-                switch (element.type) {
-                  case 'text':
-                    return (
-                      <TextNode
-                        key={element.id}
-                        element={element}
-                        isSelected={isSelected}
-                        onSelect={selectElement}
-                        onNodeRef={handleNodeRef}
-                      />
-                    );
-                  case 'image':
-                    return (
-                      <ImageNode
-                        key={element.id}
-                        element={element}
-                        isSelected={isSelected}
-                        onSelect={selectElement}
-                        onNodeRef={handleNodeRef}
-                      />
-                    );
-                  case 'shape':
-                    return (
-                      <ShapeNode
-                        key={element.id}
-                        element={element}
-                        isSelected={isSelected}
-                        onSelect={selectElement}
-                        onNodeRef={handleNodeRef}
-                      />
-                    );
-                  default:
-                    return null;
-                }
-              })}
-
-            {/* Transformer */}
+            <Rect id="slide-background" x={0} y={0} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} fill={getBackgroundFill()} {...getGradientProps()} listening={true} />
+            {sortedElements.filter((el) => el.visible).map((element) => {
+              const isSelected = element.id === selectedElementId;
+              switch (element.type) {
+                case 'text':    return <TextNode    key={element.id} element={element} isSelected={isSelected} onSelect={selectElement} onNodeRef={handleNodeRef} />;
+                case 'image':   return <ImageNode   key={element.id} element={element} isSelected={isSelected} onSelect={selectElement} onNodeRef={handleNodeRef} />;
+                case 'shape':   return <ShapeNode   key={element.id} element={element} isSelected={isSelected} onSelect={selectElement} onNodeRef={handleNodeRef} />;
+                default: return null;
+              }
+            })}
             {selectedElementId && !isTextEditing && (
-              <TransformerWrapper
-                selectedNodeRef={getSelectedNodeRef()}
-                isTextEditing={isTextEditing}
-              />
+              <TransformerWrapper selectedNodeRef={getSelectedNodeRef()} isTextEditing={isTextEditing} />
             )}
           </Layer>
         </Stage>

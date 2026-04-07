@@ -184,3 +184,49 @@ export function useDeleteDeck() {
     },
   });
 }
+
+/**
+ * Export deck as PPTX from canvas screenshots.
+ * Sends base64 slide images → gets back base64 PPTX → triggers download.
+ */
+export function useExportDeckAsImages() {
+  return useMutation({
+    mutationFn: async (payload: {
+      slideImages: string[];
+      title: string;
+      companyName?: string;
+    }) => {
+      const { data } = await api.post('/export/pptx-from-images', payload, {
+        maxBodyLength: 100 * 1024 * 1024,
+        maxContentLength: 100 * 1024 * 1024,
+      });
+      return data as { buffer: string };
+    },
+    onSuccess: (data, variables) => {
+      // Convert base64 to blob and download
+      const byteChars = atob(data.buffer);
+      const byteNumbers = new Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) {
+        byteNumbers[i] = byteChars.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], {
+        type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${variables.title.replace(/[^a-zA-Z0-9]/g, '_')}.pptx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success('PPTX downloaded!');
+    },
+    onError: () => {
+      toast.error('Failed to export PPTX');
+    },
+  });
+}

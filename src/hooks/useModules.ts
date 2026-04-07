@@ -304,7 +304,7 @@ export interface ExportStatusResponse {
 export function useExportModule(moduleType: string, ideaId: string | undefined) {
     const queryClient = useQueryClient();
 
-    return useMutation<ExportJobResponse & { newBalance?: number }, Error, { chartImages?: Record<string, string> }>({
+    return useMutation<ExportJobResponse & { newBalance?: number }, Error, { chartImages?: Record<string, string>; slideImages?: string[] }>({
         mutationFn: async (data = {}) => {
             if (!ideaId) throw new Error('No idea selected');
             const response = await api.post(`/export/${moduleType}/${ideaId}`, data);
