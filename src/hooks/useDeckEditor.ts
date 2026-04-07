@@ -190,6 +190,7 @@ export function useDeleteDeck() {
  * Sends base64 slide images → gets back base64 PPTX → triggers download.
  */
 export function useExportDeckAsImages() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: {
       slideImages: string[];
@@ -200,7 +201,7 @@ export function useExportDeckAsImages() {
         maxBodyLength: 100 * 1024 * 1024,
         maxContentLength: 100 * 1024 * 1024,
       });
-      return data as { buffer: string };
+      return data as { buffer: string; creditCost?: number; newBalance?: number };
     },
     onSuccess: (data, variables) => {
       // Convert base64 to blob and download
@@ -223,7 +224,11 @@ export function useExportDeckAsImages() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      toast.success('PPTX downloaded!');
+      // Refresh credits in the UI
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+
+      const costMsg = data.creditCost ? ` (${data.creditCost} credits used)` : '';
+      toast.success(`PPTX downloaded!${costMsg}`);
     },
     onError: () => {
       toast.error('Failed to export PPTX');
