@@ -15,7 +15,7 @@ import { useDeckEditorStore } from '@/store/useDeckEditorStore';
 interface TextNodeProps {
   element: TextElement;
   isSelected: boolean;
-  onSelect: (id: string) => void;
+  onSelect: (id: string, shiftKey?: boolean) => void;
   onNodeRef: (id: string, node: Konva.Node | null) => void;
 }
 
@@ -26,7 +26,8 @@ export function TextNode({
   onNodeRef,
 }: TextNodeProps) {
   const nodeRef = useRef<Konva.Text>(null);
-  const { updateElement, pushHistory, setTextEditing } = useDeckEditorStore();
+  const { updateElement, pushHistory, setTextEditing, moveGroup } = useDeckEditorStore();
+  const dragStartPos = useRef<{ x: number; y: number } | null>(null);
 
   const handleRef = useCallback(
     (node: Konva.Text | null) => {
@@ -36,17 +37,30 @@ export function TextNode({
     [element.id, onNodeRef]
   );
 
-  const handleDragStart = () => {
-    if (element.locked) return;
+  // Elements in a group are draggable even if individually locked
+  const isDraggable = element.groupId ? true : !element.locked;
+
+  const handleDragStart = (e: Konva.KonvaEventObject<DragEvent>) => {
+    if (!isDraggable) return;
     pushHistory();
+    dragStartPos.current = { x: e.target.x(), y: e.target.y() };
   };
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
-    if (element.locked) return;
-    updateElement(element.id, {
-      x: Math.round(e.target.x()),
-      y: Math.round(e.target.y()),
-    });
+    if (!isDraggable) return;
+    const newX = Math.round(e.target.x());
+    const newY = Math.round(e.target.y());
+
+    if (element.groupId && dragStartPos.current) {
+      const dx = newX - dragStartPos.current.x;
+      const dy = newY - dragStartPos.current.y;
+      e.target.x(dragStartPos.current.x);
+      e.target.y(dragStartPos.current.y);
+      moveGroup(element.groupId, dx, dy);
+    } else {
+      updateElement(element.id, { x: newX, y: newY });
+    }
+    dragStartPos.current = null;
   };
 
   const handleTransformEnd = () => {
@@ -183,9 +197,9 @@ export function TextNode({
       lineHeight={element.lineHeight}
       letterSpacing={element.letterSpacing}
       padding={element.padding}
-      draggable={!element.locked}
+      draggable={isDraggable}
       visible={element.visible}
-      onClick={() => onSelect(element.id)}
+      onClick={(e) => onSelect(element.id, e.evt.shiftKey)}
       onTap={() => onSelect(element.id)}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}

@@ -45,6 +45,8 @@ export default function DeckEditorPage() {
     copyElement,
     pasteElement,
     markSaved,
+    nextSlide,
+    prevSlide,
   } = useDeckEditorStore();
 
   // =========================================================================
@@ -115,10 +117,13 @@ export default function DeckEditorPage() {
       if (e.key === 'Delete' || e.key === 'Backspace') { if (selectedElementId) { e.preventDefault(); deleteElement(selectedElementId); } return; }
       if (e.key === 'Escape') { clearSelection(); return; }
       if ((e.key === 't' || e.key === 'T') && !isCtrl) { addText(); return; }
+      // Arrow keys to navigate slides when no element is selected
+      if (!selectedElementId && (e.key === 'ArrowRight' || e.key === 'ArrowDown')) { e.preventDefault(); nextSlide(); return; }
+      if (!selectedElementId && (e.key === 'ArrowLeft' || e.key === 'ArrowUp')) { e.preventDefault(); prevSlide(); return; }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isTextEditing, selectedElementId, deleteElement, duplicateElement, clearSelection, undo, redo, addText, copyElement, pasteElement, handleSave]);
+  }, [isTextEditing, selectedElementId, deleteElement, duplicateElement, clearSelection, undo, redo, addText, copyElement, pasteElement, handleSave, nextSlide, prevSlide]);
 
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => { if (isDirty) { e.preventDefault(); e.returnValue = ''; } };

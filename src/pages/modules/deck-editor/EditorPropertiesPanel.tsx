@@ -17,6 +17,7 @@ import {
   ChevronsUp, ChevronsDown, Eye, EyeOff,
   Bold, Italic, Underline, Strikethrough,
   AlignLeft, AlignCenter, AlignRight, ImagePlus,
+  Link, Unlink,
 } from 'lucide-react';
 import { useDeckEditorStore } from '@/store/useDeckEditorStore';
 import { useEditorTheme } from './editorTheme';
@@ -31,9 +32,10 @@ import type {
 export default function EditorPropertiesPanel() {
   const t = useEditorTheme((s) => s.tokens);
   const {
-    deck, activeSlideIndex, getSelectedElement, updateElement,
+    deck, activeSlideIndex, selectedElementIds, getSelectedElement, updateElement,
     deleteElement, duplicateElement, setSlideBackground,
     bringForward, sendBackward, bringToFront, sendToBack,
+    groupSelected, groupOverlapping, ungroupElement,
   } = useDeckEditorStore();
 
   const selectedElement = getSelectedElement();
@@ -185,6 +187,41 @@ export default function EditorPropertiesPanel() {
             <button onClick={() => updateProp({ visible: !selectedElement.visible })} className="p-1.5 rounded-md transition-colors text-xs" style={{ background: !selectedElement.visible ? t.btnHoverBg : t.inputBg, color: !selectedElement.visible ? t.textMuted : t.textSecondary }} title={selectedElement.visible ? 'Hide' : 'Show'}>
               {selectedElement.visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
             </button>
+          </div>
+        </Section>
+
+        {/* GROUP */}
+        <Section t={t} title="Group">
+          <div className="space-y-2">
+            {selectedElement.groupId ? (
+              <button
+                onClick={() => ungroupElement(selectedElement.id)}
+                className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all"
+                style={{ background: t.inputBg, border: `1px solid ${t.inputBorder}`, color: t.textPrimary }}
+              >
+                <Unlink className="w-3.5 h-3.5" /> Ungroup All
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => groupOverlapping(selectedElement.id)}
+                  className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all"
+                  style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', color: '#6366F1' }}
+                >
+                  <Link className="w-3.5 h-3.5" /> Group this Card
+                </button>
+                {selectedElementIds.length >= 2 && (
+                  <button
+                    onClick={() => groupSelected()}
+                    className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all"
+                    style={{ background: t.inputBg, border: `1px solid ${t.inputBorder}`, color: t.textPrimary }}
+                  >
+                    <Link className="w-3.5 h-3.5" /> Group Selected ({selectedElementIds.length})
+                  </button>
+                )}
+                <p className="text-[10px]" style={{ color: t.textMuted }}>Groups all elements inside this one so they move together.</p>
+              </>
+            )}
           </div>
         </Section>
 

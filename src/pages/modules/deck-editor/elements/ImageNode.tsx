@@ -17,13 +17,13 @@ import { useDeckEditorStore } from '@/store/useDeckEditorStore';
 interface ImageNodeProps {
   element: ImageElement;
   isSelected: boolean;
-  onSelect: (id: string) => void;
+  onSelect: (id: string, shiftKey?: boolean) => void;
   onNodeRef: (id: string, node: Konva.Node | null) => void;
 }
 
 export function ImageNode({
   element,
-  isSelected,
+  isSelected: _isSelected,
   onSelect,
   onNodeRef,
 }: ImageNodeProps) {
@@ -93,7 +93,7 @@ export function ImageNode({
         opacity={element.opacity}
         draggable={!element.locked}
         visible={element.visible}
-        onClick={() => onSelect(element.id)}
+        onClick={(e: Konva.KonvaEventObject<MouseEvent>) => onSelect(element.id, e.evt.shiftKey)}
         onTap={() => onSelect(element.id)}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
@@ -136,7 +136,7 @@ export function ImageNode({
       opacity={element.opacity}
       draggable={!element.locked}
       visible={element.visible}
-      onClick={() => onSelect(element.id)}
+      onClick={(e: Konva.KonvaEventObject<MouseEvent>) => onSelect(element.id, e.evt.shiftKey)}
       onTap={() => onSelect(element.id)}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}

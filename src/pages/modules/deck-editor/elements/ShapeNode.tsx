@@ -20,18 +20,19 @@ import { useDeckEditorStore } from '@/store/useDeckEditorStore';
 interface ShapeNodeProps {
   element: ShapeElement;
   isSelected: boolean;
-  onSelect: (id: string) => void;
+  onSelect: (id: string, shiftKey?: boolean) => void;
   onNodeRef: (id: string, node: Konva.Node | null) => void;
 }
 
 export function ShapeNode({
   element,
-  isSelected,
+  isSelected: _isSelected,
   onSelect,
   onNodeRef,
 }: ShapeNodeProps) {
   const nodeRef = useRef<Konva.Node>(null);
-  const { updateElement, pushHistory } = useDeckEditorStore();
+  const { updateElement, pushHistory, moveGroup } = useDeckEditorStore();
+  const dragStartPos = useRef<{ x: number; y: number } | null>(null);
 
   const handleRef = useCallback(
     (node: Konva.Node | null) => {
@@ -41,17 +42,31 @@ export function ShapeNode({
     [element.id, onNodeRef]
   );
 
-  const handleDragStart = () => {
-    if (element.locked) return;
+  // Elements in a group are draggable even if individually locked
+  const isDraggable = element.groupId ? true : !element.locked;
+
+  const handleDragStart = (e: Konva.KonvaEventObject<DragEvent>) => {
+    if (!isDraggable) return;
     pushHistory();
+    dragStartPos.current = { x: e.target.x(), y: e.target.y() };
   };
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
-    if (element.locked) return;
-    updateElement(element.id, {
-      x: Math.round(e.target.x()),
-      y: Math.round(e.target.y()),
-    });
+    if (!isDraggable) return;
+    const newX = Math.round(e.target.x());
+    const newY = Math.round(e.target.y());
+
+    if (element.groupId && dragStartPos.current) {
+      const dx = newX - dragStartPos.current.x;
+      const dy = newY - dragStartPos.current.y;
+      // Reset this element's position (moveGroup will set it)
+      e.target.x(dragStartPos.current.x);
+      e.target.y(dragStartPos.current.y);
+      moveGroup(element.groupId, dx, dy);
+    } else {
+      updateElement(element.id, { x: newX, y: newY });
+    }
+    dragStartPos.current = null;
   };
 
   const handleTransformEnd = () => {
@@ -78,9 +93,9 @@ export function ShapeNode({
     y: element.y,
     opacity: element.opacity,
     rotation: element.rotation,
-    draggable: !element.locked,
+    draggable: isDraggable,
     visible: element.visible,
-    onClick: () => onSelect(element.id),
+    onClick: (e: Konva.KonvaEventObject<MouseEvent>) => onSelect(element.id, e.evt.shiftKey),
     onTap: () => onSelect(element.id),
     onDragStart: handleDragStart,
     onDragEnd: handleDragEnd,

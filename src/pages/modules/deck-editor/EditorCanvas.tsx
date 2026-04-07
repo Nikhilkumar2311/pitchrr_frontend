@@ -3,6 +3,8 @@
  *
  * Renders the active slide on a canvas with multi-layer shadow,
  * themed to match the workspace (light or dark).
+ *
+ * Shift+Click = multi-select; normal Click = single select.
  */
 
 import { useRef, useCallback, useState, useEffect } from 'react';
@@ -20,8 +22,8 @@ interface EditorCanvasProps {
 export default function EditorCanvas({ containerRef }: EditorCanvasProps) {
   const t = useEditorTheme((s) => s.tokens);
   const {
-    deck, activeSlideIndex, selectedElementId, isTextEditing,
-    selectElement, clearSelection,
+    deck, activeSlideIndex, selectedElementId, selectedElementIds, isTextEditing,
+    selectElement, toggleSelectElement, clearSelection,
   } = useDeckEditorStore();
 
   const stageRef = useRef<Konva.Stage>(null);
@@ -57,6 +59,15 @@ export default function EditorCanvas({ containerRef }: EditorCanvasProps) {
   const getSelectedNodeRef = (): React.RefObject<Konva.Node | null> => ({
     current: selectedElementId ? nodeRefs.current.get(selectedElementId) || null : null,
   });
+
+  // Shift+Click = toggle multi-select; normal click = single select
+  const handleElementSelect = useCallback((id: string, shiftKey?: boolean) => {
+    if (shiftKey) {
+      toggleSelectElement(id);
+    } else {
+      selectElement(id);
+    }
+  }, [selectElement, toggleSelectElement]);
 
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
     const target = e.target;
@@ -106,11 +117,11 @@ export default function EditorCanvas({ containerRef }: EditorCanvasProps) {
           <Layer>
             <Rect id="slide-background" x={0} y={0} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} fill={getBackgroundFill()} {...getGradientProps()} listening={true} />
             {sortedElements.filter((el) => el.visible).map((element) => {
-              const isSelected = element.id === selectedElementId;
+              const isSelected = selectedElementIds.includes(element.id);
               switch (element.type) {
-                case 'text':    return <TextNode    key={element.id} element={element} isSelected={isSelected} onSelect={selectElement} onNodeRef={handleNodeRef} />;
-                case 'image':   return <ImageNode   key={element.id} element={element} isSelected={isSelected} onSelect={selectElement} onNodeRef={handleNodeRef} />;
-                case 'shape':   return <ShapeNode   key={element.id} element={element} isSelected={isSelected} onSelect={selectElement} onNodeRef={handleNodeRef} />;
+                case 'text':    return <TextNode    key={element.id} element={element} isSelected={isSelected} onSelect={handleElementSelect} onNodeRef={handleNodeRef} />;
+                case 'image':   return <ImageNode   key={element.id} element={element} isSelected={isSelected} onSelect={handleElementSelect} onNodeRef={handleNodeRef} />;
+                case 'shape':   return <ShapeNode   key={element.id} element={element} isSelected={isSelected} onSelect={handleElementSelect} onNodeRef={handleNodeRef} />;
                 default: return null;
               }
             })}

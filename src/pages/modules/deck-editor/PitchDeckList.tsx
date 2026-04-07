@@ -38,8 +38,6 @@ import {
   useIdeas,
   useModuleData,
   useGenerateModule,
-  useExportModule,
-  useExportStatus,
   useUserDecks,
   useDecksByIdea,
   useCreateDeck,
@@ -48,7 +46,6 @@ import {
 } from '@/hooks';
 import { useQueryClient } from '@tanstack/react-query';
 import type { DeckListItem } from '@/hooks';
-import { downloadFile } from '@/utils';
 import { convertAIToDeckDocument } from '@/utils/deckConverter';
 import { useIdeaStore, getStoredActiveIdeaId } from '@/store';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/types/deck-editor.types';
@@ -82,11 +79,6 @@ export default function PitchDeckList() {
   const { mutate: createDeck, isPending: isCreatingDeck } = useCreateDeck();
   const { mutate: deleteDeck } = useDeleteDeck();
 
-  // Export hooks
-  const { mutate: exportModule, isPending: isExporting } = useExportModule('pitch-deck', activeIdeaId);
-  const [exportJobId, setExportJobId] = useState<string | null>(null);
-  const { data: exportStatus } = useExportStatus(exportJobId);
-
   // One Pager state
   const [showOnePager, setShowOnePager] = useState(false);
 
@@ -102,20 +94,6 @@ export default function PitchDeckList() {
       setActiveIdeaId(activeIdeaId);
     }
   }, [activeIdeaId, storedActiveIdeaId, setActiveIdeaId]);
-
-  // Export status watcher
-  useEffect(() => {
-    if (exportStatus?.state === 'completed' && exportStatus.downloadUrl) {
-      const filename = `${ideaData?.title || 'pitch'}_deck.pptx`.replace(/[^a-zA-Z0-9_.-]/g, '_');
-      downloadFile(exportStatus.downloadUrl, filename)
-        .then(() => toast.success('Pitch deck downloaded!'))
-        .catch(() => toast.error('Download failed'));
-      setExportJobId(null);
-    } else if (exportStatus?.state === 'failed') {
-      toast.error('Export failed');
-      setExportJobId(null);
-    }
-  }, [exportStatus, ideaData?.title]);
 
   // Refetch decks list automatically after AI generation completes
   const prevGenerating = useRef(isGenerating);
@@ -187,14 +165,6 @@ export default function PitchDeckList() {
     );
   };
 
-  const handleExportPPT = () => {
-    if (!hasGenerated) return;
-    exportModule(
-      { slides: moduleData!.data.slides } as any,
-      { onSuccess: (data) => setExportJobId(data.jobId) },
-    );
-  };
-
   const handleDeleteDeck = (deckId: string) => {
     setContextDeckId(null);
     setDeletingDeckId(deckId);
@@ -257,18 +227,6 @@ export default function PitchDeckList() {
                 onClick={() => setShowOnePager(true)}
               >
                 One Pager
-              </Button>
-              <Button
-                variant="secondary"
-                leftIcon={<Download className="w-4 h-4" />}
-                disabled={isExporting || !!exportJobId}
-                isLoading={isExporting || !!exportJobId}
-                onClick={handleExportPPT}
-              >
-                <span className="flex items-center gap-2">
-                  {exportJobId ? 'Exporting...' : 'Export PPT'}
-                  {!exportJobId && <CreditCost cost={5} />}
-                </span>
               </Button>
               <Button
                 variant="secondary"
@@ -461,7 +419,7 @@ export default function PitchDeckList() {
                   </button>
                   {contextDeckId === deck.id && (
                     <div
-                      className="absolute top-10 right-2 rounded-xl py-1 min-w-[140px] z-10"
+                      className="absolute top-10 right-2 rounded-xl py-1 min-w-[160px] z-10"
                       style={{
                         background: 'var(--dash-surface)',
                         border: '1px solid var(--dash-border-solid)',
@@ -469,6 +427,36 @@ export default function PitchDeckList() {
                       }}
                       onClick={(e) => e.stopPropagation()}
                     >
+                      <button
+                        className="w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors"
+                        style={{ color: 'var(--dash-text)' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.06)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                        onClick={() => {
+                          setContextDeckId(null);
+                          navigate(`/dashboard/pitch/${deck.id}`);
+                        }}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        Edit
+                      </button>
+                      <button
+                        className="w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors"
+                        style={{ color: 'var(--dash-text)' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.06)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                        onClick={() => {
+                          setContextDeckId(null);
+                          navigate(`/dashboard/pitch/${deck.id}?export=true`);
+                        }}
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span className="flex items-center gap-1.5">
+                          Export PPT
+                          <CreditCost cost={5} />
+                        </span>
+                      </button>
+                      <div style={{ height: '1px', background: 'var(--dash-border-solid)', margin: '4px 8px' }} />
                       <button
                         className="w-full px-3 py-2 text-left text-sm hover:bg-red-50 flex items-center gap-2"
                         style={{ color: '#EF4444' }}

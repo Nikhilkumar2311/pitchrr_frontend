@@ -66,6 +66,9 @@ export interface BaseElement {
 
   // Optional name for layer panel
   name?: string;
+
+  // Grouping — elements with the same groupId move together
+  groupId?: string;
 }
 
 // =============================================================================
@@ -135,6 +138,27 @@ export interface ShapeElement extends BaseElement {
 export type SlideElement = TextElement | ImageElement | ShapeElement;
 
 // =============================================================================
+// SLIDE DESIGN SYSTEM
+// =============================================================================
+
+/** Embedded design system tokens derived from branding module */
+export interface SlideDesignSystem {
+  colors: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    background: string;
+    textDark: string;
+    textLight: string;
+    textMuted: string;
+  };
+  typography: {
+    headingFont: string;
+    bodyFont: string;
+  };
+}
+
+// =============================================================================
 // SLIDE
 // =============================================================================
 
@@ -145,6 +169,9 @@ export interface EditorSlide {
   // Background
   background: string;          // CSS color or gradient string
   backgroundImage?: string;    // Optional background image URL
+
+  // Animation hint for presentation mode
+  animation?: 'fade' | 'slide-up' | 'none';
 }
 
 // =============================================================================
@@ -161,6 +188,9 @@ export interface DeckDocument {
   // Canvas dimensions (16:9 default)
   canvasWidth: number;         // default: 960
   canvasHeight: number;        // default: 540
+
+  // Design system tokens (from branding module)
+  designSystem?: SlideDesignSystem;
 
   // Metadata
   createdAt?: string;

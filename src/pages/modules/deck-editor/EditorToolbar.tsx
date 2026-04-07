@@ -17,6 +17,7 @@ import {
   ArrowRight, Diamond, Undo2, Redo2, Trash2, Save, Copy,
   Clipboard, ArrowLeft, Sun, Moon, Download, Loader2,
 } from 'lucide-react';
+import { CreditCost } from '@/components/common';
 import { useDeckEditorStore } from '@/store/useDeckEditorStore';
 import { useExportDeckAsImages } from '@/hooks/useDeckEditor';
 import { useEditorTheme } from './editorTheme';
@@ -168,7 +169,7 @@ export default function EditorToolbar({ onSave, isSaving }: EditorToolbarProps) 
         title="Export as PowerPoint (pixel-perfect)"
       >
         {exportBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-        {exportBusy ? 'Exporting...' : 'Export PPT'}
+        {exportBusy ? 'Exporting...' : <><span>Export PPT</span><CreditCost cost={5} /></>}
       </button>
 
       {/* Save */}

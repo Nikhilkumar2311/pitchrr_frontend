@@ -156,6 +156,7 @@ interface DeckEditorState {
   deck: DeckDocument;
   activeSlideIndex: number;
   selectedElementId: string | null;
+  selectedElementIds: string[]; // multi-select via Shift+Click
 
   // Editor state
   isDirty: boolean;
@@ -185,6 +186,8 @@ interface DeckEditorState {
   setActiveSlide: (index: number) => void;
   setSlideBackground: (background: string) => void;
   reorderSlides: (fromIndex: number, toIndex: number) => void;
+  nextSlide: () => void;
+  prevSlide: () => void;
 
   // =========================================================================
   // ELEMENT ACTIONS
@@ -196,10 +199,15 @@ interface DeckEditorState {
   updateElement: (id: string, updates: Partial<SlideElement>) => void;
   deleteElement: (id: string) => void;
   duplicateElement: (id: string) => void;
+  moveGroup: (groupId: string, dx: number, dy: number) => void;
 
   // Selection
   selectElement: (id: string | null) => void;
+  toggleSelectElement: (id: string) => void; // Shift+Click multi-select
   clearSelection: () => void;
+  groupSelected: () => void;
+  groupOverlapping: (id: string) => void; // group all elements inside the selected one's bounds
+  ungroupElement: (id: string) => void;
 
   // Layer ordering
   bringForward: (id: string) => void;
@@ -254,6 +262,7 @@ export const useDeckEditorStore = create<DeckEditorState>((set, get) => ({
   deck: createDefaultDeck(),
   activeSlideIndex: 0,
   selectedElementId: null,
+  selectedElementIds: [],
   isDirty: false,
   isTextEditing: false,
   undoStack: [],
@@ -269,6 +278,7 @@ export const useDeckEditorStore = create<DeckEditorState>((set, get) => ({
       deck,
       activeSlideIndex: 0,
       selectedElementId: null,
+      selectedElementIds: [],
       isDirty: false,
       undoStack: [],
       redoStack: [],
@@ -287,6 +297,7 @@ export const useDeckEditorStore = create<DeckEditorState>((set, get) => ({
       deck: createDefaultDeck(),
       activeSlideIndex: 0,
       selectedElementId: null,
+      selectedElementIds: [],
       isDirty: false,
       undoStack: [],
       redoStack: [],
@@ -390,6 +401,22 @@ export const useDeckEditorStore = create<DeckEditorState>((set, get) => ({
     });
   },
 
+  nextSlide: () => {
+    const state = get();
+    const next = state.activeSlideIndex + 1;
+    if (next < state.deck.slides.length) {
+      set({ activeSlideIndex: next, selectedElementId: null, isTextEditing: false });
+    }
+  },
+
+  prevSlide: () => {
+    const state = get();
+    const prev = state.activeSlideIndex - 1;
+    if (prev >= 0) {
+      set({ activeSlideIndex: prev, selectedElementId: null, isTextEditing: false });
+    }
+  },
+
   // ===========================================================================
   // ELEMENT ACTIONS
   // ===========================================================================
@@ -444,6 +471,23 @@ export const useDeckEditorStore = create<DeckEditorState>((set, get) => ({
     });
   },
 
+  moveGroup: (groupId, dx, dy) => {
+    set((state) => {
+      const slides = [...state.deck.slides];
+      const slide = { ...slides[state.activeSlideIndex] };
+      slide.elements = slide.elements.map((el) =>
+        el.groupId === groupId
+          ? { ...el, x: el.x + dx, y: el.y + dy } as SlideElement
+          : el
+      );
+      slides[state.activeSlideIndex] = slide;
+      return {
+        deck: { ...state.deck, slides },
+        isDirty: true,
+      };
+    });
+  },
+
   deleteElement: (id) => {
     get().pushHistory();
     set((state) => {
@@ -489,9 +533,82 @@ export const useDeckEditorStore = create<DeckEditorState>((set, get) => ({
   },
 
   // Selection
-  selectElement: (id) => set({ selectedElementId: id, isTextEditing: false }),
+  selectElement: (id) => set({ selectedElementId: id, selectedElementIds: id ? [id] : [], isTextEditing: false }),
+  toggleSelectElement: (id) => {
+    const state = get();
+    const ids = [...state.selectedElementIds];
+    if (ids.includes(id)) {
+      const filtered = ids.filter((eid) => eid !== id);
+      set({ selectedElementIds: filtered, selectedElementId: filtered[filtered.length - 1] || null, isTextEditing: false });
+    } else {
+      ids.push(id);
+      set({ selectedElementIds: ids, selectedElementId: id, isTextEditing: false });
+    }
+  },
   clearSelection: () =>
-    set({ selectedElementId: null, isTextEditing: false }),
+    set({ selectedElementId: null, selectedElementIds: [], isTextEditing: false }),
+  groupSelected: () => {
+    const state = get();
+    if (state.selectedElementIds.length < 2) return;
+    state.pushHistory();
+    const groupId = uuidv4().slice(0, 12);
+    set((s) => {
+      const slides = [...s.deck.slides];
+      const slide = { ...slides[s.activeSlideIndex] };
+      slide.elements = slide.elements.map((el) =>
+        s.selectedElementIds.includes(el.id)
+          ? { ...el, groupId } as SlideElement
+          : el
+      );
+      slides[s.activeSlideIndex] = slide;
+      return { deck: { ...s.deck, slides }, isDirty: true };
+    });
+  },
+  ungroupElement: (id) => {
+    const state = get();
+    const slide = state.deck.slides[state.activeSlideIndex];
+    const el = slide?.elements.find((e) => e.id === id);
+    if (!el?.groupId) return;
+    const gid = el.groupId;
+    state.pushHistory();
+    set((s) => {
+      const slides = [...s.deck.slides];
+      const sl = { ...slides[s.activeSlideIndex] };
+      sl.elements = sl.elements.map((e) =>
+        e.groupId === gid ? { ...e, groupId: undefined } as SlideElement : e
+      );
+      slides[s.activeSlideIndex] = sl;
+      return { deck: { ...s.deck, slides }, isDirty: true };
+    });
+  },
+  groupOverlapping: (id) => {
+    const state = get();
+    const slide = state.deck.slides[state.activeSlideIndex];
+    const anchor = slide?.elements.find((e) => e.id === id);
+    if (!anchor) return;
+    // Find elements whose center falls inside the anchor's bounding box
+    const ax = anchor.x, ay = anchor.y;
+    const aw = anchor.width * (anchor.scaleX ?? 1);
+    const ah = anchor.height * (anchor.scaleY ?? 1);
+    const inside = slide.elements.filter((el) => {
+      const cx = el.x + (el.width * (el.scaleX ?? 1)) / 2;
+      const cy = el.y + (el.height * (el.scaleY ?? 1)) / 2;
+      return cx >= ax && cx <= ax + aw && cy >= ay && cy <= ay + ah;
+    });
+    if (inside.length < 2) return;
+    state.pushHistory();
+    const groupId = uuidv4().slice(0, 12);
+    set((s) => {
+      const slides = [...s.deck.slides];
+      const sl = { ...slides[s.activeSlideIndex] };
+      const ids = new Set(inside.map((e) => e.id));
+      sl.elements = sl.elements.map((el) =>
+        ids.has(el.id) ? { ...el, groupId } as SlideElement : el
+      );
+      slides[s.activeSlideIndex] = sl;
+      return { deck: { ...s.deck, slides }, isDirty: true };
+    });
+  },
 
   // Layer ordering
   bringForward: (id) => {
