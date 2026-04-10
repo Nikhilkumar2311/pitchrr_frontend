@@ -49,16 +49,20 @@ export function SuggestedFounders({ posts = [], currentUserId }: SuggestedFounde
         {founders.map((founder, i) => (
           <div key={founder.id} className="flex items-center gap-3">
             <Link to={`/profile/${founder.id}`}>
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 cursor-pointer hover:ring-2 hover:ring-blue-200 transition-all"
-                style={{
-                  background: founder.avatar
-                    ? `url(${founder.avatar}) center/cover`
-                    : COLORS[i % COLORS.length],
-                }}
-              >
-                {!founder.avatar && founder.name[0]?.toUpperCase()}
-              </div>
+              {founder.avatar ? (
+                <img
+                  src={founder.avatar}
+                  alt={founder.name}
+                  className="w-8 h-8 rounded-full object-cover shrink-0 cursor-pointer hover:ring-2 hover:ring-blue-200 transition-all"
+                />
+              ) : (
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 cursor-pointer hover:ring-2 hover:ring-blue-200 transition-all"
+                  style={{ background: COLORS[i % COLORS.length] }}
+                >
+                  {founder.name[0]?.toUpperCase()}
+                </div>
+              )}
             </Link>
             <div className="flex-1 min-w-0">
               <Link

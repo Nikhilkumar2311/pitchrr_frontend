@@ -189,16 +189,20 @@ function ReplyRow({
         data-comment-id={reply.id}
       >
         {/* Avatar */}
-        <div
-          className="w-6 h-6 shrink-0 rounded-full flex items-center justify-center text-[8px] font-bold text-white"
-          style={{
-            background: reply.userAvatar
-              ? `url(${reply.userAvatar}) center/cover`
-              : 'var(--color-primary-blue)',
-          }}
-        >
-          {!reply.userAvatar && (reply.userName?.[0]?.toUpperCase() || 'U')}
-        </div>
+        {reply.userAvatar ? (
+          <img
+            src={reply.userAvatar}
+            alt={reply.userName || 'User'}
+            className="w-6 h-6 shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <div
+            className="w-6 h-6 shrink-0 rounded-full flex items-center justify-center text-[8px] font-bold text-white"
+            style={{ background: 'var(--color-primary-blue)' }}
+          >
+            {reply.userName?.[0]?.toUpperCase() || 'U'}
+          </div>
+        )}
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -305,16 +309,20 @@ function CommentThread({
         data-comment-user={comment.userName || 'User'}
         data-comment-id={comment.id}
       >
-        <div
-          className="w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
-          style={{
-            background: comment.userAvatar
-              ? `url(${comment.userAvatar}) center/cover`
-              : 'var(--color-gradient)',
-          }}
-        >
-          {!comment.userAvatar && (comment.userName?.[0]?.toUpperCase() || 'U')}
-        </div>
+        {comment.userAvatar ? (
+          <img
+            src={comment.userAvatar}
+            alt={comment.userName || 'User'}
+            className="w-7 h-7 shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <div
+            className="w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
+            style={{ background: 'var(--color-gradient)' }}
+          >
+            {comment.userName?.[0]?.toUpperCase() || 'U'}
+          </div>
+        )}
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">

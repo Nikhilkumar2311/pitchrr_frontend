@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Send, Loader2, Zap, Sparkles } from 'lucide-react';
+import { Send, Loader2, Sparkles } from 'lucide-react';
 import { useCreatePost } from '@/hooks/useCommunity';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
@@ -46,16 +46,20 @@ export function PostComposer({ onOpenAutoPost }: PostComposerProps) {
         className="post-composer-collapsed"
         onClick={() => setExpanded(true)}
       >
-        <div
-          className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-          style={{
-            background: user.imageUrl
-              ? `url(${user.imageUrl}) center/cover`
-              : 'var(--color-gradient)',
-          }}
-        >
-          {!user.imageUrl && (user.firstName?.[0]?.toUpperCase() || 'U')}
-        </div>
+        {user.imageUrl ? (
+          <img
+            src={user.imageUrl}
+            alt={user.firstName || 'User'}
+            className="w-9 h-9 rounded-full object-cover shrink-0"
+          />
+        ) : (
+          <div
+            className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+            style={{ background: 'var(--color-gradient)' }}
+          >
+            {user.firstName?.[0]?.toUpperCase() || 'U'}
+          </div>
+        )}
         <span
           className="text-sm flex-1"
           style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-body)' }}
@@ -132,8 +136,8 @@ export function PostComposer({ onOpenAutoPost }: PostComposerProps) {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:bg-blue-50"
             style={{ color: 'var(--color-primary-blue)', fontFamily: 'var(--font-body)' }}
           >
-            <Zap className="w-3.5 h-3.5" />
-            AI Assist
+            <Sparkles className="w-3.5 h-3.5" />
+            Generate with AI
           </button>
           <button
             onClick={() => { setExpanded(false); setContent(''); }}

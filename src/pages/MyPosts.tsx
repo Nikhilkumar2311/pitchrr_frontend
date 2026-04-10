@@ -69,7 +69,7 @@ function ExpandablePost({ post, navigate, deleteMutation }: any) {
           </div>
 
           <p
-            className="text-xs leading-relaxed line-clamp-2"
+            className="text-xs leading-relaxed"
             style={{ color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}
           >
             {post.content}

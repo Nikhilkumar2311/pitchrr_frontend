@@ -28,16 +28,20 @@ export function LeftSidebar({ activeNav, onNavChange }: LeftSidebarProps) {
         <div className="sidebar-card sidebar-profile-card">
           <Link to={`/profile/${user.id}`} className="block p-4">
             <div className="flex items-center gap-3">
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                style={{
-                  background: user.imageUrl
-                    ? `url(${user.imageUrl}) center/cover`
-                    : 'var(--color-gradient)',
-                }}
-              >
-                {!user.imageUrl && (user.firstName?.[0]?.toUpperCase() || 'U')}
-              </div>
+              {user.imageUrl ? (
+                <img
+                  src={user.imageUrl}
+                  alt={user.fullName || 'User'}
+                  className="w-10 h-10 rounded-full object-cover shrink-0"
+                />
+              ) : (
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                  style={{ background: 'var(--color-gradient)' }}
+                >
+                  {user.firstName?.[0]?.toUpperCase() || 'U'}
+                </div>
+              )}
               <div className="min-w-0">
                 <p
                   className="text-sm font-semibold truncate"

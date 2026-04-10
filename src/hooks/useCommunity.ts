@@ -183,43 +183,24 @@ export function useSharePost() {
 }
 
 // ============================================================================
-// Auto-Post Settings
+// AI Content Generation
 // ============================================================================
 
-export interface AutoPostSettings {
-  id: string;
-  userId: string;
-  ideaId: string | null;
-  ideaTitle: string | null;
-  enabled: boolean;
-  frequency: 'DAILY' | 'TWICE_A_WEEK' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY';
-  nextRunAt: string | null;
-  lastRunAt: string | null;
-}
-
-export function useAutoPostSettings() {
-  return useQuery<AutoPostSettings>({
-    queryKey: ['auto-post-settings'],
-    queryFn: async () => {
-      const res = await api.get('/community/settings/auto-post');
-      return res.data;
-    },
-  });
-}
-
-export function useUpdateAutoPostSettings() {
-  const queryClient = useQueryClient();
-
+export function useGenerateAIContent() {
   return useMutation({
-    mutationFn: async (data: Partial<AutoPostSettings>) => {
-      const res = await api.put('/community/settings/auto-post', data);
-      return res.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['auto-post-settings'] });
+    mutationFn: async (data: {
+      ideaTitle: string;
+      industry?: string;
+      description?: string;
+      targetAudience?: string;
+      problemSolved?: string;
+    }) => {
+      const res = await api.post('/community/settings/auto-post/generate-content', data);
+      return res.data as { content: string };
     },
   });
 }
+
 
 // ============================================================================
 // Achievements
@@ -433,18 +414,5 @@ export function useUserPosts(userId?: string) {
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     initialPageParam: undefined as string | undefined,
     enabled: !!userId,
-  });
-}
-
-// ============================================================================
-// Auto-Post Manual Trigger
-// ============================================================================
-
-export function useTriggerAutoPost() {
-  return useMutation({
-    mutationFn: async () => {
-      const res = await api.post('/community/settings/auto-post/trigger');
-      return res.data;
-    },
   });
 }

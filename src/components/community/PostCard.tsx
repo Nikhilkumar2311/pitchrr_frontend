@@ -68,16 +68,20 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
       <div className="flex items-start justify-between p-5 pb-0">
         <div className="flex items-center gap-3">
           <Link to={`/profile/${post.userId}`}>
-            <div
-              className="w-11 h-11 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 cursor-pointer hover:ring-2 hover:ring-blue-200 transition-all"
-              style={{
-                background: post.userAvatar
-                  ? `url(${post.userAvatar}) center/cover`
-                  : 'var(--color-gradient)',
-              }}
-            >
-              {!post.userAvatar && (post.userName?.[0]?.toUpperCase() || 'U')}
-            </div>
+            {post.userAvatar ? (
+              <img
+                src={post.userAvatar}
+                alt={post.userName || 'User'}
+                className="w-11 h-11 rounded-full object-cover shrink-0 cursor-pointer hover:ring-2 hover:ring-blue-200 transition-all"
+              />
+            ) : (
+              <div
+                className="w-11 h-11 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 cursor-pointer hover:ring-2 hover:ring-blue-200 transition-all"
+                style={{ background: 'var(--color-gradient)' }}
+              >
+                {post.userName?.[0]?.toUpperCase() || 'U'}
+              </div>
+            )}
           </Link>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">

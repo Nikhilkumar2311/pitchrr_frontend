@@ -1,67 +1,94 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Zap, Loader2, CalendarClock, ChevronDown } from 'lucide-react';
-import { useAutoPostSettings, useUpdateAutoPostSettings } from '@/hooks/useCommunity';
+import { X, Sparkles, Loader2, ChevronDown, Wand2, CheckCircle2, Edit3, Send } from 'lucide-react';
+import { useGenerateAIContent, useCreatePost } from '@/hooks/useCommunity';
 import { useIdeas } from '@/hooks/useIdeas';
+import type { Idea } from '@/hooks/useIdeas';
 import toast from 'react-hot-toast';
 
-interface AutoPostPanelProps {
+interface AIGeneratePanelProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const FREQUENCY_OPTIONS = [
-  { value: 'DAILY', label: 'Daily', desc: 'Post every day at 10:00 AM' },
-  { value: 'TWICE_A_WEEK', label: 'Twice a week', desc: 'Post 2× per week' },
-  { value: 'WEEKLY', label: 'Weekly', desc: 'Post once a week' },
-  { value: 'BIWEEKLY', label: 'Biweekly', desc: 'Post every 2 weeks' },
-  { value: 'MONTHLY', label: 'Monthly', desc: 'Post once a month' },
-] as const;
-
-export function AutoPostPanel({ isOpen, onClose }: AutoPostPanelProps) {
-  const { data: settings, isLoading } = useAutoPostSettings();
-  const updateSettings = useUpdateAutoPostSettings();
+export function AutoPostPanel({ isOpen, onClose }: AIGeneratePanelProps) {
+  const generateAI = useGenerateAIContent();
+  const createPost = useCreatePost();
   const { data: ideas, isLoading: ideasLoading } = useIdeas();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedContent, setGeneratedContent] = useState('');
+  const [isPosting, setIsPosting] = useState(false);
 
-  const handleToggle = async () => {
-    if (!settings) return;
+  const activeIdeas = ideas?.filter((idea) => !idea.isArchived) ?? [];
 
-    if (!settings.enabled && !settings.ideaId) {
-      toast.error('Please select a startup idea first');
+  const handleIdeaSelect = (idea: Idea) => {
+    setSelectedIdea(idea);
+    setShowDropdown(false);
+    setGeneratedContent('');
+  };
+
+  const handleGenerate = async () => {
+    if (!selectedIdea) {
+      toast.error('Please select a startup first');
       return;
     }
 
+    setIsGenerating(true);
+    setGeneratedContent('');
+
     try {
-      await updateSettings.mutateAsync({
-        enabled: !settings.enabled,
+      const result = await generateAI.mutateAsync({
+        ideaTitle: selectedIdea.title,
+        industry: selectedIdea.industry ?? undefined,
+        description: selectedIdea.description,
+        targetAudience: selectedIdea.targetAudience ?? undefined,
+        problemSolved: selectedIdea.problemSolved ?? undefined,
       });
-      toast.success(settings.enabled ? 'Auto-posting paused' : 'Auto-posting enabled!');
-    } catch {
-      toast.error('Failed to update settings');
+      setGeneratedContent(result.content);
+      toast.success('Content generated! Review and edit before posting.');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to generate content. Try again.');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
-  const handleIdeaSelect = async (ideaId: string, ideaTitle: string) => {
+  const handlePost = async () => {
+    if (!generatedContent.trim()) {
+      toast.error('Post content cannot be empty');
+      return;
+    }
+
+    setIsPosting(true);
+
     try {
-      await updateSettings.mutateAsync({ ideaId, ideaTitle });
-      setShowDropdown(false);
-      toast.success(`Selected "${ideaTitle}"`);
-    } catch {
-      toast.error('Failed to update');
+      await createPost.mutateAsync({
+        content: generatedContent.trim(),
+        ideaId: selectedIdea?.id,
+        ideaTitle: selectedIdea?.title,
+        industry: selectedIdea?.industry ?? undefined,
+      });
+      toast.success('Post published successfully!');
+      handleClose();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to publish post. Try again.');
+    } finally {
+      setIsPosting(false);
     }
   };
 
-  const handleFrequencyChange = async (frequency: string) => {
-    try {
-      await updateSettings.mutateAsync({ frequency: frequency as any });
-      toast.success('Frequency updated');
-    } catch {
-      toast.error('Failed to update');
-    }
+  const handleClose = () => {
+    setGeneratedContent('');
+    setSelectedIdea(null);
+    setIsGenerating(false);
+    setIsPosting(false);
+    onClose();
   };
 
-  const activeIdeas = ideas?.filter((idea) => !idea.isArchived) ?? [];
+  const charCount = generatedContent.length;
+  const maxChars = 500;
 
   return (
     <AnimatePresence>
@@ -72,14 +99,14 @@ export function AutoPostPanel({ isOpen, onClose }: AutoPostPanelProps) {
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(6px)' }}
-          onClick={onClose}
+          onClick={handleClose}
         >
           <motion.div
             initial={{ scale: 0.95, opacity: 0, y: 10 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 10 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-2xl overflow-hidden max-h-[85vh] overflow-y-auto"
+            className="w-full max-w-lg rounded-2xl overflow-visible"
             style={{
               background: 'white',
               border: '1px solid var(--color-border)',
@@ -88,248 +115,307 @@ export function AutoPostPanel({ isOpen, onClose }: AutoPostPanelProps) {
           >
             {/* Header */}
             <div
-              className="flex items-center justify-between p-5 sticky top-0 bg-white z-10"
+              className="flex items-center justify-between p-5"
               style={{ borderBottom: '1px solid var(--color-border)' }}
             >
               <div className="flex items-center gap-2.5">
                 <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center"
-                  style={{ background: 'var(--color-bg-accent)' }}
+                  className="w-9 h-9 rounded-xl flex items-center justify-center"
+                  style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #4F7DF3 100%)' }}
                 >
-                  <Zap className="w-4 h-4" style={{ color: 'var(--color-primary-blue)' }} />
+                  <Sparkles className="w-4.5 h-4.5 text-white" />
                 </div>
                 <div>
                   <h3
                     className="text-sm font-semibold"
                     style={{ color: 'var(--color-text-primary)', fontFamily: 'var(--font-heading)' }}
                   >
-                    Auto-Post Settings
+                    Generate AI Post
                   </h3>
                   <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
-                    AI generates community posts for you
+                    AI creates a post — you review & edit before publishing
                   </p>
                 </div>
               </div>
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 className="p-1.5 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <X className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
               </button>
             </div>
 
-            {isLoading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--color-primary-blue)' }} />
+            <div className="p-5 space-y-5">
+              {/* Info Banner */}
+              <div
+                className="flex items-start gap-3 px-4 py-3 rounded-xl"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.06) 0%, rgba(79, 125, 243, 0.06) 100%)',
+                  border: '1px solid rgba(139, 92, 246, 0.12)',
+                }}
+              >
+                <Wand2 className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#8B5CF6' }} />
+                <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                  Select your startup and our AI will craft a relevant, engaging community post. 
+                  You can review and edit the content before publishing.
+                </p>
               </div>
-            ) : (
-              <div className="p-5 space-y-5">
-                {/* Toggle */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
-                      Enable Auto-Posting
-                    </p>
-                    <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                      AI will write and post on your behalf
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleToggle}
-                    disabled={updateSettings.isPending}
-                    className="relative w-11 h-6 rounded-full transition-colors"
-                    style={{
-                      background: settings?.enabled
-                        ? 'var(--color-primary-blue)'
-                        : 'var(--color-border)',
-                    }}
-                  >
-                    <div
-                      className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform"
-                      style={{
-                        transform: settings?.enabled ? 'translateX(22px)' : 'translateX(2px)',
-                      }}
-                    />
-                  </button>
-                </div>
 
-                {/* Startup Idea Dropdown */}
-                <div>
-                  <label
-                    className="text-xs font-semibold block mb-1.5"
-                    style={{ color: 'var(--color-text-secondary)' }}
-                  >
-                    Startup Idea
-                  </label>
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowDropdown(!showDropdown)}
-                      className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-xs outline-none transition-all"
+              {/* Startup Idea Selector */}
+              <div className="relative">
+                <label
+                  className="text-xs font-semibold block mb-2"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
+                  Select Startup
+                </label>
+                <button
+                  onClick={() => setShowDropdown(!showDropdown)}
+                  className="w-full flex items-center justify-between rounded-xl px-4 py-3 text-xs outline-none transition-all"
+                  style={{
+                    background: 'var(--color-bg-light)',
+                    border: showDropdown ? '1.5px solid var(--color-primary-blue)' : '1.5px solid var(--color-border)',
+                    color: selectedIdea ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+                    fontFamily: 'var(--font-body)',
+                    boxShadow: showDropdown ? '0 0 0 3px rgba(79, 125, 243, 0.1)' : 'none',
+                  }}
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    {selectedIdea && (
+                      <div
+                        className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #4F7DF3 100%)' }}
+                      >
+                        <span className="text-[9px] font-bold text-white">
+                          {selectedIdea.title[0]?.toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    <span className="truncate font-medium">
+                      {selectedIdea?.title || 'Choose a startup idea...'}
+                    </span>
+                  </div>
+                  <ChevronDown
+                    className="w-3.5 h-3.5 shrink-0 ml-2 transition-transform"
+                    style={{
+                      color: 'var(--color-text-muted)',
+                      transform: showDropdown ? 'rotate(180deg)' : 'rotate(0)',
+                    }}
+                  />
+                </button>
+
+                <AnimatePresence>
+                  {showDropdown && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      className="absolute top-full left-0 right-0 mt-1.5 rounded-xl z-20"
                       style={{
-                        background: 'var(--color-bg-light)',
+                        background: 'white',
                         border: '1px solid var(--color-border)',
-                        color: settings?.ideaTitle ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
-                        fontFamily: 'var(--font-body)',
+                        boxShadow: '0 12px 36px rgba(0,0,0,0.12)',
+                        maxHeight: '220px',
+                        overflowY: 'auto',
+                        overflowX: 'hidden',
                       }}
                     >
-                      <span className="truncate">
-                        {settings?.ideaTitle || 'Select a startup idea...'}
-                      </span>
-                      <ChevronDown
-                        className="w-3.5 h-3.5 shrink-0 ml-2 transition-transform"
-                        style={{
-                          color: 'var(--color-text-muted)',
-                          transform: showDropdown ? 'rotate(180deg)' : 'rotate(0)',
-                        }}
-                      />
-                    </button>
-
-                    <AnimatePresence>
-                      {showDropdown && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -4 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -4 }}
-                          className="absolute top-full left-0 right-0 mt-1 rounded-xl overflow-hidden z-20"
-                          style={{
-                            background: 'white',
-                            border: '1px solid var(--color-border)',
-                            boxShadow: 'var(--shadow-card)',
-                            maxHeight: '200px',
-                            overflowY: 'auto',
-                          }}
-                        >
-                          {ideasLoading ? (
-                            <div className="flex justify-center py-4">
-                              <Loader2 className="w-4 h-4 animate-spin" style={{ color: 'var(--color-primary-blue)' }} />
-                            </div>
-                          ) : activeIdeas.length === 0 ? (
-                            <div className="py-4 px-3 text-center">
-                              <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
-                                No startup ideas found. Create one first in your Dashboard.
-                              </p>
-                            </div>
-                          ) : (
-                            activeIdeas.map((idea) => (
+                      {ideasLoading ? (
+                        <div className="flex justify-center py-6">
+                          <Loader2 className="w-4 h-4 animate-spin" style={{ color: 'var(--color-primary-blue)' }} />
+                        </div>
+                      ) : activeIdeas.length === 0 ? (
+                        <div className="py-5 px-4 text-center">
+                          <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                            No startup ideas found. Create one first in your Dashboard.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="py-1">
+                          {activeIdeas.map((idea, index) => {
+                            const isSelected = selectedIdea?.id === idea.id;
+                            const isLast = index === activeIdeas.length - 1;
+                            return (
                               <button
                                 key={idea.id}
-                                onClick={() => handleIdeaSelect(idea.id, idea.title)}
-                                className="w-full text-left px-3.5 py-2.5 text-xs transition-colors hover:bg-blue-50 flex items-center justify-between"
+                                onClick={() => handleIdeaSelect(idea)}
+                                className="w-full text-left px-4 py-3 text-xs transition-colors flex items-center gap-3"
                                 style={{
-                                  borderBottom: '1px solid var(--color-border)',
-                                  color: settings?.ideaId === idea.id
-                                    ? 'var(--color-primary-blue)'
-                                    : 'var(--color-text-primary)',
-                                  fontWeight: settings?.ideaId === idea.id ? 600 : 400,
+                                  background: isSelected ? 'rgba(79, 125, 243, 0.06)' : 'transparent',
+                                  borderBottom: isLast ? 'none' : '1px solid var(--color-border)',
                                   fontFamily: 'var(--font-body)',
                                 }}
+                                onMouseEnter={(e) => {
+                                  if (!isSelected) e.currentTarget.style.background = 'rgba(79, 125, 243, 0.04)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.background = isSelected ? 'rgba(79, 125, 243, 0.06)' : 'transparent';
+                                }}
                               >
-                                <div className="truncate flex-1">
-                                  <span className="block font-medium">{idea.title}</span>
+                                {/* Idea Avatar */}
+                                <div
+                                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                                  style={{
+                                    background: isSelected
+                                      ? 'linear-gradient(135deg, #8B5CF6 0%, #4F7DF3 100%)'
+                                      : 'var(--color-bg-accent)',
+                                  }}
+                                >
+                                  <span
+                                    className="text-[10px] font-bold"
+                                    style={{ color: isSelected ? 'white' : 'var(--color-primary-blue)' }}
+                                  >
+                                    {idea.title[0]?.toUpperCase()}
+                                  </span>
+                                </div>
+
+                                {/* Idea Info */}
+                                <div className="flex-1 min-w-0">
+                                  <span
+                                    className="block font-semibold text-[12px] truncate"
+                                    style={{
+                                      color: isSelected ? 'var(--color-primary-blue)' : 'var(--color-text-primary)',
+                                    }}
+                                  >
+                                    {idea.title}
+                                  </span>
                                   {idea.industry && (
-                                    <span className="text-[10px] block mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                                    <span
+                                      className="block text-[10px] mt-0.5 truncate"
+                                      style={{ color: 'var(--color-text-muted)' }}
+                                    >
                                       {idea.industry}
                                     </span>
                                   )}
                                 </div>
-                                {settings?.ideaId === idea.id && (
-                                  <div
-                                    className="w-2 h-2 rounded-full shrink-0 ml-2"
-                                    style={{ background: 'var(--color-primary-blue)' }}
+
+                                {/* Checkmark */}
+                                {isSelected && (
+                                  <CheckCircle2
+                                    className="w-4 h-4 shrink-0"
+                                    style={{ color: 'var(--color-primary-blue)' }}
                                   />
                                 )}
                               </button>
-                            ))
-                          )}
-                        </motion.div>
+                            );
+                          })}
+                        </div>
                       )}
-                    </AnimatePresence>
-                  </div>
-                  <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
-                    AI will generate posts about this startup idea
-                  </p>
-                </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
-                {/* Frequency */}
-                <div>
-                  <label
-                    className="text-xs font-semibold block mb-2"
-                    style={{ color: 'var(--color-text-secondary)' }}
+              {/* Generated Content Preview & Edit */}
+              <AnimatePresence>
+                {generatedContent && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 6 }}
                   >
-                    Posting Frequency
-                  </label>
-                  <div className="space-y-1.5">
-                    {FREQUENCY_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.value}
-                        onClick={() => handleFrequencyChange(opt.value)}
-                        className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left transition-all"
-                        style={{
-                          background:
-                            settings?.frequency === opt.value ? 'var(--color-bg-accent)' : 'transparent',
-                          border: `1px solid ${
-                            settings?.frequency === opt.value
-                              ? 'rgba(79, 125, 243, 0.2)'
-                              : 'var(--color-border)'
-                          }`,
-                        }}
+                    <div className="flex items-center justify-between mb-2">
+                      <label
+                        className="text-xs font-semibold flex items-center gap-1.5"
+                        style={{ color: 'var(--color-text-secondary)' }}
                       >
-                        <div
-                          className="w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center shrink-0"
-                          style={{
-                            borderColor:
-                              settings?.frequency === opt.value
-                                ? 'var(--color-primary-blue)'
-                                : 'var(--color-border)',
-                          }}
-                        >
-                          {settings?.frequency === opt.value && (
-                            <div
-                              className="w-1.5 h-1.5 rounded-full"
-                              style={{ background: 'var(--color-primary-blue)' }}
-                            />
-                          )}
-                        </div>
-                        <div>
-                          <span
-                            className="text-xs font-semibold block"
-                            style={{ color: 'var(--color-text-primary)' }}
-                          >
-                            {opt.label}
-                          </span>
-                          <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
-                            {opt.desc}
-                          </span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                        <Edit3 className="w-3.5 h-3.5" />
+                        Review & Edit
+                      </label>
+                      <span
+                        className="text-[10px] font-medium"
+                        style={{ color: charCount > maxChars ? '#DC2626' : 'var(--color-text-muted)' }}
+                      >
+                        {charCount}/{maxChars}
+                      </span>
+                    </div>
+                    <textarea
+                      value={generatedContent}
+                      onChange={(e) => setGeneratedContent(e.target.value.slice(0, maxChars))}
+                      rows={6}
+                      className="w-full rounded-xl px-4 py-3 text-xs leading-relaxed resize-none outline-none transition-all"
+                      style={{
+                        background: 'var(--color-bg-light)',
+                        border: '1.5px solid var(--color-border)',
+                        color: 'var(--color-text-primary)',
+                        fontFamily: 'var(--font-body)',
+                      }}
+                      placeholder="AI-generated content will appear here..."
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-                {/* Schedule Info */}
-                <div
-                  className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl"
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                {/* Generate / Regenerate Button */}
+                <motion.button
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  onClick={handleGenerate}
+                  disabled={isGenerating || !selectedIdea}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                    generatedContent ? 'text-purple-600' : 'text-white'
+                  }`}
                   style={{
-                    background: 'var(--color-bg-accent)',
-                    border: '1px solid rgba(79, 125, 243, 0.12)',
+                    background: generatedContent
+                      ? 'rgba(139, 92, 246, 0.08)'
+                      : selectedIdea
+                        ? 'linear-gradient(135deg, #8B5CF6 0%, #4F7DF3 100%)'
+                        : 'var(--color-border)',
+                    border: generatedContent ? '1.5px solid rgba(139, 92, 246, 0.2)' : 'none',
+                    boxShadow: !generatedContent && selectedIdea ? '0 4px 16px rgba(139, 92, 246, 0.3)' : 'none',
                   }}
                 >
-                  <CalendarClock className="w-4 h-4 shrink-0" style={{ color: 'var(--color-primary-blue)' }} />
-                  <div>
-                    <span className="text-[11px] font-medium block" style={{ color: 'var(--color-text-secondary)' }}>
-                      {settings?.enabled && settings?.nextRunAt
-                        ? `Next post: ${new Date(settings.nextRunAt).toLocaleDateString('en-US', {
-                            weekday: 'short', month: 'short', day: 'numeric',
-                          })} at 10:00 AM IST`
-                        : 'Posts are scheduled at 10:00 AM IST'}
-                    </span>
-                    <span className="text-[10px] block mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                      AI generates startup-relevant content automatically
-                    </span>
-                  </div>
-                </div>
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      {generatedContent ? 'Regenerate' : 'Generate with AI'}
+                    </>
+                  )}
+                </motion.button>
+
+                {/* Post Button — only visible after content is generated */}
+                {generatedContent && (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    onClick={handlePost}
+                    disabled={isPosting || !generatedContent.trim()}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      background: 'linear-gradient(135deg, #059669 0%, #10B981 100%)',
+                      boxShadow: '0 4px 16px rgba(5, 150, 105, 0.3)',
+                    }}
+                  >
+                    {isPosting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Posting...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        Publish Post
+                      </>
+                    )}
+                  </motion.button>
+                )}
               </div>
-            )}
+
+              <p className="text-center text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+                {generatedContent
+                  ? 'Review the content above, make any edits, then publish.'
+                  : 'AI will generate a post about your startup for you to review.'}
+              </p>
+            </div>
           </motion.div>
         </motion.div>
       )}
