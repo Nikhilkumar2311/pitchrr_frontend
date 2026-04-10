@@ -4,19 +4,12 @@
  */
 
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, LogOut, Menu, X, Compass } from "lucide-react";
+import { LayoutDashboard, LogOut, Menu, X } from "lucide-react";
 import { useUIStore } from "@/store";
 import { useAuth } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { useFeedback } from "@/context/FeedbackContext";
 import { useState } from "react";
-
-const navLinks = [
-    { label: "How it Works", href: "#how-it-works" },
-    { label: "Features", href: "#features" },
-    { label: "Pricing", href: "#pricing" },
-    { label: "Explore", href: "/explore", isRoute: true },
-];
 
 export function Header() {
     const { setAuthModalOpen, setAuthModalView } = useUIStore();
@@ -33,6 +26,8 @@ export function Header() {
         setAuthModalView("signin");
         setAuthModalOpen(true);
     };
+
+    const isActive = (path: string) => location.pathname === path;
 
     return (
         <header className="fixed top-0 left-0 right-0 z-50 pt-4 px-4">
@@ -58,34 +53,28 @@ export function Header() {
 
                     {/* Desktop Navigation - Center */}
                     <div className="hidden lg:flex items-center gap-1">
-                        {navLinks.map((link) => {
-                            const NavTag = (link as any).isRoute ? Link : 'a';
-                            const navProps = (link as any).isRoute
-                                ? { to: link.href }
-                                : { href: link.href };
-                            return (
-                                <NavTag
-                                    key={link.label}
-                                    {...navProps as any}
-                                    className="px-3.5 py-1.5 text-[13px] font-medium rounded-lg transition-colors duration-200"
-                                    style={{
-                                        fontFamily: "var(--font-body)",
-                                        color: link.label === "Explore" ? "var(--color-primary-blue)" : "var(--color-text-secondary)",
-                                    }}
-                                    onMouseEnter={(e: any) => {
-                                        e.currentTarget.style.color = "var(--color-text-primary)";
-                                        e.currentTarget.style.background = "rgba(0,0,0,0.03)";
-                                    }}
-                                    onMouseLeave={(e: any) => {
-                                        e.currentTarget.style.color = link.label === "Explore" ? "var(--color-primary-blue)" : "var(--color-text-secondary)";
-                                        e.currentTarget.style.background = "transparent";
-                                    }}
-                                >
-                                    {link.label === "Explore" && <Compass className="w-3.5 h-3.5 inline mr-1" />}
-                                    {link.label}
-                                </NavTag>
-                            );
-                        })}
+                        <Link
+                            to="/explore"
+                            className="nav-link-hover"
+                            data-active={isActive("/explore") || undefined}
+                        >
+                            Explore
+                        </Link>
+                        <button
+                            onClick={openFeedback}
+                            className="nav-link-hover"
+                        >
+                            Feedback
+                        </button>
+                        {user && (
+                            <Link
+                                to="/dashboard"
+                                className="nav-link-hover"
+                                data-active={isActive("/dashboard") || undefined}
+                            >
+                                Dashboard
+                            </Link>
+                        )}
                     </div>
 
                     {/* Desktop Right Actions */}
@@ -94,24 +83,6 @@ export function Header() {
                             <div className="w-8 h-8 rounded-full bg-gray-100 animate-pulse" />
                         ) : user ? (
                             <div className="flex items-center gap-2.5">
-                                {/* Feedback button */}
-                                <button
-                                    onClick={openFeedback}
-                                    className="btn-outline px-3.5 py-1.5 text-[12px] rounded-lg"
-                                    style={{ fontFamily: "var(--font-body)" }}
-                                >
-                                    Feedback
-                                </button>
-
-                                <Link to="/dashboard">
-                                    <button
-                                        className="btn-gradient px-3.5 py-1.5 text-[12px] rounded-lg inline-flex items-center gap-1.5"
-                                    >
-                                        <LayoutDashboard className="w-3.5 h-3.5" />
-                                        Dashboard
-                                    </button>
-                                </Link>
-
                                 <div className="relative group">
                                     <UserAvatar
                                         name={user.firstName || user.username || user.primaryEmailAddress?.emailAddress}
@@ -137,24 +108,12 @@ export function Header() {
                                 </div>
                             </div>
                         ) : (
-                            <>
-                                {/* Feedback - outline button */}
-                                <button
-                                    onClick={openFeedback}
-                                    className="btn-outline px-3.5 py-1.5 text-[12px] rounded-lg"
-                                    style={{ fontFamily: "var(--font-body)" }}
-                                >
-                                    Feedback
-                                </button>
-
-                                {/* Sign In - gradient button */}
-                                <button
-                                    onClick={handleSignIn}
-                                    className="btn-gradient px-4 py-1.5 text-[12px] rounded-lg"
-                                >
-                                    Sign In
-                                </button>
-                            </>
+                            <button
+                                onClick={handleSignIn}
+                                className="btn-gradient px-4 py-1.5 text-[12px] rounded-lg"
+                            >
+                                Sign In
+                            </button>
                         )}
                     </div>
 
@@ -176,16 +135,13 @@ export function Header() {
                 >
                     <div className="overflow-hidden">
                         <div className="border-t border-gray-100/50 py-3 px-2 space-y-1">
-                            {navLinks.map((link) => (
-                                <a
-                                    key={link.label}
-                                    href={link.href}
-                                    onClick={() => setMobileOpen(false)}
-                                    className="block px-4 py-2.5 text-[13px] font-medium text-gray-700 hover:text-[var(--color-primary-blue)] hover:bg-gray-50 rounded-lg transition-colors"
-                                >
-                                    {link.label}
-                                </a>
-                            ))}
+                            <Link
+                                to="/explore"
+                                onClick={() => setMobileOpen(false)}
+                                className="block px-4 py-2.5 text-[13px] font-medium text-gray-700 hover:text-[var(--color-primary-blue)] hover:bg-gray-50 rounded-lg transition-colors"
+                            >
+                                Explore
+                            </Link>
                             <button
                                 onClick={() => { openFeedback(); setMobileOpen(false); }}
                                 className="block w-full text-left px-4 py-2.5 text-[13px] font-medium text-gray-700 hover:text-[var(--color-primary-blue)] hover:bg-gray-50 rounded-lg transition-colors"

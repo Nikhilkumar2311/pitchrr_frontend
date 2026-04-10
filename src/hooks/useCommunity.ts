@@ -84,6 +84,9 @@ export function useCreatePost() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['community-feed'] });
+      queryClient.invalidateQueries({ queryKey: ['my-posts-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['user-posts'] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },
   });
 }
@@ -98,6 +101,10 @@ export function useDeletePost() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['community-feed'] });
+      queryClient.invalidateQueries({ queryKey: ['my-posts-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['user-posts'] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['my-bookmarks'] });
     },
   });
 }
@@ -116,6 +123,8 @@ export function useReactToPost() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['community-feed'] });
+      queryClient.invalidateQueries({ queryKey: ['my-posts-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['user-posts'] });
     },
   });
 }
@@ -150,6 +159,8 @@ export function useAddComment() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['community-comments', variables.postId] });
       queryClient.invalidateQueries({ queryKey: ['community-feed'] });
+      queryClient.invalidateQueries({ queryKey: ['my-posts-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['user-posts'] });
     },
   });
 }
@@ -165,6 +176,8 @@ export function useDeleteComment() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['community-comments'] });
       queryClient.invalidateQueries({ queryKey: ['community-feed'] });
+      queryClient.invalidateQueries({ queryKey: ['my-posts-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['user-posts'] });
     },
   });
 }
@@ -270,6 +283,8 @@ export function useFollowUser() {
       queryClient.invalidateQueries({ queryKey: ['follow-stats', userId] });
       queryClient.invalidateQueries({ queryKey: ['is-following', userId] });
       queryClient.invalidateQueries({ queryKey: ['user-profile', userId] });
+      queryClient.invalidateQueries({ queryKey: ['my-following'] });
+      queryClient.invalidateQueries({ queryKey: ['community-feed'] });
     },
   });
 }
@@ -321,6 +336,7 @@ export function useToggleBookmark() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-bookmarks'] });
+      queryClient.invalidateQueries({ queryKey: ['community-feed'] });
     },
   });
 }
@@ -384,6 +400,8 @@ export function useUpdateProfile() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['community-feed'] });
+      queryClient.invalidateQueries({ queryKey: ['my-posts-dashboard'] });
     },
   });
 }
@@ -398,6 +416,9 @@ export function useUpdateCoreProfile() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['community-feed'] });
+      queryClient.invalidateQueries({ queryKey: ['my-posts-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['user-posts'] });
     },
   });
 }

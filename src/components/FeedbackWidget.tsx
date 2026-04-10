@@ -49,7 +49,7 @@ export function FeedbackWidget() {
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             transition={{ duration: 0.2 }}
-                            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 rounded-2xl border border-gray-200 bg-white p-5 shadow-2xl z-50"
+                            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[440px] max-w-[90vw] rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl z-50"
                         >
                             <div className="mb-4 flex items-center justify-between">
                                 <h3 className="font-semibold text-gray-900">Send Feedback</h3>
@@ -62,18 +62,30 @@ export function FeedbackWidget() {
                             </div>
 
                             <form onSubmit={handleSubmit} className="space-y-4">
-                                <div className="space-y-1.5">
+                                <div className="space-y-2">
                                     <label className="text-xs font-medium text-gray-500">Type</label>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {['FEATURE', 'BUG', 'OTHER'].map((t) => (
+                                    <div className="relative flex rounded-xl bg-gray-100 p-1">
+                                        {/* Sliding indicator */}
+                                        <motion.div
+                                            className="absolute top-1 bottom-1 rounded-lg bg-white shadow-md"
+                                            layout
+                                            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                                            style={{
+                                                width: `calc((100% - 8px) / 3)`,
+                                                left: `calc(4px + ${['FEATURE', 'BUG', 'OTHER'].indexOf(type)} * (100% - 8px) / 3)`,
+                                            }}
+                                        />
+                                        {['FEATURE', 'BUG', 'OTHER'].map((t, i) => (
                                             <button
                                                 key={t}
                                                 type="button"
                                                 onClick={() => setType(t)}
-                                                className={`rounded-lg px-2 py-1.5 text-xs font-medium transition-all ${type === t
-                                                    ? 'bg-indigo-600 text-white shadow-sm'
-                                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                                    }`}
+                                                className="relative z-10 flex-1 py-2 text-xs font-semibold transition-colors duration-200"
+                                                style={{
+                                                    color: type === t ? '#4f46e5' : '#6b7280',
+                                                    borderRight: i < 2 && type !== t && type !== ['FEATURE', 'BUG', 'OTHER'][i + 1]
+                                                        ? '1px solid rgba(0,0,0,0.08)' : 'none',
+                                                }}
                                             >
                                                 {t.charAt(0) + t.slice(1).toLowerCase()}
                                             </button>
@@ -87,7 +99,7 @@ export function FeedbackWidget() {
                                         value={message}
                                         onChange={(e) => setMessage(e.target.value)}
                                         placeholder="Tell us what you think..."
-                                        className="h-24 w-full resize-none rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                        className="h-36 w-full resize-none rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
                                         required
                                     />
                                 </div>

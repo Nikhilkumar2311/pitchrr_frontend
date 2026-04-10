@@ -129,3 +129,49 @@ body {
     animation: commentFlash 2s ease-out forwards;
     border-radius: 0.75rem;
 }
+
+/* ============================================
+   NAV LINK HOVER UNDERLINE
+   ============================================ */
+.nav-link-hover {
+    position: relative;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: var(--font-body, 'Inter', sans-serif);
+    color: var(--color-text-secondary, #6b7280);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.nav-link-hover::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: var(--color-primary-blue, #4f7df3);
+    border-radius: 1px;
+    transform: translateX(-50%);
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-link-hover:hover {
+    color: var(--color-text-primary, #111827);
+}
+
+.nav-link-hover:hover::after {
+    width: 60%;
+}
+
+.nav-link-hover[data-active]  {
+    color: var(--color-primary-blue, #4f7df3);
+}
+
+.nav-link-hover[data-active]::after {
+    width: 60%;
+    background: var(--color-primary-blue, #4f7df3);
+}
