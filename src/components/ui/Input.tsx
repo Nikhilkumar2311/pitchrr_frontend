@@ -1,11 +1,16 @@
 /**
  * Input Component
  * 
- * Premium styled text input with label, error handling, and design system tokens.
- * Features subtle depth with inner shadow and smooth focus transitions.
+ * Premium styled text input with floating label animation.
+ * The label sits inside the input as placeholder text, then smoothly floats
+ * up to the top-left border when focused or filled.
+ * 
+ * Animation performance: Uses ONLY transform and opacity for the label
+ * movement (GPU composited). No top/padding/font-weight transitions
+ * to avoid layout thrashing and stuttering.
  */
 
-import { forwardRef, useState, type InputHTMLAttributes } from 'react';
+import { forwardRef, useState, useRef, useEffect, useMemo, type InputHTMLAttributes } from 'react';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     label?: string;
@@ -14,6 +19,55 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     leftIcon?: React.ReactNode;
     rightIcon?: React.ReactNode;
     fullWidth?: boolean;
+}
+
+let idCounter = 0;
+const generateId = () => `input-${++idCounter}`;
+
+// Inject keyframes + floating label styles once
+const STYLE_ID = '__floating-label-styles';
+if (typeof document !== 'undefined' && !document.getElementById(STYLE_ID)) {
+    const styleEl = document.createElement('style');
+    styleEl.id = STYLE_ID;
+    styleEl.textContent = `
+        .fl-wrapper {
+            position: relative;
+        }
+        .fl-label {
+            position: absolute;
+            top: 50%;
+            pointer-events: none;
+            user-select: none;
+            transform-origin: left center;
+            transform: translateY(-50%);
+            transition: top 0.2s cubic-bezier(0.33, 1, 0.68, 1),
+                        transform 0.2s cubic-bezier(0.33, 1, 0.68, 1),
+                        color 0.18s ease;
+            will-change: top, transform;
+            line-height: 1;
+            z-index: 5;
+        }
+        .fl-label.fl-active {
+            top: 0;
+            transform: translateY(-50%) scale(0.78);
+        }
+        .fl-label-bg {
+            position: absolute;
+            inset: -2px -6px;
+            background: white;
+            border-radius: 2px;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.18s ease;
+        }
+        .fl-label.fl-active .fl-label-bg {
+            opacity: 1;
+        }
+        .fl-icon {
+            transition: color 0.2s ease;
+        }
+    `;
+    document.head.appendChild(styleEl);
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
@@ -28,64 +82,78 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             className = '',
             id,
             style,
+            value,
+            placeholder: _placeholder,
             ...props
         },
         ref
     ) => {
-        const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+        const inputId = useMemo(() => id || generateId(), [id]);
         const hasError = Boolean(error);
         const [isFocused, setIsFocused] = useState(false);
+        const [hasValue, setHasValue] = useState(Boolean(value));
+        const innerRef = useRef<HTMLInputElement | null>(null);
 
+        useEffect(() => {
+            setHasValue(Boolean(value));
+        }, [value]);
+
+        const isFloating = isFocused || hasValue;
         const wrapperClasses = `${fullWidth ? 'w-full' : ''} ${className}`.trim();
+
+        const accentColor = hasError ? '#EF4444' : '#4F7DF3';
+        const borderIdle = hasError ? '#F87171' : 'var(--dash-border-solid, #E8ECF4)';
+        const borderActive = hasError ? '#EF4444' : '#4F7DF3';
+        const labelLeft = leftIcon ? 40 : 14;
 
         return (
             <div className={wrapperClasses}>
-                {label && (
-                    <label
-                        htmlFor={inputId}
-                        className="block text-[12px] font-semibold mb-1.5 uppercase tracking-wider"
-                        style={{
-                            color: 'var(--dash-text-muted, #64748B)',
-                            fontFamily: 'var(--dash-font-body, Inter, sans-serif)',
-                            letterSpacing: '0.04em',
-                        }}
-                    >
-                        {label}
-                    </label>
-                )}
-
-                <div className="relative flex items-center">
+                <div
+                    className="relative flex items-center"
+                    style={{ marginTop: label ? 6 : 0 }}
+                >
                     {leftIcon && (
                         <div
-                            className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none"
-                            style={{ color: isFocused ? '#4F7DF3' : '#94A3B8', transition: 'color 0.2s ease' }}
+                            className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none fl-icon"
+                            style={{
+                                color: isFocused ? accentColor : '#94A3B8',
+                                zIndex: 10,
+                            }}
                         >
                             {leftIcon}
                         </div>
                     )}
 
                     <input
-                        ref={ref}
+                        ref={(node) => {
+                            innerRef.current = node;
+                            if (typeof ref === 'function') ref(node);
+                            else if (ref) (ref as React.MutableRefObject<HTMLInputElement | null>).current = node;
+                        }}
                         id={inputId}
+                        value={value}
+                        placeholder=""
                         className="w-full outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{
                             fontFamily: 'var(--dash-font-body, Inter, sans-serif)',
                             color: 'var(--dash-text, #0F172A)',
-                            fontSize: 13,
+                            fontSize: 14,
                             fontWeight: 500,
-                            padding: leftIcon ? '11px 14px 11px 40px' : rightIcon ? '11px 40px 11px 14px' : '11px 14px',
-                            background: isFocused ? '#fff' : 'rgba(0,0,0,0.015)',
+                            padding: leftIcon
+                                ? '15px 14px 15px 40px'
+                                : rightIcon
+                                    ? '15px 40px 15px 14px'
+                                    : '15px 14px',
+                            background: isFocused ? '#fff' : '#F8F9FC',
                             border: '1.5px solid',
-                            borderColor: isFocused
-                                ? (hasError ? '#EF4444' : '#4F7DF3')
-                                : (hasError ? '#F87171' : 'var(--dash-border-solid, #E8ECF4)'),
-                            borderRadius: 10,
+                            borderColor: isFocused ? borderActive : borderIdle,
+                            borderRadius: 12,
                             boxShadow: isFocused
                                 ? (hasError
-                                    ? '0 0 0 3px rgba(239,68,68,0.06), inset 0 1px 2px rgba(0,0,0,0.03)'
-                                    : '0 0 0 3px rgba(79,125,243,0.06), inset 0 1px 2px rgba(0,0,0,0.03)')
-                                : 'inset 0 1px 2px rgba(0,0,0,0.04)',
-                            transition: 'all 0.2s ease',
+                                    ? '0 0 0 3px rgba(239,68,68,0.08)'
+                                    : '0 0 0 3px rgba(79,125,243,0.08)')
+                                : 'none',
+                            transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease',
                             ...style,
                         }}
                         onFocus={(e) => {
@@ -94,17 +162,47 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                         }}
                         onBlur={(e) => {
                             setIsFocused(false);
+                            setHasValue(Boolean(e.target.value));
                             props.onBlur?.(e);
+                        }}
+                        onChange={(e) => {
+                            setHasValue(Boolean(e.target.value));
+                            props.onChange?.(e);
                         }}
                         aria-invalid={hasError}
                         aria-describedby={hasError ? `${inputId}-error` : undefined}
                         {...props}
                     />
 
+                    {/* Floating Label — only transform + color animate (GPU only, no layout) */}
+                    {label && (
+                        <label
+                            htmlFor={inputId}
+                            className={`fl-label ${isFloating ? 'fl-active' : ''}`}
+                            style={{
+                                left: labelLeft,
+                                fontFamily: 'var(--dash-font-body, Inter, sans-serif)',
+                                fontSize: 14,
+                                fontWeight: 500,
+                                color: isFocused
+                                    ? accentColor
+                                    : hasValue
+                                        ? '#64748B'
+                                        : '#9CA3AF',
+                            }}
+                        >
+                            {/* White pill background that fades in when floating */}
+                            <span className="fl-label-bg" />
+                            {label}
+                        </label>
+                    )}
+
                     {rightIcon && (
                         <div
-                            className="absolute inset-y-0 right-0 pr-3.5 flex items-center"
-                            style={{ color: isFocused ? '#4F7DF3' : '#94A3B8', transition: 'color 0.2s ease' }}
+                            className="absolute inset-y-0 right-0 pr-3.5 flex items-center fl-icon"
+                            style={{
+                                color: isFocused ? accentColor : '#94A3B8',
+                            }}
                         >
                             {rightIcon}
                         </div>

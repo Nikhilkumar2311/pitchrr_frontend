@@ -98,7 +98,7 @@ export function Modal({
                                 stiffness: 350,
                                 duration: 0.3
                             }}
-                            className={`relative w-full ${sizeStyles[size]} overflow-hidden z-10 my-auto`}
+                            className={`relative w-full ${sizeStyles[size]} z-10 my-auto`}
                             style={{
                                 background: 'white',
                                 borderRadius: 'var(--dash-radius, 12px)',
@@ -149,7 +149,7 @@ export function Modal({
                             )}
 
                             {/* Body */}
-                            <div className="px-6 py-5 overflow-y-auto max-h-[85vh]">
+                            <div className="px-6 py-5 overflow-y-auto max-h-[85vh] relative">
                                 {children}
                             </div>
                         </motion.div>

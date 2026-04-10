@@ -3,6 +3,10 @@
  * 
  * Views: signin, signup, verify-email, forgot-password, reset-password-code
  * Uses our custom AuthContext for all auth operations.
+ * 
+ * Design: Clean layout with floating-label inputs, real Pitchrr logo,
+ * subtle purple gradient wash at the bottom, single Google OAuth section,
+ * and smooth micro-interactions throughout.
  */
 
 import React, { useState } from 'react';
@@ -10,7 +14,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Modal, Button, Input } from '@/components/ui';
 import { useUIStore } from '@/store';
-import { ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, Mail, Lock, User, Hash } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 // Core API URL for Google OAuth redirect
@@ -25,6 +30,24 @@ const GoogleIcon = ({ className }: { className?: string }) => (
         <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
     </svg>
 );
+
+// Smooth staggered form animation variants
+const formVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: { staggerChildren: 0.06, delayChildren: 0.05 },
+    },
+};
+
+const fieldVariants = {
+    hidden: { opacity: 0, y: 12 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] as const },
+    },
+};
 
 export function AuthModal() {
     const navigate = useNavigate();
@@ -58,7 +81,6 @@ export function AuthModal() {
 
     // --- OAuth handling ---
     const handleOAuth = () => {
-        // Redirect to our backend Google OAuth endpoint
         window.location.href = `${API_BASE}/auth/google`;
     };
 
@@ -207,6 +229,8 @@ export function AuthModal() {
         }
     };
 
+    const showGoogleOAuth = view !== 'forgot-password' && view !== 'verify-email' && view !== 'reset-password-code';
+
     return (
         <Modal
             isOpen={isAuthModalOpen}
@@ -214,153 +238,247 @@ export function AuthModal() {
             size="md"
             showCloseButton={false}
         >
-            <div className="py-2">
-                {/* Header */}
-                <div className="text-center mb-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mt-2">
-                        {view === 'signin' && 'Welcome Back'}
-                        {view === 'signup' && 'Create Account'}
-                        {view === 'forgot-password' && 'Reset Password'}
-                        {view === 'verify-email' && 'Verify Email'}
-                        {view === 'reset-password-code' && 'Reset Password'}
-                    </h2>
-                    <p className="text-gray-400 text-sm mt-2 font-medium">
-                        {view === 'signin' && 'Enter your details to access your dashboard'}
-                        {view === 'signup' && 'Join Pitchrr and start building today'}
-                        {view === 'forgot-password' && 'Enter your email to receive a reset code'}
-                        {view === 'verify-email' && `Enter the code sent to ${formData.email}`}
-                        {view === 'reset-password-code' && 'Enter code and new password'}
-                    </p>
-                </div>
+            {/* Bottom gradient wash - breaks out of body padding to cover full modal */}
+            <div
+                style={{
+                    position: 'absolute',
+                    bottom: -20,
+                    left: -24,
+                    right: -24,
+                    height: '65%',
+                    background: 'linear-gradient(180deg, transparent 0%, rgba(122, 92, 255, 0.05) 30%, rgba(79, 125, 243, 0.10) 60%, rgba(122, 92, 255, 0.15) 100%)',
+                    pointerEvents: 'none',
+                    borderRadius: '0 0 var(--dash-radius, 12px) var(--dash-radius, 12px)',
+                    zIndex: 0,
+                }}
+            />
+            {/* Radial glow spot at bottom center */}
+            <div
+                style={{
+                    position: 'absolute',
+                    bottom: -30,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '90%',
+                    height: 120,
+                    background: 'radial-gradient(ellipse at center, rgba(122, 92, 255, 0.15) 0%, rgba(79, 125, 243, 0.06) 40%, transparent 70%)',
+                    pointerEvents: 'none',
+                    filter: 'blur(25px)',
+                    zIndex: 0,
+                }}
+            />
 
-                {/* OAuth Buttons */}
-                {view !== 'forgot-password' && view !== 'verify-email' && view !== 'reset-password-code' && (
-                    <div className="space-y-3 mb-8">
-                        <Button
-                            variant="secondary"
-                            className="w-full h-12 border-gray-100 shadow-sm text-gray-600 hover:bg-gray-50 transition-all font-semibold"
-                            leftIcon={<GoogleIcon className="w-5 h-5" />}
-                            onClick={handleOAuth}
-                            isLoading={isLoading}
-                        >
-                            Continue with Google
-                        </Button>
-                        <div className="relative">
-                            <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-gray-100"></div>
-                            </div>
-                            <div className="relative flex justify-center text-xs">
-                                <span className="px-4 bg-white text-gray-400 font-bold uppercase tracking-widest text-[10px]">Or</span>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Forms */}
-                <form
-                    className="space-y-4"
-                    onSubmit={
-                        view === 'signin' ? handleSignIn :
-                            view === 'signup' ? handleSignUp :
-                                view === 'verify-email' ? handleVerify :
-                                    view === 'forgot-password' ? handleForgotPassword :
-                                        view === 'reset-password-code' ? handleResetPassword :
-                                            (e) => e.preventDefault()
-                    }
+            <div className="relative" style={{ zIndex: 1 }}>
+                {/* Header with real logo */}
+                <motion.div
+                    className="text-center mb-6"
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                 >
-                    {view === 'signup' && (
-                        <Input
-                            label="Full Name"
-                            placeholder="John Doe"
-                            value={formData.firstName}
-                            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                            required
+                    {/* Real Pitchrr Logo */}
+                    <div style={{ marginBottom: 20 }}>
+                        <img
+                            src="/logo.svg"
+                            alt="Pitchrr"
+                            style={{
+                                height: 40,
+                                display: 'inline-block',
+                            }}
                         />
-                    )}
+                    </div>
 
-                    {/* Email Field - Hidden in Verify & Reset Code Views */}
-                    {view !== 'verify-email' && view !== 'reset-password-code' && (
-                        <Input
-                            label="Email Address"
-                            type="email"
-                            placeholder="john@example.com"
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            required
-                        />
-                    )}
-
-                    {/* Password Field */}
-                    {(view === 'signin' || view === 'signup' || view === 'reset-password-code') && (
-                        <div className="space-y-1">
-                            <Input
-                                label={view === 'reset-password-code' ? "New Password" : "Password"}
-                                type={showPassword ? "text" : "password"}
-                                placeholder="••••••••"
-                                value={formData.password}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, password: e.target.value });
-                                    if (passwordError) setPasswordError('');
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={view}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -6 }}
+                            transition={{ duration: 0.25, ease: 'easeOut' }}
+                        >
+                            <h2
+                                style={{
+                                    fontSize: 22,
+                                    fontWeight: 700,
+                                    color: '#0F172A',
+                                    fontFamily: "var(--dash-font-heading, 'Sora', 'Inter', sans-serif)",
+                                    marginBottom: 6,
                                 }}
-                                required
-                                error={(view === 'signup' || view === 'reset-password-code') ? passwordError : undefined}
-                                helperText={(view === 'signup' || view === 'reset-password-code') && !passwordError ? "Min 8 chars, 1 upper, 1 lower, 1 digit, 1 special." : undefined}
-                                rightIcon={
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="focus:outline-none hover:text-gray-600 transition-colors"
-                                    >
-                                        {showPassword ? (
-                                            <EyeOff className="w-5 h-5 text-gray-400" />
-                                        ) : (
-                                            <Eye className="w-5 h-5 text-gray-400" />
-                                        )}
-                                    </button>
-                                }
-                            />
-                            {view === 'signin' && (
-                                <div className="flex justify-end">
-                                    <button
-                                        type="button"
-                                        onClick={() => setView('forgot-password')}
-                                        className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
-                                    >
-                                        Forgot password?
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    )}
+                            >
+                                {view === 'signin' && 'Sign in with email'}
+                                {view === 'signup' && 'Create your account'}
+                                {view === 'forgot-password' && 'Reset Password'}
+                                {view === 'verify-email' && 'Verify Email'}
+                                {view === 'reset-password-code' && 'Reset Password'}
+                            </h2>
+                            <p
+                                style={{
+                                    color: '#94A3B8',
+                                    fontSize: 13.5,
+                                    fontWeight: 500,
+                                    lineHeight: 1.5,
+                                }}
+                            >
+                                {view === 'signin' && 'Access your personalized dashboard'}
+                                {view === 'signup' && 'Join Pitchrr and start building today'}
+                                {view === 'forgot-password' && 'Enter your email to receive a reset code'}
+                                {view === 'verify-email' && `Enter the code sent to ${formData.email}`}
+                                {view === 'reset-password-code' && 'Enter code and new password'}
+                            </p>
+                        </motion.div>
+                    </AnimatePresence>
+                </motion.div>
 
-                    {/* OTP Field */}
-                    {(view === 'verify-email' || view === 'reset-password-code') && (
-                        <Input
-                            label="Verification Code"
-                            placeholder="123456"
-                            value={formData.code}
-                            onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                            required
-                            className="text-center text-lg tracking-widest"
-                            maxLength={6}
-                        />
-                    )}
-
-                    <Button
-                        type="submit"
-                        className="w-full h-12 group"
-                        isLoading={isLoading}
-                        rightIcon={<ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />}
+                {/* Form fields with staggered animation */}
+                <AnimatePresence mode="wait">
+                    <motion.form
+                        key={view}
+                        className="space-y-4"
+                        variants={formVariants}
+                        initial="hidden"
+                        animate="visible"
+                        onSubmit={
+                            view === 'signin' ? handleSignIn :
+                                view === 'signup' ? handleSignUp :
+                                    view === 'verify-email' ? handleVerify :
+                                        view === 'forgot-password' ? handleForgotPassword :
+                                            view === 'reset-password-code' ? handleResetPassword :
+                                                (e) => e.preventDefault()
+                        }
                     >
-                        {view === 'signin' && 'Sign In'}
-                        {view === 'signup' && 'Get Started'}
-                        {view === 'verify-email' && 'Verify & Login'}
-                        {view === 'forgot-password' && 'Send Reset Code'}
-                        {view === 'reset-password-code' && 'Reset Password'}
-                    </Button>
-                </form>
+                        {view === 'signup' && (
+                            <motion.div variants={fieldVariants}>
+                                <Input
+                                    label="Full Name"
+                                    value={formData.firstName}
+                                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                                    required
+                                    leftIcon={<User className="w-[18px] h-[18px]" />}
+                                />
+                            </motion.div>
+                        )}
 
-                {/* Resend OTP link for verify-email and reset-password views */}
+                        {/* Email Field */}
+                        {view !== 'verify-email' && view !== 'reset-password-code' && (
+                            <motion.div variants={fieldVariants}>
+                                <Input
+                                    label="Email"
+                                    type="email"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    required
+                                    leftIcon={<Mail className="w-[18px] h-[18px]" />}
+                                />
+                            </motion.div>
+                        )}
+
+                        {/* Password Field */}
+                        {(view === 'signin' || view === 'signup' || view === 'reset-password-code') && (
+                            <motion.div variants={fieldVariants} className="space-y-1.5">
+                                <Input
+                                    label={view === 'reset-password-code' ? "New Password" : "Password"}
+                                    type={showPassword ? "text" : "password"}
+                                    value={formData.password}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, password: e.target.value });
+                                        if (passwordError) setPasswordError('');
+                                    }}
+                                    required
+                                    error={(view === 'signup' || view === 'reset-password-code') ? passwordError : undefined}
+                                    helperText={(view === 'signup' || view === 'reset-password-code') && !passwordError ? "Min 8 chars, 1 upper, 1 lower, 1 digit, 1 special." : undefined}
+                                    leftIcon={<Lock className="w-[18px] h-[18px]" />}
+                                    rightIcon={
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="focus:outline-none transition-all"
+                                            style={{
+                                                color: '#94A3B8',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.color = '#4F7DF3';
+                                                e.currentTarget.style.transform = 'scale(1.1)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.color = '#94A3B8';
+                                                e.currentTarget.style.transform = 'scale(1)';
+                                            }}
+                                        >
+                                            {showPassword ? (
+                                                <EyeOff className="w-[18px] h-[18px]" />
+                                            ) : (
+                                                <Eye className="w-[18px] h-[18px]" />
+                                            )}
+                                        </button>
+                                    }
+                                />
+                                {view === 'signin' && (
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => setView('forgot-password')}
+                                            className="text-xs font-medium transition-all"
+                                            style={{ color: '#4F7DF3' }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.color = '#3B65D9';
+                                                e.currentTarget.style.transform = 'translateX(1px)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.color = '#4F7DF3';
+                                                e.currentTarget.style.transform = 'translateX(0)';
+                                            }}
+                                        >
+                                            Forgot password?
+                                        </button>
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
+
+                        {/* OTP Field */}
+                        {(view === 'verify-email' || view === 'reset-password-code') && (
+                            <motion.div variants={fieldVariants}>
+                                <Input
+                                    label="Verification Code"
+                                    value={formData.code}
+                                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                                    required
+                                    className="text-center text-lg tracking-widest"
+                                    maxLength={6}
+                                    leftIcon={<Hash className="w-[18px] h-[18px]" />}
+                                />
+                            </motion.div>
+                        )}
+
+                        <motion.div variants={fieldVariants} style={{ paddingTop: 6 }}>
+                            <Button
+                                type="submit"
+                                className="w-full h-12 group"
+                                style={{
+                                    borderRadius: 12,
+                                    fontSize: 14,
+                                    fontWeight: 700,
+                                    letterSpacing: '-0.01em',
+                                    background: 'linear-gradient(135deg, #4F7DF3 0%, #6B5CF7 50%, #7A5CFF 100%)',
+                                    boxShadow: '0 4px 15px rgba(79, 125, 243, 0.3), 0 1px 3px rgba(0,0,0,0.1)',
+                                }}
+                                isLoading={isLoading}
+                                rightIcon={<ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />}
+                            >
+                                {view === 'signin' && 'Get Started'}
+                                {view === 'signup' && 'Create Account'}
+                                {view === 'verify-email' && 'Verify & Login'}
+                                {view === 'forgot-password' && 'Send Reset Code'}
+                                {view === 'reset-password-code' && 'Reset Password'}
+                            </Button>
+                        </motion.div>
+                    </motion.form>
+                </AnimatePresence>
+
+                {/* Resend OTP link */}
                 {(view === 'verify-email' || view === 'reset-password-code') && (
                     <div className="mt-3 text-center">
                         <button
@@ -369,7 +487,6 @@ export function AuthModal() {
                                 if (view === 'verify-email') {
                                     handleResendOtp();
                                 } else {
-                                    // Re-send forgot password OTP
                                     const result = await forgotPassword(formData.email);
                                     if (result.success) {
                                         toast.success('New reset code sent!');
@@ -378,55 +495,136 @@ export function AuthModal() {
                                     }
                                 }
                             }}
-                            className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                            className="text-xs font-medium transition-colors"
+                            style={{ color: '#4F7DF3' }}
+                            onMouseEnter={(e) => e.currentTarget.style.color = '#3B65D9'}
+                            onMouseLeave={(e) => e.currentTarget.style.color = '#4F7DF3'}
                         >
                             Didn't receive the code? Resend
                         </button>
                     </div>
                 )}
 
-                {/* Footer Links */}
-                <div className="mt-8 text-center border-t border-gray-100 pt-6">
-                    {view === 'signin' ? (
-                        <p className="text-sm text-gray-600">
-                            Don't have an account?{' '}
-                            <button
-                                onClick={() => setView('signup')}
-                                className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                {/* Footer - single section: account switch + Google OAuth together */}
+                <motion.div
+                    className="mt-6 text-center"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3, duration: 0.4 }}
+                >
+                    {/* Account switch links */}
+                    <div style={{ marginBottom: showGoogleOAuth ? 16 : 0 }}>
+                        {view === 'signin' ? (
+                            <p className="text-sm" style={{ color: '#64748B' }}>
+                                Don't have an account?{' '}
+                                <button
+                                    onClick={() => setView('signup')}
+                                    className="font-bold transition-all"
+                                    style={{ color: '#0F172A' }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.color = '#4F7DF3';
+                                        e.currentTarget.style.textDecoration = 'underline';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.color = '#0F172A';
+                                        e.currentTarget.style.textDecoration = 'none';
+                                    }}
+                                >
+                                    Sign Up
+                                </button>
+                            </p>
+                        ) : view === 'signup' ? (
+                            <p className="text-sm" style={{ color: '#64748B' }}>
+                                Already have an account?{' '}
+                                <button
+                                    onClick={() => setView('signin')}
+                                    className="font-bold transition-all"
+                                    style={{ color: '#0F172A' }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.color = '#4F7DF3';
+                                        e.currentTarget.style.textDecoration = 'underline';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.color = '#0F172A';
+                                        e.currentTarget.style.textDecoration = 'none';
+                                    }}
+                                >
+                                    Login
+                                </button>
+                            </p>
+                        ) : view === 'verify-email' ? (
+                            <p className="text-sm">
+                                <button
+                                    onClick={() => setView('signup')}
+                                    className="font-semibold text-gray-500 hover:text-gray-700 transition-colors"
+                                >
+                                    Back to Signup
+                                </button>
+                            </p>
+                        ) : (
+                            <p className="text-sm">
+                                <button
+                                    onClick={() => setView('signin')}
+                                    className="font-semibold transition-colors"
+                                    style={{ color: '#4F7DF3' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.color = '#3B65D9'}
+                                    onMouseLeave={(e) => e.currentTarget.style.color = '#4F7DF3'}
+                                >
+                                    Back to Login
+                                </button>
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Google OAuth section - single clean divider */}
+                    {showGoogleOAuth && (
+                        <>
+                            <div className="relative" style={{ marginBottom: 18 }}>
+                                <div
+                                    className="absolute inset-0 flex items-center"
+                                    style={{ paddingInline: 8 }}
+                                >
+                                    <div className="w-full" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }} />
+                                </div>
+                                <div className="relative flex justify-center">
+                                    <span
+                                        style={{
+                                            background: 'white',
+                                            color: '#B0B7C3',
+                                            fontWeight: 500,
+                                            fontSize: 12,
+                                            padding: '0 12px',
+                                        }}
+                                    >
+                                        Or sign in with
+                                    </span>
+                                </div>
+                            </div>
+
+                            <motion.button
+                                type="button"
+                                onClick={handleOAuth}
+                                whileHover={{ scale: 1.06, y: -2 }}
+                                whileTap={{ scale: 0.95 }}
+                                transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+                                style={{
+                                    width: 50,
+                                    height: 50,
+                                    borderRadius: '50%',
+                                    border: '1.5px solid rgba(0,0,0,0.07)',
+                                    background: 'white',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                                }}
                             >
-                                Signup
-                            </button>
-                        </p>
-                    ) : view === 'signup' ? (
-                        <p className="text-sm text-gray-600">
-                            Already have an account?{' '}
-                            <button
-                                onClick={() => setView('signin')}
-                                className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
-                            >
-                                Login
-                            </button>
-                        </p>
-                    ) : view === 'verify-email' ? (
-                        <p className="text-sm text-gray-600">
-                            <button
-                                onClick={() => setView('signup')}
-                                className="font-semibold text-gray-500 hover:text-gray-700 transition-colors"
-                            >
-                                Back to Signup
-                            </button>
-                        </p>
-                    ) : (
-                        <p className="text-sm text-gray-600">
-                            <button
-                                onClick={() => setView('signin')}
-                                className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
-                            >
-                                Back to Login
-                            </button>
-                        </p>
+                                <GoogleIcon className="w-5 h-5" />
+                            </motion.button>
+                        </>
                     )}
-                </div>
+                </motion.div>
             </div>
         </Modal>
     );
