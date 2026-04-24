@@ -28,7 +28,6 @@ import {
     TrendingUp,
     TrendingDown,
     Minus,
-    Loader2,
     Shield,
     Compass,
     BarChart3,
@@ -42,6 +41,7 @@ import {
 import toast from 'react-hot-toast';
 import { useIdeaStore, getStoredActiveIdeaId } from '@/store';
 import { IdeaValidationSkeleton } from '@/components/skeletons/IdeaValidationSkeleton';
+import { AIGeneratingSkeleton } from '@/components/skeletons/AIGeneratingSkeleton';
 import { CreditCost, SEO } from '@/components/common';
 import {
     useIdea,
@@ -509,35 +509,10 @@ export default function IdeaValidation() {
                     GENERATING STATE (inline strip)
                  ═══════════════════════════════════════════════ */}
                 {isAnalyzing && (
-                    <motion.div {...fadeUp}>
-                        <div
-                            className="flex items-center gap-4 p-4 rounded-[12px]"
-                            style={{
-                                background: 'linear-gradient(135deg, rgba(79,125,243,0.04), rgba(122,92,255,0.04))',
-                                border: '1px solid rgba(79,125,243,0.1)',
-                            }}
-                        >
-                            <div
-                                className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
-                                style={{
-                                    background: 'linear-gradient(135deg, #4F7DF3, #7A5CFF)',
-                                }}
-                            >
-                                <Loader2 className="w-5 h-5 text-white animate-spin" />
-                            </div>
-                            <div>
-                                <h3
-                                    className="font-semibold text-[14px]"
-                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
-                                >
-                                    Generating Analysis...
-                                </h3>
-                                <p className="text-[13px]" style={{ color: 'var(--dash-text-muted)' }}>
-                                    This usually takes 30-60 seconds
-                                </p>
-                            </div>
-                        </div>
-                    </motion.div>
+                    <AIGeneratingSkeleton
+                        moduleType="idea_validation"
+                        moduleName="Analysis"
+                    />
                 )}
 
                 {/* ═══════════════════════════════════════════════
