@@ -117,6 +117,391 @@ const IdeaValidationSkeleton = () => (
     </div>
 );
 
+// ── Marketing Strategy skeleton ─────────────────────────────────────────
+const MarketingStrategySkeleton = () => (
+    <div className="space-y-6">
+        {/* 30-Day Plan */}
+        <div>
+            <Shimmer w="180px" h="18px" className="mb-3" />
+            <div className="space-y-3">
+                {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="p-4 rounded-[10px]" style={{ background: 'rgba(0,0,0,0.015)' }}>
+                        <Shimmer w="120px" h="14px" className="mb-2" />
+                        <div className="space-y-1.5">
+                            {[1, 2, 3].map(j => (
+                                <div key={j} className="flex items-start gap-2">
+                                    <Shimmer w="6px" h="6px" radius="50%" className="mt-1" />
+                                    <Shimmer w={`${90 - j * 12}%`} h="13px" />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        {/* Target Segments */}
+        <div>
+            <Shimmer w="140px" h="18px" className="mb-3" />
+            <div className="space-y-3">
+                {[1, 2, 3].map(i => (
+                    <div key={i} className="p-4 rounded-[10px]" style={{ background: 'rgba(0,0,0,0.015)' }}>
+                        <div className="flex items-center justify-between mb-1">
+                            <Shimmer w="110px" h="14px" />
+                            <Shimmer w="60px" h="22px" radius="6px" />
+                        </div>
+                        <Shimmer w="85%" h="13px" className="mt-1" />
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        {/* Channels */}
+        <div>
+            <Shimmer w="160px" h="18px" className="mb-3" />
+            <div className="space-y-3">
+                {[1, 2, 3].map(i => (
+                    <div key={i} className="p-4 rounded-[10px]" style={{ background: 'rgba(0,0,0,0.015)' }}>
+                        <div className="flex items-center justify-between mb-2.5">
+                            <Shimmer w="100px" h="14px" />
+                            <Shimmer w="50px" h="22px" radius="6px" />
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                            {[1, 2, 3].map(j => (
+                                <Shimmer key={j} w={`${60 + j * 10}px`} h="24px" radius="12px" />
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        {/* KPIs */}
+        <div>
+            <Shimmer w="200px" h="18px" className="mb-3" />
+            <div className="flex flex-wrap gap-2">
+                {[1, 2, 3, 4, 5].map(i => (
+                    <Shimmer key={i} w={`${80 + i * 10}px`} h="36px" radius="8px" />
+                ))}
+            </div>
+        </div>
+    </div>
+);
+
+// ── Branding skeleton ───────────────────────────────────────────────────
+const BrandingSkeleton = () => (
+    <div className="space-y-6">
+        {/* Logo Editor area */}
+        <div>
+            <Shimmer w="100px" h="18px" className="mb-3" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {[1, 2, 3, 4, 5, 6].map(i => (
+                    <div key={i} className="rounded-[12px] aspect-square" style={{ background: 'rgba(0,0,0,0.02)' }}>
+                        <Shimmer w="100%" h="100%" radius="12px" />
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        {/* Brand Name */}
+        <div className="text-center py-6 rounded-[12px]" style={{ background: 'rgba(0,0,0,0.015)' }}>
+            <Shimmer w="180px" h="32px" className="mx-auto" />
+            <Shimmer w="220px" h="14px" className="mx-auto mt-2" />
+        </div>
+
+        {/* Taglines */}
+        <div>
+            <Shimmer w="160px" h="18px" className="mb-3" />
+            <div className="space-y-2">
+                {[1, 2, 3].map(i => (
+                    <div key={i} className="p-3.5 rounded-[10px]" style={{ background: 'rgba(0,0,0,0.015)' }}>
+                        <Shimmer w={`${85 - i * 10}%`} h="13px" />
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        {/* Brand Voice */}
+        <div>
+            <Shimmer w="110px" h="18px" className="mb-3" />
+            <Shimmer w="80px" h="13px" className="mb-2" />
+            <div className="flex flex-wrap gap-1.5">
+                {[1, 2, 3, 4, 5].map(i => (
+                    <Shimmer key={i} w={`${50 + i * 8}px`} h="28px" radius="6px" />
+                ))}
+            </div>
+            <Shimmer w="90%" h="13px" className="mt-3" />
+            <Shimmer w="70%" h="13px" className="mt-1" />
+        </div>
+
+        {/* Color Palette */}
+        <div>
+            <Shimmer w="200px" h="18px" className="mb-3" />
+            <div className="flex flex-wrap gap-3">
+                {[1, 2, 3, 4, 5].map(i => (
+                    <div key={i} className="flex flex-col items-center gap-2 p-3 rounded-[10px]" style={{ background: 'rgba(0,0,0,0.015)' }}>
+                        <Shimmer w="56px" h="56px" radius="8px" />
+                        <Shimmer w="50px" h="12px" />
+                        <Shimmer w="60px" h="11px" radius="4px" />
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
+);
+
+// ── Competitor Analysis skeleton ────────────────────────────────────────
+const CompetitorAnalysisSkeleton = () => (
+    <div className="space-y-6">
+        {/* Competitor Cards */}
+        <div>
+            <Shimmer w="140px" h="18px" className="mb-4" />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="p-4 rounded-[12px]" style={{ background: 'rgba(0,0,0,0.018)' }}>
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                            <div className="min-w-0">
+                                <Shimmer w="120px" h="14px" />
+                                <Shimmer w="160px" h="12px" className="mt-1" />
+                            </div>
+                            <Shimmer w="60px" h="24px" radius="6px" />
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-3 mt-3">
+                            <div className="flex-1">
+                                <Shimmer w="70px" h="11px" className="mb-1.5" />
+                                <div className="flex flex-wrap gap-1">
+                                    {[1, 2].map(j => (
+                                        <Shimmer key={j} w={`${50 + j * 15}px`} h="22px" radius="11px" />
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="flex-1">
+                                <Shimmer w="80px" h="11px" className="mb-1.5" />
+                                <div className="flex flex-wrap gap-1">
+                                    {[1, 2].map(j => (
+                                        <Shimmer key={j} w={`${45 + j * 12}px`} h="22px" radius="11px" />
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        {/* Market Overview */}
+        <div>
+            <Shimmer w="150px" h="18px" className="mb-3" />
+            <div className="p-4 rounded-[12px]" style={{ background: 'rgba(0,0,0,0.015)' }}>
+                <Shimmer w="100%" h="13px" />
+                <Shimmer w="95%" h="13px" className="mt-1.5" />
+                <Shimmer w="80%" h="13px" className="mt-1.5" />
+            </div>
+        </div>
+
+        {/* Competitive Positioning */}
+        <div>
+            <Shimmer w="180px" h="18px" className="mb-4" />
+            <div className="space-y-1.5">
+                {[1, 2, 3].map(i => (
+                    <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-[8px]" style={{ background: 'rgba(52,211,153,0.05)' }}>
+                        <Shimmer w="6px" h="6px" radius="50%" className="mt-1" />
+                        <Shimmer w={`${90 - i * 8}%`} h="13px" />
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        {/* Recommendations */}
+        <div>
+            <Shimmer w="200px" h="18px" className="mb-4" />
+            <div className="space-y-2">
+                {[1, 2, 3].map(i => (
+                    <div key={i} className="flex items-start gap-3 p-3 rounded-[10px]" style={{ background: 'rgba(0,0,0,0.018)' }}>
+                        <Shimmer w="20px" h="20px" radius="10px" />
+                        <Shimmer w={`${88 - i * 6}%`} h="13px" />
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
+);
+
+// ── GTM Strategy skeleton ───────────────────────────────────────────────
+const GTMStrategySkeleton = () => (
+    <div className="space-y-6">
+        {/* Target Users */}
+        <div>
+            <Shimmer w="120px" h="18px" className="mb-4" />
+            <div className="space-y-2.5">
+                {[1, 2, 3].map(i => (
+                    <div key={i} className="p-3.5 rounded-[10px]" style={{ background: 'rgba(0,0,0,0.018)' }}>
+                        <div className="flex items-center justify-between mb-1">
+                            <Shimmer w="110px" h="14px" />
+                            <Shimmer w="45px" h="18px" radius="10px" />
+                        </div>
+                        <Shimmer w="85%" h="13px" className="mt-1" />
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        {/* Pricing Strategy */}
+        <div>
+            <Shimmer w="150px" h="18px" className="mb-4" />
+            <div className="p-4 rounded-[12px]" style={{ background: 'rgba(0,0,0,0.015)' }}>
+                <div className="flex items-center justify-between mb-2">
+                    <Shimmer w="90px" h="12px" />
+                    <Shimmer w="70px" h="20px" radius="10px" />
+                </div>
+                <Shimmer w="95%" h="13px" />
+                <Shimmer w="80%" h="13px" className="mt-1" />
+                <div className="space-y-2.5 pt-3 mt-3" style={{ borderTop: '1px solid rgba(0,0,0,0.04)' }}>
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="flex justify-between items-center">
+                            <Shimmer w="80px" h="13px" />
+                            <Shimmer w="60px" h="13px" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+
+        {/* Launch Plan Timeline */}
+        <div>
+            <Shimmer w="180px" h="18px" className="mb-4" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="p-4 rounded-[12px]" style={{ background: 'rgba(0,0,0,0.015)', borderLeft: '3px solid rgba(0,0,0,0.06)' }}>
+                        <Shimmer w="80px" h="14px" className="mb-0.5" />
+                        <Shimmer w="60px" h="11px" className="mb-2.5" />
+                        <div className="space-y-1.5">
+                            {[1, 2].map(j => (
+                                <div key={j} className="flex items-start gap-2">
+                                    <Shimmer w="6px" h="6px" radius="50%" className="mt-1" />
+                                    <Shimmer w={`${85 - j * 15}%`} h="12px" />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        {/* Growth + KPIs */}
+        <div>
+            <Shimmer w="150px" h="18px" className="mb-4" />
+            <div className="space-y-2">
+                {[1, 2, 3].map(i => (
+                    <div key={i} className="flex items-center justify-between p-3 rounded-[10px]" style={{ background: 'rgba(0,0,0,0.018)' }}>
+                        <Shimmer w={`${120 + i * 10}px`} h="13px" />
+                        <Shimmer w="60px" h="22px" radius="10px" />
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
+);
+
+// ── Pitch Deck skeleton ─────────────────────────────────────────────────
+const PitchDeckSkeleton = () => (
+    <div className="space-y-6">
+        {/* Slide Thumbnails Grid */}
+        <div>
+            <Shimmer w="100px" h="18px" className="mb-3" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                    <div key={i} className="rounded-[10px] overflow-hidden" style={{ background: 'rgba(0,0,0,0.02)' }}>
+                        <div style={{ aspectRatio: '16/9', background: 'rgba(0,0,0,0.03)' }} className="p-3">
+                            <Shimmer w="60%" h="10px" className="mb-1.5" />
+                            <Shimmer w="80%" h="6px" className="mt-1" />
+                            <Shimmer w="50%" h="6px" className="mt-0.5" />
+                        </div>
+                        <div className="px-2 py-1.5">
+                            <Shimmer w="80%" h="10px" />
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        {/* Slide preview area */}
+        <div className="rounded-[12px] overflow-hidden" style={{ background: 'rgba(0,0,0,0.02)', aspectRatio: '16/9' }}>
+            <div className="p-8 h-full flex flex-col">
+                <Shimmer w="50%" h="24px" className="mb-4" />
+                <Shimmer w="40%" h="4px" radius="2px" className="mb-4" />
+                <Shimmer w="80%" h="14px" className="mb-2" />
+                <Shimmer w="70%" h="14px" className="mb-2" />
+                <Shimmer w="60%" h="14px" />
+                <div className="mt-auto flex justify-between">
+                    <Shimmer w="60px" h="10px" />
+                    <Shimmer w="30px" h="10px" />
+                </div>
+            </div>
+        </div>
+    </div>
+);
+
+// ── Grants skeleton ─────────────────────────────────────────────────────
+const GrantsSkeleton = () => (
+    <div className="space-y-6">
+        {/* Recommended Grants */}
+        <div>
+            <Shimmer w="220px" h="18px" className="mb-1" />
+            <Shimmer w="300px" h="13px" className="mb-4" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {[1, 2, 3, 4, 5, 6].map(i => (
+                    <div
+                        key={i}
+                        className="p-4 rounded-[12px]"
+                        style={{ background: 'rgba(0,0,0,0.015)', border: '1px solid rgba(0,0,0,0.04)' }}
+                    >
+                        <Shimmer w={`${80 - i * 5}%`} h="14px" className="mb-2" />
+                        <Shimmer w="60px" h="20px" radius="10px" className="mb-2" />
+                        <Shimmer w="90%" h="13px" className="mt-1" />
+                        <Shimmer w="75%" h="13px" className="mt-1" />
+                        <Shimmer w="80px" h="12px" className="mt-2" />
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        {/* Roadmap */}
+        <div>
+            <Shimmer w="240px" h="18px" className="mb-1" />
+            <Shimmer w="320px" h="13px" className="mb-5" />
+            <div className="space-y-6">
+                {[1, 2, 3].map(i => (
+                    <div key={i} className="flex gap-4">
+                        <div className="flex flex-col items-center shrink-0">
+                            <Shimmer w="48px" h="48px" radius="50%" />
+                            {i < 3 && <div className="w-0.5 flex-1 mt-2" style={{ background: 'rgba(0,0,0,0.06)', minHeight: 40 }} />}
+                        </div>
+                        <div className="flex-1 pb-2">
+                            <Shimmer w="100px" h="15px" className="mb-1" />
+                            <Shimmer w="90%" h="13px" className="mb-3" />
+                            <div className="flex flex-wrap gap-1.5 mb-3">
+                                {[1, 2, 3].map(j => (
+                                    <Shimmer key={j} w={`${70 + j * 10}px`} h="24px" radius="12px" />
+                                ))}
+                            </div>
+                            <div className="rounded-[10px] p-3" style={{ background: 'rgba(0,0,0,0.015)' }}>
+                                <Shimmer w="60px" h="11px" className="mb-2" />
+                                {[1, 2].map(j => (
+                                    <div key={j} className="flex items-start gap-2 py-0.5">
+                                        <Shimmer w="16px" h="16px" radius="50%" className="mt-0.5" />
+                                        <Shimmer w={`${80 - j * 10}%`} h="13px" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
+);
+
 const GenericModuleSkeleton = () => (
     <div className="space-y-5">
         {/* Section 1 */}
@@ -164,6 +549,12 @@ const GenericModuleSkeleton = () => (
 // ── Module type → skeleton mapping ──────────────────────────────────────
 const skeletonMap: Record<string, React.FC> = {
     idea_validation: IdeaValidationSkeleton,
+    marketing_strategy: MarketingStrategySkeleton,
+    branding: BrandingSkeleton,
+    competitor_analysis: CompetitorAnalysisSkeleton,
+    gtm_strategy: GTMStrategySkeleton,
+    pitch_deck: PitchDeckSkeleton,
+    grants: GrantsSkeleton,
 };
 
 interface AIGeneratingSkeletonProps {

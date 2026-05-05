@@ -46,6 +46,14 @@ export const setTokenGetter = (fn: () => Promise<string | null>) => {
     getToken = fn;
 };
 
+/** Get the current auth token (for SSE/fetch calls that bypass axios) */
+export const getAuthToken = async (): Promise<string | null> => {
+    if (getToken) {
+        return await getToken();
+    }
+    return null;
+};
+
 /**
  * REQUEST INTERCEPTOR
  * 

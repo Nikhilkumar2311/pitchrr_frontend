@@ -224,12 +224,12 @@ export default function StartupChatbot() {
         }
     }, [messages.length, isTyping]);
 
-    const startTypewriter = useCallback((messageId: string, fullContent: string) => {
-        if (animationTimerRef.current) clearTimeout(animationTimerRef.current);
-        animatingContentRef.current = fullContent;
-        setAnimatingMessageId(messageId);
-        setDisplayedCharCount(0);
-    }, []);
+    // const startTypewriter = useCallback((messageId: string, fullContent: string) => {
+    //     if (animationTimerRef.current) clearTimeout(animationTimerRef.current);
+    //     animatingContentRef.current = fullContent;
+    //     setAnimatingMessageId(messageId);
+    //     setDisplayedCharCount(0);
+    // }, []);
 
     useEffect(() => {
         if (!animatingMessageId) return;
@@ -283,36 +283,124 @@ export default function StartupChatbot() {
         setInputValue('');
         setIsTyping(true);
 
+        const aiMessageId = (Date.now() + 1).toString();
+
         try {
             const context = buildContext();
-            const { data } = await api.post('/chat', {
-                message: content, context, ideaId: activeIdeaId,
-                history: messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
+            const historyPayload = messages.slice(-10).map(m => ({ role: m.role, content: m.content }));
+
+            // Get auth token for SSE (can't use axios interceptor for fetch)
+            const { getAuthToken } = await import('@/services/api');
+            const token = await getAuthToken();
+
+            const API_BASE = import.meta.env.VITE_CORE_API_URL || 'http://localhost:3001/api/v1';
+
+            const response = await fetch(`${API_BASE}/chat/stream`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                },
+                body: JSON.stringify({
+                    message: content,
+                    context,
+                    ideaId: activeIdeaId,
+                    history: historyPayload,
+                }),
             });
 
-            let responseText = "I'm having trouble responding right now. Please try again.";
-            let newFollowUps: string[] = [];
-            if (data.response) {
-                if (typeof data.response === 'object' && data.response.message) {
-                    responseText = data.response.message;
-                    if (Array.isArray(data.response.follow_up_questions) && data.response.follow_up_questions.length > 0) {
-                        newFollowUps = data.response.follow_up_questions;
-                    }
-                } else if (typeof data.response === 'string') {
-                    responseText = data.response;
-                }
-            } else if (data.message) {
-                responseText = typeof data.message === 'string' ? data.message : JSON.stringify(data.message);
+            if (!response.ok || !response.body) {
+                throw new Error(`Stream failed: ${response.status}`);
             }
-            if (newFollowUps.length > 0) setFollowUpQuestions(newFollowUps);
 
-            const aiMessageId = (Date.now() + 1).toString();
-            setMessages(prev => [...prev, { id: aiMessageId, role: 'assistant', content: responseText, timestamp: new Date() }]);
-            startTypewriter(aiMessageId, responseText);
+            // Add empty assistant message that will be filled by streaming
+            setMessages(prev => [...prev, { id: aiMessageId, role: 'assistant', content: '', timestamp: new Date() }]);
+            setIsTyping(false); // Hide typing dots once streaming starts
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let fullText = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                // Parse SSE format: "data: {content}\n\n"
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (!line.startsWith('data: ')) continue;
+                    const data = line.slice(6); // Remove "data: " prefix
+
+                    if (data === '[DONE]') continue;
+                    if (data.startsWith('[ERROR]')) {
+                        console.error('SSE error:', data);
+                        continue;
+                    }
+                    // Unescape newlines that were escaped for SSE transport
+                    const unescaped = data.replace(/\\n/g, '\n');
+                    fullText += unescaped;
+
+                    // Update the message content in real-time
+                    setMessages(prev =>
+                        prev.map(m => m.id === aiMessageId ? { ...m, content: fullText } : m)
+                    );
+                }
+            }
+
+            // If no text was received, use fallback
+            if (!fullText.trim()) {
+                throw new Error('Empty response from stream');
+            }
+
         } catch (error: any) {
-            console.error('Chat error:', error);
-            const fallbackResponse = getFallbackResponse(content);
-            setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: fallbackResponse, timestamp: new Date() }]);
+            console.error('Stream error, falling back to non-streaming:', error);
+            setIsTyping(false);
+
+            // Fallback: try the non-streaming endpoint
+            try {
+                const context = buildContext();
+                const { data } = await api.post('/chat', {
+                    message: content, context, ideaId: activeIdeaId,
+                    history: messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
+                });
+
+                let responseText = "I'm having trouble responding right now. Please try again.";
+                let newFollowUps: string[] = [];
+                if (data.response) {
+                    if (typeof data.response === 'object' && data.response.message) {
+                        responseText = data.response.message;
+                        if (Array.isArray(data.response.follow_up_questions) && data.response.follow_up_questions.length > 0) {
+                            newFollowUps = data.response.follow_up_questions;
+                        }
+                    } else if (typeof data.response === 'string') {
+                        responseText = data.response;
+                    }
+                } else if (data.message) {
+                    responseText = typeof data.message === 'string' ? data.message : JSON.stringify(data.message);
+                }
+                if (newFollowUps.length > 0) setFollowUpQuestions(newFollowUps);
+
+                // Update or add the message
+                setMessages(prev => {
+                    const exists = prev.some(m => m.id === aiMessageId);
+                    if (exists) {
+                        return prev.map(m => m.id === aiMessageId ? { ...m, content: responseText } : m);
+                    }
+                    return [...prev, { id: aiMessageId, role: 'assistant', content: responseText, timestamp: new Date() }];
+                });
+            } catch (fallbackError) {
+                console.error('Fallback also failed:', fallbackError);
+                const fallbackResponse = getFallbackResponse(content);
+                setMessages(prev => {
+                    const exists = prev.some(m => m.id === aiMessageId);
+                    if (exists) {
+                        return prev.map(m => m.id === aiMessageId ? { ...m, content: fallbackResponse } : m);
+                    }
+                    return [...prev, { id: aiMessageId, role: 'assistant', content: fallbackResponse, timestamp: new Date() }];
+                });
+            }
         } finally {
             setIsTyping(false);
         }

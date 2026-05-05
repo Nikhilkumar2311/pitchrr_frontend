@@ -520,7 +520,7 @@ export default function IdeaValidation() {
                  ═══════════════════════════════════════════════ */}
 
                 {/* Idea Score — open section */}
-                {hasAnalysis && (
+                {hasAnalysis && !isAnalyzing && (
                     <motion.div
                         {...fadeUp}
                         transition={{ delay: 0.05 }}
@@ -603,7 +603,7 @@ export default function IdeaValidation() {
                 )}
 
                 {/* Risk Assessment — open section */}
-                {hasAnalysis && analysis.risk_heat_map && (
+                {hasAnalysis && !isAnalyzing && analysis.risk_heat_map && (
                     <motion.div
                         {...fadeUp}
                         transition={{ delay: 0.1 }}
@@ -698,7 +698,7 @@ export default function IdeaValidation() {
                 )}
 
                 {/* SWOT Analysis — open section */}
-                {hasAnalysis && analysis.swot && (
+                {hasAnalysis && !isAnalyzing && analysis.swot && (
                     <motion.div
                         {...fadeUp}
                         transition={{ delay: 0.15 }}
@@ -767,7 +767,7 @@ export default function IdeaValidation() {
                 )}
 
                 {/* Market Demand Snapshot — open section */}
-                {hasAnalysis && analysis.market_demand_snapshot && (
+                {hasAnalysis && !isAnalyzing && analysis.market_demand_snapshot && (
                     <motion.div
                         {...fadeUp}
                         transition={{ delay: 0.2 }}
@@ -838,7 +838,7 @@ export default function IdeaValidation() {
                 {/* ═══════════════════════════════════════════════
                     SECTION 3 — RECOMMENDATIONS (open section)
                  ═══════════════════════════════════════════════ */}
-                {hasAnalysis && analysis.recommendations && (
+                {hasAnalysis && !isAnalyzing && analysis.recommendations && (
                     <motion.div
                         {...fadeUp}
                         transition={{ delay: 0.25 }}

@@ -25,7 +25,7 @@ import {
     ChevronLeft,
     ChevronRight,
     Edit,
-    Loader2,
+
     FileText,
     Pencil,
 } from 'lucide-react';
@@ -39,6 +39,7 @@ import {
 } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { PitchDeckSkeleton } from '@/components/skeletons/PitchDeckSkeleton';
+import { AIGeneratingSkeleton } from '@/components/skeletons/AIGeneratingSkeleton';
 import { CreditCost, SEO } from '@/components/common';
 import {
     useIdea,
@@ -539,25 +540,16 @@ export default function PitchDeck() {
                 )}
             </Card>
 
-            {/* Generating State */}
+            {/* Generating State (content-aware skeleton) */}
             {isGenerating && (
-                <Card className="bg-amber-50 border-amber-200">
-                    <div className="flex items-center gap-4">
-                        <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
-                        <div>
-                            <h3 className="font-medium text-amber-900">
-                                Generating Pitch Deck...
-                            </h3>
-                            <p className="text-sm text-amber-700">
-                                Creating 12 investor-ready slides. This usually takes 30-60 seconds.
-                            </p>
-                        </div>
-                    </div>
-                </Card>
+                <AIGeneratingSkeleton
+                    moduleType="pitch_deck"
+                    moduleName="Pitch Deck"
+                />
             )}
 
             {/* Slide Preview & Editor */}
-            {slides.length > 0 && (
+            {slides.length > 0 && !isGenerating && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Slide Thumbnails â€” mini themed previews */}
                     <div className="lg:col-span-1 space-y-2 lg:sticky lg:top-4 lg:self-start">

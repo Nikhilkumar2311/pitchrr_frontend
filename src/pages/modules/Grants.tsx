@@ -19,7 +19,7 @@ import { motion } from 'framer-motion';
 import {
     HandCoins,
     Sparkles,
-    Loader2,
+
     // ExternalLink,
     Search,
     Lightbulb,
@@ -35,6 +35,7 @@ import { Button } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { useIdeaStore, getStoredActiveIdeaId } from '@/store';
 import { SEO, CreditCost } from '@/components/common';
+import { AIGeneratingSkeleton } from '@/components/skeletons/AIGeneratingSkeleton';
 import {
     useIdeas,
     useModuleData,
@@ -353,33 +354,18 @@ export default function Grants() {
                 </div>
             )}
 
-            {/* Generating State — inline strip */}
+            {/* Generating State (content-aware skeleton) */}
             {isGenerating && (
-                <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-4 px-5 py-4 rounded-[12px]"
-                    style={{
-                        background: 'linear-gradient(135deg, rgba(6,182,212,0.08), rgba(8,145,178,0.04))',
-                        border: '1px solid rgba(6,182,212,0.18)',
-                    }}
-                >
-                    <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#06B6D4' }} />
-                    <div>
-                        <h3 className="font-medium text-[14px]" style={{ color: 'var(--dash-text)' }}>
-                            Finding the best grants for you...
-                        </h3>
-                        <p className="text-[13px]" style={{ color: 'var(--dash-text-muted)' }}>
-                            Analyzing your startup profile for the best grants. This usually takes 30-60 seconds.
-                        </p>
-                    </div>
-                </motion.div>
+                <AIGeneratingSkeleton
+                    moduleType="grants"
+                    moduleName="Grant Recommendations"
+                />
             )}
 
             {/* ================================================================= */}
             {/* SECTION 1: Recommended for your Startup                           */}
             {/* ================================================================= */}
-            {recommendations.length > 0 && (
+            {recommendations.length > 0 && !isGenerating && (
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -477,7 +463,7 @@ export default function Grants() {
             {/* ================================================================= */}
             {/* SECTION 2: Stage-wise Roadmap (Visual Timeline)                   */}
             {/* ================================================================= */}
-            {roadmap.length > 0 && (
+            {roadmap.length > 0 && !isGenerating && (
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}

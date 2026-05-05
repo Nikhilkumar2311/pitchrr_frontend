@@ -41,6 +41,7 @@ import { Button } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { useIdeaStore, getStoredActiveIdeaId } from '@/store';
 import { GTMStrategySkeleton } from '@/components/skeletons/GTMStrategySkeleton';
+import { AIGeneratingSkeleton } from '@/components/skeletons/AIGeneratingSkeleton';
 import { CreditCost, SEO } from '@/components/common';
 import {
     useIdea,
@@ -219,33 +220,18 @@ export default function GTMStrategy() {
                 </div>
             </div>
 
-            {/* Generating State */}
+            {/* Generating State (content-aware skeleton) */}
             {isGenerating && (
-                <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-4 px-5 py-4 rounded-[12px]"
-                    style={{
-                        background: 'linear-gradient(135deg, rgba(249,112,102,0.06), rgba(249,112,102,0.02))',
-                        border: '1px solid rgba(249,112,102,0.15)',
-                    }}
-                >
-                    <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#F97066' }} />
-                    <div>
-                        <h3 className="font-medium text-[14px]" style={{ color: 'var(--dash-text)' }}>
-                            Generating GTM Strategy...
-                        </h3>
-                        <p className="text-[13px]" style={{ color: 'var(--dash-text-muted)' }}>
-                            Building your launch plan, pricing, and growth strategies. This usually takes 30-60 seconds.
-                        </p>
-                    </div>
-                </motion.div>
+                <AIGeneratingSkeleton
+                    moduleType="gtm_strategy"
+                    moduleName="GTM Strategy"
+                />
             )}
 
             {/* ================================================================= */}
             {/* RESULTS — only shown after generation, NO outer boxes             */}
             {/* ================================================================= */}
-            {hasGenerated && (
+            {hasGenerated && !isGenerating && (
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}

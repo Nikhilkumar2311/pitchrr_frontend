@@ -25,7 +25,7 @@ import {
     Sparkles,
     Type,
     Paintbrush,
-    Loader2,
+
     Layers,
     Edit3,
     LayoutGrid,
@@ -37,6 +37,7 @@ import {
 import toast from 'react-hot-toast';
 import { useIdeaStore, getStoredActiveIdeaId } from '@/store';
 import { BrandingSkeleton } from '@/components/skeletons/BrandingSkeleton';
+import { AIGeneratingSkeleton } from '@/components/skeletons/AIGeneratingSkeleton';
 import { CreditCost, SEO } from '@/components/common';
 import {
     useIdea,
@@ -341,39 +342,13 @@ export default function Branding() {
                 </div>
 
                 {/* ═══════════════════════════════════════════════
-                    GENERATING STATE (inline strip)
+                    GENERATING STATE (content-aware skeleton)
                  ═══════════════════════════════════════════════ */}
                 {isGenerating && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                    >
-                        <div
-                            className="flex items-center gap-4 p-4 rounded-[12px]"
-                            style={{
-                                background: 'linear-gradient(135deg, rgba(139,92,246,0.04), rgba(124,58,237,0.04))',
-                                border: '1px solid rgba(139,92,246,0.1)',
-                            }}
-                        >
-                            <div
-                                className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
-                                style={{ background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)' }}
-                            >
-                                <Loader2 className="w-5 h-5 text-white animate-spin" />
-                            </div>
-                            <div>
-                                <h3
-                                    className="font-semibold text-[14px]"
-                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
-                                >
-                                    Generating Brand Identity...
-                                </h3>
-                                <p className="text-[13px]" style={{ color: 'var(--dash-text-muted)' }}>
-                                    This usually takes 1-2 minutes (generating logos with AI)
-                                </p>
-                            </div>
-                        </div>
-                    </motion.div>
+                    <AIGeneratingSkeleton
+                        moduleType="branding"
+                        moduleName="Brand Identity"
+                    />
                 )}
 
                 {/* ═══════════════════════════════════════════════
@@ -381,7 +356,7 @@ export default function Branding() {
                  ═══════════════════════════════════════════════ */}
 
                 {/* Logo Editor — only shown after branding is generated */}
-                {hasGenerated && (
+                {hasGenerated && !isGenerating && (
                     <div>
                         {/* Section divider label */}
                         <div className="flex items-center gap-3 mb-5">
@@ -472,7 +447,7 @@ export default function Branding() {
                     >
                         {startupName || 'Your Startup'}
                     </h2>
-                    {hasGenerated && branding?.taglines?.[0] && (
+                    {hasGenerated && !isGenerating && branding?.taglines?.[0] && (
                         <p
                             className="mt-2 italic text-[14px]"
                             style={{ color: 'var(--dash-text-muted)' }}
@@ -483,7 +458,7 @@ export default function Branding() {
                 </div>
 
                 {/* Taglines */}
-                {hasGenerated && branding?.taglines && (
+                {hasGenerated && !isGenerating && branding?.taglines && (
                     <motion.div
                         initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -521,7 +496,7 @@ export default function Branding() {
                         <Sparkles className="w-4 h-4" style={{ color: '#8B5CF6' }} />
                         Brand Voice
                     </h2>
-                    {hasGenerated && branding?.brand_voice ? (
+                    {hasGenerated && !isGenerating && branding?.brand_voice ? (
                         <div>
                             <div
                                 className="text-[13px] mb-3"
@@ -571,7 +546,7 @@ export default function Branding() {
                 </div>
 
                 {/* Font Recommendations */}
-                {hasGenerated && branding?.typography && (
+                {hasGenerated && !isGenerating && branding?.typography && (
                     <motion.div
                         initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -618,7 +593,7 @@ export default function Branding() {
                 )}
 
                 {/* AI-Generated Color Palette */}
-                {hasGenerated && branding?.color_palette && (
+                {hasGenerated && !isGenerating && branding?.color_palette && (
                     <motion.div
                         initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -676,7 +651,7 @@ export default function Branding() {
                 )}
 
                 {/* Startup Card Generator */}
-                {hasGenerated && branding && (
+                {hasGenerated && !isGenerating && branding && (
                     <StartupCard
                         startupName={startupName}
                         primaryColor={branding?.color_palette?.primary || selectedColorPreset.primary}

@@ -28,7 +28,7 @@ import {
     Users,
     Target,
     Zap,
-    Loader2,
+
     BarChart3,
 } from 'lucide-react';
 import {
@@ -38,6 +38,7 @@ import {
 import toast from 'react-hot-toast';
 import { useIdeaStore, getStoredActiveIdeaId } from '@/store';
 import { MarketingStrategySkeleton } from '@/components/skeletons/MarketingStrategySkeleton';
+import { AIGeneratingSkeleton } from '@/components/skeletons/AIGeneratingSkeleton';
 import { CreditCost, SEO } from '@/components/common';
 import {
     useIdea,
@@ -276,38 +277,13 @@ export default function MarketingStrategy() {
                 </div>
 
                 {/* ═══════════════════════════════════════════════
-                    GENERATING STATE (inline strip)
+                    GENERATING STATE (content-aware skeleton)
                  ═══════════════════════════════════════════════ */}
                 {isGenerating && (
-                    <motion.div {...fadeUp}>
-                        <div
-                            className="flex items-center gap-4 p-4 rounded-[12px]"
-                            style={{
-                                background: 'linear-gradient(135deg, rgba(16,185,129,0.04), rgba(5,150,105,0.04))',
-                                border: '1px solid rgba(16,185,129,0.1)',
-                            }}
-                        >
-                            <div
-                                className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
-                                style={{
-                                    background: 'linear-gradient(135deg, #10B981, #059669)',
-                                }}
-                            >
-                                <Loader2 className="w-5 h-5 text-white animate-spin" />
-                            </div>
-                            <div>
-                                <h3
-                                    className="font-semibold text-[14px]"
-                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
-                                >
-                                    Generating Marketing Strategy...
-                                </h3>
-                                <p className="text-[13px]" style={{ color: 'var(--dash-text-muted)' }}>
-                                    This usually takes 30-60 seconds
-                                </p>
-                            </div>
-                        </div>
-                    </motion.div>
+                    <AIGeneratingSkeleton
+                        moduleType="marketing_strategy"
+                        moduleName="Marketing Strategy"
+                    />
                 )}
 
                 {/* ═══════════════════════════════════════════════
@@ -315,7 +291,7 @@ export default function MarketingStrategy() {
                  ═══════════════════════════════════════════════ */}
 
                 {/* 30-Day Marketing Plan */}
-                {hasGenerated && strategy?.timeline && (
+                {hasGenerated && !isGenerating && strategy?.timeline && (
                     <motion.div {...fadeUp} transition={{ delay: 0.05 }}>
                         {/* Section divider label */}
                         <div className="flex items-center gap-3 mb-5">
@@ -367,7 +343,7 @@ export default function MarketingStrategy() {
                 )}
 
                 {/* Target Segments */}
-                {hasGenerated && strategy?.target_segments && (
+                {hasGenerated && !isGenerating && strategy?.target_segments && (
                     <motion.div {...fadeUp} transition={{ delay: 0.1 }}>
                         <h2
                             className="text-[18px] font-bold flex items-center gap-2 mb-4"
@@ -415,7 +391,7 @@ export default function MarketingStrategy() {
                 )}
 
                 {/* Marketing Channels */}
-                {hasGenerated && strategy?.channels && (
+                {hasGenerated && !isGenerating && strategy?.channels && (
                     <motion.div {...fadeUp} transition={{ delay: 0.15 }}>
                         <h2
                             className="text-[18px] font-bold flex items-center gap-2 mb-4"
@@ -483,7 +459,7 @@ export default function MarketingStrategy() {
                 )}
 
                 {/* Messaging Framework */}
-                {hasGenerated && strategy?.messaging_framework && (
+                {hasGenerated && !isGenerating && strategy?.messaging_framework && (
                     <motion.div {...fadeUp} transition={{ delay: 0.2 }}>
                         <h2
                             className="text-[18px] font-bold flex items-center gap-2 mb-4"
@@ -539,7 +515,7 @@ export default function MarketingStrategy() {
                 )}
 
                 {/* KPIs */}
-                {hasGenerated && strategy?.kpis && (
+                {hasGenerated && !isGenerating && strategy?.kpis && (
                     <motion.div {...fadeUp} transition={{ delay: 0.25 }}>
                         <h2
                             className="text-[18px] font-bold flex items-center gap-2 mb-4"

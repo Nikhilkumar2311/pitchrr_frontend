@@ -38,6 +38,7 @@ import { Button } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { useIdeaStore, getStoredActiveIdeaId } from '@/store';
 import { CompetitorAnalysisSkeleton } from '@/components/skeletons/CompetitorAnalysisSkeleton';
+import { AIGeneratingSkeleton } from '@/components/skeletons/AIGeneratingSkeleton';
 import { CreditCost, SEO } from '@/components/common';
 import {
     useIdeas,
@@ -201,33 +202,18 @@ export default function CompetitorAnalysis() {
                 </div>
             </div>
 
-            {/* Generating State */}
+            {/* Generating State (content-aware skeleton) */}
             {isAnalyzing && (
-                <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-4 px-5 py-4 rounded-[12px]"
-                    style={{
-                        background: 'linear-gradient(135deg, rgba(6,182,212,0.06), rgba(6,182,212,0.02))',
-                        border: '1px solid rgba(6,182,212,0.15)',
-                    }}
-                >
-                    <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#06B6D4' }} />
-                    <div>
-                        <h3 className="font-medium text-[14px]" style={{ color: 'var(--dash-text)' }}>
-                            Analyzing Competitors...
-                        </h3>
-                        <p className="text-[13px]" style={{ color: 'var(--dash-text-muted)' }}>
-                            Researching your market and competitive landscape. This usually takes 30-60 seconds.
-                        </p>
-                    </div>
-                </motion.div>
+                <AIGeneratingSkeleton
+                    moduleType="competitor_analysis"
+                    moduleName="Competitor Analysis"
+                />
             )}
 
             {/* ================================================================= */}
             {/* RESULTS — only shown after generation                             */}
             {/* ================================================================= */}
-            {hasAnalyzed && (
+            {hasAnalyzed && !isAnalyzing && (
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
