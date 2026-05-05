@@ -13,14 +13,15 @@ import api from '@/services/api';
 export function CreditsDisplay() {
     const { isSignedIn, isLoaded } = useAuth();
 
-    // Fetch credits with automatic refetch every 5 seconds for real-time updates
+    // Fetch credits — updated reactively via SSE when modules complete
+    // (no more 5s polling — SSE invalidates this query key on generation complete)
     const { data: credits, isLoading } = useQuery({
         queryKey: ['credits', 'stats'],
         queryFn: async () => {
             const response = await api.get('/credits');
             return response.data;
         },
-        refetchInterval: 5000,
+        staleTime: 5 * 60 * 1000, // 5 minutes — SSE handles real-time updates
         enabled: isLoaded && isSignedIn,
     });
 

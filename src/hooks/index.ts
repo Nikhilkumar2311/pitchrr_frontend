@@ -38,6 +38,9 @@ export {
 } from './useModules';
 export type { ModuleType, ModuleDataResponse, GenerateModuleResponse, ExportJobResponse, ExportStatusResponse } from './useModules';
 
+// SSE Push Notifications (replaces polling)
+export { useModuleSSE } from './useModuleSSE';
+
 // API Hooks - Credits
 export {
     useCredits,

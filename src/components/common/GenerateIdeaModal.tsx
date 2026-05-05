@@ -167,6 +167,7 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedIdeas, setGeneratedIdeas] = useState<GeneratedIdea[]>([]);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+    const [generationError, setGenerationError] = useState<string | null>(null);
 
     // Build questions dynamically based on selected startup type
     const selectedType = (answers.startupType as string) || '';
@@ -268,6 +269,7 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
 
     const generateIdeas = async () => {
         setIsGenerating(true);
+        setGenerationError(null);
 
         try {
             // Import API service
@@ -303,15 +305,22 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                 ? (answers.interests as string[]).join(', ')
                 : '';
 
-            // Map to GeneratedIdea format
-            const mapped: GeneratedIdea[] = ideasArray.map((item: any) => ({
-                title: item.title || 'AI-Generated Idea',
-                description: item.description || '',
-                problem: item.problem || '',
-                solution: item.solution || '',
-                targetMarket: item.target_market || item.targetMarket || '',
-                industry: industryFromInterests,
-            }));
+            // Map to GeneratedIdea format and filter out invalid/empty ideas
+            const mapped: GeneratedIdea[] = ideasArray
+                .filter((item: any) => item?.title && item?.description)
+                .map((item: any) => ({
+                    title: item.title,
+                    description: item.description || '',
+                    problem: item.problem || '',
+                    solution: item.solution || '',
+                    targetMarket: item.target_market || item.targetMarket || '',
+                    industry: industryFromInterests,
+                }));
+
+            if (mapped.length === 0) {
+                setGenerationError('The AI couldn\'t generate valid ideas this time. Please try again with different preferences.');
+                return;
+            }
 
             setGeneratedIdeas(mapped);
             // Auto-select the first idea
@@ -330,8 +339,11 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                 return;
             }
 
-            // Handle other errors
-            toast.error('Failed to generate ideas. Please try again.');
+            // Show error state in modal instead of just a toast
+            const errorMessage = error.response?.data?.message
+                || error.message
+                || 'Failed to generate ideas. Please try again.';
+            setGenerationError(errorMessage);
         } finally {
             setIsGenerating(false);
         }
@@ -351,6 +363,7 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
         setGeneratedIdeas([]);
         setSelectedIndex(null);
         setIsGenerating(false);
+        setGenerationError(null);
         onClose();
     };
 
@@ -433,7 +446,7 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                     </div>
 
                     {/* Progress strip (questions phase only) */}
-                    {generatedIdeas.length === 0 && !isGenerating && (
+                    {generatedIdeas.length === 0 && !isGenerating && !generationError && (
                         <div className="px-5 pt-4 shrink-0">
                             <div className="flex items-center justify-between mb-2">
                                 <span
@@ -487,6 +500,81 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                                     Our AI is analyzing market trends and your preferences
                                 </p>
                             </div>
+                        ) : generationError ? (
+                            /* Error state */
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="text-center py-10"
+                            >
+                                <div
+                                    className="w-14 h-14 mx-auto mb-5 rounded-[12px] flex items-center justify-center"
+                                    style={{
+                                        background: 'rgba(239,68,68,0.08)',
+                                        border: '1.5px solid rgba(239,68,68,0.15)',
+                                    }}
+                                >
+                                    <X className="w-7 h-7" style={{ color: '#EF4444' }} />
+                                </div>
+                                <h3
+                                    className="text-[16px] font-semibold mb-2"
+                                    style={{ color: 'var(--dash-text)', fontFamily: 'var(--dash-font-heading)' }}
+                                >
+                                    Generation Failed
+                                </h3>
+                                <p
+                                    className="text-[13px] mb-6 max-w-md mx-auto leading-relaxed"
+                                    style={{ color: 'var(--dash-text-muted)' }}
+                                >
+                                    {generationError}
+                                </p>
+                                <div className="flex items-center justify-center gap-3">
+                                    <button
+                                        onClick={() => {
+                                            setGenerationError(null);
+                                            setCurrentStep(questions.length - 1);
+                                        }}
+                                        className="px-4 py-2 rounded-[10px] text-[13px] font-medium transition-all duration-150 cursor-pointer"
+                                        style={{
+                                            background: 'rgba(0,0,0,0.04)',
+                                            border: '1.5px solid var(--dash-border-solid, #E8ECF4)',
+                                            color: 'var(--dash-text-secondary)',
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'rgba(0,0,0,0.06)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'rgba(0,0,0,0.04)';
+                                        }}
+                                    >
+                                        <ArrowLeft style={{ width: 14, height: 14, display: 'inline', marginRight: 6, verticalAlign: 'middle' }} />
+                                        Go Back
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setGenerationError(null);
+                                            generateIdeas();
+                                        }}
+                                        className="px-4 py-2 rounded-[10px] text-[13px] font-semibold transition-all duration-150 cursor-pointer text-white"
+                                        style={{
+                                            background: 'linear-gradient(135deg, #4F7DF3, #7A5CFF)',
+                                            boxShadow: '0 4px 12px rgba(79,125,243,0.25)',
+                                            border: 'none',
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(79,125,243,0.35)';
+                                            e.currentTarget.style.transform = 'translateY(-1px)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(79,125,243,0.25)';
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                        }}
+                                    >
+                                        <Sparkles style={{ width: 14, height: 14, display: 'inline', marginRight: 6, verticalAlign: 'middle' }} />
+                                        Try Again
+                                    </button>
+                                </div>
+                            </motion.div>
                         ) : generatedIdeas.length > 0 ? (
                             /* Generated Ideas Selection */
                             <div className="space-y-2">
@@ -867,7 +955,8 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                         )}
                     </div>
 
-                    {/* Footer */}
+                    {/* Footer — hidden during generating/error states */}
+                    {!isGenerating && !generationError && (
                     <div
                         className="flex items-center justify-between p-5 shrink-0"
                         style={{
@@ -916,6 +1005,7 @@ export function GenerateIdeaModal({ isOpen, onClose, onIdeaGenerated }: Generate
                             </>
                         )}
                     </div>
+                    )}
                 </motion.div>
             </motion.div>
         </AnimatePresence>

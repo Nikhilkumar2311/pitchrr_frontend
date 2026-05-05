@@ -126,11 +126,12 @@ export function useAllModules(ideaId: string | undefined) {
 export function useModuleData(
     ideaId: string | undefined,
     moduleType: ModuleType,
-    options?: { pollWhileGenerating?: boolean }
+    options?: { pollWhileGenerating?: boolean; disablePolling?: boolean }
 ) {
     const { isSignedIn } = useAuth();
     const queryClient = useQueryClient();
     const pollWhileGenerating = options?.pollWhileGenerating ?? true;
+    const disablePolling = options?.disablePolling ?? false;
 
     return useQuery({
         queryKey: moduleKeys.single(ideaId || '', moduleType),
@@ -142,7 +143,7 @@ export function useModuleData(
         },
         enabled: !!isSignedIn && !!ideaId,
         staleTime: 60 * 1000, // 1 minute fresh
-        refetchInterval: pollWhileGenerating
+        refetchInterval: (pollWhileGenerating && !disablePolling)
             ? (query) => {
                 const data = query.state.data;
                 // Stop polling if:
@@ -167,17 +168,21 @@ export function useModuleData(
 
 /**
  * Generate module data using AI.
- * Returns immediately with jobId - use useModuleData to poll for results.
- * 
+ * Returns immediately with jobId.
+ *
+ * After successful trigger, opens an SSE connection to receive
+ * real-time push notifications when the job completes/fails.
+ * This replaces the previous polling approach.
+ *
  * Usage:
  * ```tsx
  * const { mutate: generateModule, isPending } = useGenerateModule(ideaId);
- * 
+ *
  * // Trigger generation
  * generateModule('idea_validation', {
  *     onSuccess: (response) => {
  *         console.log('Job queued:', response.jobId);
- *         // React Query will auto-poll for results via useModuleData
+ *         // SSE will automatically notify when complete
  *     }
  * });
  * ```
@@ -192,7 +197,7 @@ export function useGenerateModule(ideaId: string) {
             );
             return data;
         },
-        onSuccess: (response, moduleType) => {
+        onSuccess: async (response, moduleType) => {
             // Show toast with credits info
             toast.success(
                 `Generating ${formatModuleName(moduleType)}...`,
@@ -205,10 +210,93 @@ export function useGenerateModule(ideaId: string) {
                 trackCreditUsed('module_generation', response.creditsDeducted, ideaId);
             }
 
-            // Invalidate module data to start polling
+            // Invalidate module data (sets status to IN_PROGRESS for skeleton)
             queryClient.invalidateQueries({
                 queryKey: moduleKeys.single(ideaId, moduleType),
             });
+
+            // Open SSE connection for real-time push notification
+            // Falls back to polling (via useModuleData refetchInterval) if SSE fails
+            try {
+                const { getAuthToken } = await import('@/services/api');
+                const token = await getAuthToken();
+                const API_BASE = import.meta.env.VITE_CORE_API_URL || 'http://localhost:3001/api/v1';
+
+                const sseResponse = await fetch(`${API_BASE}/events/modules/${ideaId}`, {
+                    method: 'GET',
+                    headers: {
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                    },
+                });
+
+                if (!sseResponse.ok || !sseResponse.body) {
+                    console.warn('[SSE] Connection failed, falling back to polling');
+                    return;
+                }
+
+                const reader = sseResponse.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                const processStream = async () => {
+                    try {
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+
+                            buffer += decoder.decode(value, { stream: true });
+                            const events = buffer.split('\n\n');
+                            buffer = events.pop() || '';
+
+                            for (const eventStr of events) {
+                                if (!eventStr.trim()) continue;
+                                for (const line of eventStr.split('\n')) {
+                                    if (!line.startsWith('data: ')) continue;
+                                    try {
+                                        const event = JSON.parse(line.slice(6));
+
+                                        if (event.event === 'module_complete' || event.event === 'module_failed') {
+                                            // Invalidate the module query → triggers a single refetch
+                                            const evtModule = event.moduleType?.toLowerCase() as ModuleType;
+                                            if (evtModule) {
+                                                queryClient.invalidateQueries({
+                                                    queryKey: moduleKeys.single(ideaId, evtModule),
+                                                });
+                                                queryClient.invalidateQueries({
+                                                    queryKey: moduleKeys.allForIdea(ideaId),
+                                                });
+                                                queryClient.invalidateQueries({
+                                                    queryKey: creditKeys.stats(),
+                                                });
+                                            }
+                                            // Close SSE — job is done
+                                            reader.cancel();
+                                            return;
+                                        }
+
+                                        if (event.event === 'timeout') {
+                                            reader.cancel();
+                                            return;
+                                        }
+                                    } catch {
+                                        // heartbeat or non-JSON — ignore
+                                    }
+                                }
+                            }
+                        }
+                    } catch (err: any) {
+                        if (err.name !== 'AbortError') {
+                            console.warn('[SSE] Stream error:', err.message);
+                        }
+                    }
+                };
+
+                // Process in background — don't block the mutation callback
+                processStream();
+            } catch {
+                // SSE setup failed — polling fallback is still active
+                console.warn('[SSE] Setup failed, polling fallback active');
+            }
         },
         onError: (error: any) => {
             const message = error?.response?.data?.message || 'Failed to start generation';

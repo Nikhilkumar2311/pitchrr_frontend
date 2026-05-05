@@ -880,8 +880,10 @@ export default function PitchDeck() {
 
                                     {/* Chart Visualization */}
                                     {(() => {
-                                        const chart = slides[currentSlide]?.chart;
-                                        if (chart && chart.type && chart.type !== 'none' && chart.data && chart.data.length > 0) {
+                                        const slide = slides[currentSlide];
+                                        const chart = slide?.chart;
+                                        // Skip chart for business_model — the numbered cards already show revenue streams
+                                        if (chart && chart.type && chart.type !== 'none' && chart.data && chart.data.length > 0 && slide?.type !== 'business_model') {
                                             return (
                                                 <div id={`slide-chart-${currentSlide}`} className="mt-3 rounded-lg relative overflow-hidden" style={{ zIndex: 10, maxHeight: '50%' }}>
                                                     <button
