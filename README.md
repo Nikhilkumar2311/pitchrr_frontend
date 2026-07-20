@@ -1,4 +1,4 @@
-# Pitchrr — Client Application Documentation
+# Pitchrr - Client Application Documentation
 
 Welcome to the frontend application repository for **Pitchrr**, an AI-powered co-builder platform designed to help founders, entrepreneurs, and builders turn raw business concepts into fully validated, market-ready startups.
 
@@ -54,38 +54,42 @@ The Pitchrr client operates as a Single Page Application (SPA) driven by React R
 
 ```mermaid
 flowchart TD
-    subgraph Client Application [Pitchrr React 19 Client]
-        Router[React Router v7 / Lazy Loading]
+    subgraph ClientApp["Pitchrr React 19 Client"]
+        Router["React Router v7 / Lazy Loading"]
         
-        subgraph State Layer
-            UIStore[Zustand UI Store]
-            IdeaStore[Zustand Idea Store]
-            DeckStore[Zustand Deck Editor Store]
-            RQCache[TanStack React Query Cache]
+        subgraph StateLayer["State Layer"]
+            UIStore["Zustand UI Store"]
+            IdeaStore["Zustand Idea Store"]
+            DeckStore["Zustand Deck Editor Store"]
+            RQCache["TanStack React Query Cache"]
         end
         
-        subgraph Transport Layer
-            AxiosClient[Axios Central API Client]
-            SSEHook[useModuleSSE Stream Hook]
+        subgraph TransportLayer["Transport Layer"]
+            AxiosClient["Axios Central API Client"]
+            SSEHook["useModuleSSE Stream Hook"]
         end
         
-        subgraph UI Views
-            DashboardView[Dashboard & Module Views]
-            DeckEditorView[Konva Pitch Deck Canvas Studio]
-            ExploreView[Community Explore & Posts]
-            StoreView[Credits Store & Razorpay]
+        subgraph UIViewGroup["UI Views"]
+            DashboardView["Dashboard & Module Views"]
+            DeckEditorView["Konva Pitch Deck Canvas Studio"]
+            ExploreView["Community Explore & Posts"]
+            StoreView["Credits Store & Razorpay"]
         end
     end
 
-    subgraph Backend Services [Pitchrr Core API Platform]
-        CoreAPI[Core Service REST API /api/v1]
-        SSEEndpoint[SSE Event Stream /events/modules/:ideaId]
-        AuthService[Auth & User Sync Service]
-        PaymentGateway[Razorpay Payment Gateway]
+    subgraph BackendServices["Pitchrr Core API Platform"]
+        CoreAPI["Core Service REST API /api/v1"]
+        SSEEndpoint["SSE Event Stream /events/modules/:ideaId"]
+        AuthService["Auth & User Sync Service"]
+        PaymentGateway["Razorpay Payment Gateway"]
     end
 
-    Router --> DashboardView & DeckEditorView & ExploreView & StoreView
-    DashboardView --> RQCache & IdeaStore
+    Router --> DashboardView
+    Router --> DeckEditorView
+    Router --> ExploreView
+    Router --> StoreView
+    DashboardView --> RQCache
+    DashboardView --> IdeaStore
     DeckEditorView --> DeckStore
     
     RQCache --> AxiosClient
@@ -105,25 +109,25 @@ Instead of aggressive polling, module generation uses Server-Sent Events (SSE) v
 sequenceDiagram
     autonumber
     participant User as Founder / User
-    participant Page as Module Page (e.g. IdeaValidation)
+    participant Page as Module Page
     participant Axios as Axios API Client
     participant SSE as useModuleSSE Hook
     participant Backend as Core Backend & Worker
     participant Query as React Query Cache
 
     User->>Page: Click "Generate Strategy / Analysis"
-    Page->>Axios: POST /modules/:type/generate { ideaId }
+    Page->>Axios: POST /modules/:type/generate
     Axios->>Backend: Request module generation
     Backend-->>Axios: 202 Accepted (Job queued)
     
     Page->>SSE: connect(ideaId)
-    SSE->>Backend: GET /events/modules/:ideaId (Authorization: Bearer token)
+    SSE->>Backend: GET /events/modules/:ideaId
     Backend-->>SSE: Connection established (stream open)
     
-    Note over Backend: Background Worker processes AI models & prompts...
+    Note over Backend: Background Worker processes AI models...
     
     alt Job Completed
-        Backend-->>SSE: Event: module_complete { moduleType, ideaId }
+        Backend-->>SSE: Event: module_complete
         SSE->>Query: invalidateQueries(['modules', ideaId, moduleType])
         SSE->>Query: invalidateQueries(['credits'])
         Query->>Backend: Auto-refetch fresh module data
@@ -131,8 +135,8 @@ sequenceDiagram
         Query-->>Page: Re-render UI with generated results
         SSE->>SSE: Auto disconnect stream
     else Job Failed
-        Backend-->>SSE: Event: module_failed { moduleType, error }
-        SSE-->>Page: Trigger Toast notification with error detail
+        Backend-->>SSE: Event: module_failed
+        SSE-->>Page: Trigger Toast notification
         SSE->>SSE: Auto disconnect stream
     end
 ```
@@ -145,30 +149,30 @@ The Pitch Deck Studio provides a Canva-like visual builder powered by Konva. All
 
 ```mermaid
 flowchart LR
-    subgraph UI Toolbar & Panels
-        Toolbar[Editor Toolbar: Add Text, Shape, Image]
-        PropertiesPanel[Properties Panel: Styles, Fonts, Colors, Layering]
-        SlidesPanel[Slides Thumbnail Panel: Add, Reorder, Delete Slides]
+    subgraph UIPanels["UI Toolbar & Panels"]
+        Toolbar["Editor Toolbar: Add Text, Shape, Image"]
+        PropertiesPanel["Properties Panel: Styles, Fonts, Colors, Layering"]
+        SlidesPanel["Slides Thumbnail Panel: Add, Reorder, Delete Slides"]
     end
 
-    subgraph Zustand Deck Store [useDeckEditorStore]
-        SlidesState[Slides Array & Active Slide Index]
-        ElementState[Elements Vector Data]
-        HistoryState[History Snapshot Stack (Undo / Redo)]
-        SelectionState[Selected Element IDs]
+    subgraph DeckStoreGroup["Zustand Deck Store (useDeckEditorStore)"]
+        SlidesState["Slides Array & Active Slide Index"]
+        ElementState["Elements Vector Data"]
+        HistoryState["History Snapshot Stack - Undo / Redo"]
+        SelectionState["Selected Element IDs"]
     end
 
-    subgraph Canvas Rendering [Konva Engine]
-        KonvaStage[Konva Stage & Layer]
-        TransformerNode[Konva Transformer: Drag, Scale, Rotate]
-        ExportEngine[html-to-image / Canvas PNG & PDF Export]
+    subgraph CanvasGroup["Canvas Rendering (Konva Engine)"]
+        KonvaStage["Konva Stage & Layer"]
+        TransformerNode["Konva Transformer: Drag, Scale, Rotate"]
+        ExportEngine["html-to-image / Canvas PNG & PDF Export"]
     end
 
-    Toolbar -->|Dispatch Actions| Zustand Deck Store
+    Toolbar -->|Dispatch Actions| DeckStoreGroup
     PropertiesPanel -->|Update Attributes| ElementState
     SlidesPanel -->|Switch / Reorder| SlidesState
 
-    Zustand Deck Store -->|State Subscription| KonvaStage
+    DeckStoreGroup -->|State Subscription| KonvaStage
     KonvaStage --> TransformerNode
     KonvaStage --> ExportEngine
 ```
@@ -181,19 +185,19 @@ Pitchrr utilizes a credit system for AI module generation. The central Axios cli
 
 ```mermaid
 flowchart TD
-    A[User Triggers AI Action] --> B[Axios Sends API Request]
-    B --> C{Backend Response Status}
+    A["User Triggers AI Action"] --> B["Axios Sends API Request"]
+    B --> C{"Backend Response Status"}
     
-    C -->|200 / 201 Success| D[Update UI & Return Data]
-    C -->|401 Unauthorized| E[Log Warning & Handle Auth Session]
-    C -->|402 Payment Required| F[Extract Required vs Available Credits]
+    C -->|200 / 201 Success| D["Update UI & Return Data"]
+    C -->|401 Unauthorized| E["Log Warning & Handle Auth Session"]
+    C -->|402 Payment Required| F["Extract Required vs Available Credits"]
     
-    F --> G[Display Toast Error Notification]
-    G --> H[Redirect User to /dashboard/store/credits after 1.5s]
+    F --> G["Display Toast Error Notification"]
+    G --> H["Redirect User to Credits Store"]
     
-    C -->|404 Not Found| I{Silent Endpoint?}
-    I -->|Yes e.g. /credits, /users/sync| J[Suppress Toast]
-    I -->|No| K[Show Toast Resource Not Found]
+    C -->|404 Not Found| I{"Silent Endpoint?"}
+    I -->|Yes| J["Suppress Toast Notification"]
+    I -->|No| K["Show Toast: Resource Not Found"]
 ```
 
 ---
@@ -260,108 +264,3 @@ Pitchrr includes 8 specialized co-builder modules along with social and monetiza
 
 ### Global Feedback System
 - **Floating Feedback Widget**: Accessible feedback modal (`FeedbackWidget.tsx`) allowing users to report bugs or submit feature suggestions directly from any dashboard page.
-
----
-
-## Directory Structure
-
-```
-client/
-├── public/                  # Static web assets, logos, and favicon
-├── src/
-│   ├── app/                 # Application initialization & routing
-│   │   ├── providers.tsx    # Global React Query, Toast, & Context wrappers
-│   │   └── router.tsx       # React Router v7 routes & lazy load definitions
-│   ├── assets/              # Static media, vectors, and brand graphics
-│   ├── components/          # Reusable UI component library
-│   │   ├── branding/        # Visual palette & card components
-│   │   ├── common/          # Modals, protected route wrappers, spinners
-│   │   ├── community/       # Post cards, comment sections, vote buttons
-│   │   ├── pitch-deck/      # Deck preview & template thumbnails
-│   │   ├── skeletons/       # Loading skeleton placeholders
-│   │   └── ui/              # Buttons, inputs, dialogs, cards
-│   ├── context/             # Global Context providers (Auth, Feedback)
-│   ├── data/                # Static configuration & fallback mock data
-│   ├── docs/                # Internal developer documentation
-│   ├── hooks/               # Custom React hooks
-│   │   ├── useCommunity.ts  # Post, upvote, & comment mutations
-│   │   ├── useCredits.ts    # Credit balance query & purchase hooks
-│   │   ├── useDeckEditor.ts # Pitch deck canvas utilities
-│   │   ├── useIdeas.ts      # Idea CRUD operations
-│   │   ├── useModuleSSE.ts  # SSE real-time event listener
-│   │   └── useModules.ts    # TanStack Query hooks for all 8 modules
-│   ├── layout/              # Page layouts (Header, Sidebar, Footer, DashboardLayout)
-│   ├── pages/               # Top-level route pages
-│   │   ├── modules/         # Individual module pages & deck-editor studio
-│   │   ├── store/           # Credits purchase store
-│   │   ├── legal/           # Privacy, Terms, Refund, Contact, About pages
-│   │   ├── Dashboard.tsx    # Primary founder dashboard overview
-│   │   ├── Explore.tsx      # Community feed page
-│   │   ├── Landing.tsx      # High-converting marketing landing page
-│   │   ├── MyPosts.tsx      # Founder post management portal
-│   │   └── UserProfile.tsx  # Public creator profile view
-│   ├── services/            # Centralized API client & HTTP network layer
-│   │   └── api.ts           # Axios instance with request/response interceptors
-│   ├── store/               # Zustand state stores
-│   │   ├── ideaStore.ts     # Active idea context store
-│   │   ├── uiStore.ts       # Sidebar, theme, & modal UI store
-│   │   └── useDeckEditorStore.ts # Konva slide deck canvas store & undo/redo engine
-│   ├── styles/              # Custom CSS utility definitions
-│   ├── types/               # TypeScript interfaces & domain types
-│   └── utils/               # Formatting, date, and math helpers
-├── .env.example             # Template for required environment variables
-├── eslint.config.js         # ESLint code quality configuration
-├── index.html               # Vite HTML entry template
-├── package.json             # NPM dependencies and project scripts
-├── tsconfig.json            # TypeScript master configuration
-└── vite.config.ts           # Vite build & alias configuration
-```
-
----
-
-## Environment Configuration & Local Setup
-
-### 1. Prerequisites
-
-Ensure you have the following tools installed on your development system:
-- **Node.js**: `v18.0.0` or higher
-- **NPM**: `v9.0.0` or higher
-
-### 2. Environment Setup
-
-Create a `.env` file in the `client/` root directory (refer to `.env.example`):
-
-```env
-# Core API Service Endpoint
-VITE_CORE_API_URL=http://localhost:3001/api/v1
-
-# Razorpay Integration (Test / Live Key)
-VITE_RAZORPAY_KEY_ID=rzp_test_...
-
-# Contact & Feedback Form Access Key (Web3Forms)
-VITE_WEB3FORMS_ACCESS_KEY=your_web3forms_key
-```
-
-### 3. Installation & Scripts
-
-Install the project dependencies:
-
-```bash
-npm install
-```
-
-Available development scripts:
-
-```bash
-# Start the local development server with HMR
-npm run dev
-
-# Run TypeScript type check and compile production bundle
-npm run build
-
-# Preview the compiled production build locally
-npm run preview
-
-# Run ESLint to verify code quality and style compliance
-npm run lint
-```
