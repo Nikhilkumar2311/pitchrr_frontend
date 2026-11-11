@@ -19,6 +19,8 @@
 
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import toast from 'react-hot-toast';
+import { isDemoMode } from '@/demo/demoStore';
+import { handleDemoRequest } from '@/demo/demoApi';
 
 /**
  * We cannot use Clerk hooks (useAuth) directly here because this is a plain TS file.
@@ -31,11 +33,19 @@ import toast from 'react-hot-toast';
 const API_BASE_URL = import.meta.env.VITE_CORE_API_URL || 'http://localhost:3001/api/v1';
 // console.log('[API] Core API Base URL:', API_BASE_URL);
 
+const defaultAdapter = axios.getAdapter(axios.defaults.adapter);
+
 const api = axios.create({
     baseURL: API_BASE_URL,
     timeout: 30000,
     headers: {
         'Content-Type': 'application/json',
+    },
+    adapter: async (config) => {
+        if (isDemoMode()) {
+            return handleDemoRequest(config);
+        }
+        return defaultAdapter(config);
     },
 });
 

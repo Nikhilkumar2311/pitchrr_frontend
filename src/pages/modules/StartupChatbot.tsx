@@ -108,6 +108,7 @@ import { SEO } from '@/components/common';
 import { useIdea, useIdeas, useAllModules } from '@/hooks';
 import { useIdeaStore, getStoredActiveIdeaId } from '@/store';
 import api from '@/services/api';
+import { isDemoMode, getDemoChatReply } from '@/demo/demoStore';
 
 interface Message {
     id: string;
@@ -284,6 +285,23 @@ export default function StartupChatbot() {
         setIsTyping(true);
 
         const aiMessageId = (Date.now() + 1).toString();
+
+        if (isDemoMode()) {
+            const fullReply = getDemoChatReply(content, idea, allModules);
+            await new Promise((resolve) => setTimeout(resolve, 450));
+            setMessages(prev => [...prev, { id: aiMessageId, role: 'assistant', content: '', timestamp: new Date() }]);
+            setIsTyping(false);
+
+            const tokens = fullReply.split(/(\s+)/);
+            let accumulated = '';
+            for (let i = 0; i < tokens.length; i += 3) {
+                accumulated += tokens.slice(i, i + 3).join('');
+                const snapshot = accumulated;
+                setMessages(prev => prev.map(m => m.id === aiMessageId ? { ...m, content: snapshot } : m));
+                await new Promise((resolve) => setTimeout(resolve, 22));
+            }
+            return;
+        }
 
         try {
             const context = buildContext();

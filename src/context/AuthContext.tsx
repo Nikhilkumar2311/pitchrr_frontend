@@ -19,6 +19,7 @@ import {
     useRef,
     type ReactNode,
 } from 'react';
+import { isDemoMode, enterDemoMode, exitDemoMode, getDemoStore } from '@/demo/demoStore';
 // import api from '@/services/api';
 
 // User shape matching what our backend returns
@@ -42,9 +43,11 @@ interface AuthContextType {
     user: AuthUser | null;
     isSignedIn: boolean;
     isLoaded: boolean;
+    isDemo: boolean;
 
     // Actions
     login: (email: string, password: string) => Promise<{ success: boolean; error?: string; needsVerification?: boolean }>;
+    loginAsDemo: () => void;
     register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
     verifyEmail: (email: string, code: string) => Promise<{ success: boolean; error?: string }>;
     resendOtp: (email: string) => Promise<{ success: boolean; error?: string }>;
@@ -66,12 +69,13 @@ const API_BASE = import.meta.env.VITE_CORE_API_URL || 'http://localhost:3001/api
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
+    const [isDemo, setIsDemo] = useState<boolean>(() => isDemoMode());
     const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     /**
      * Format user to be compatible with existing Clerk-based code
      */
-    const formatUser = (raw: any): AuthUser => ({
+    const formatUser = useCallback((raw: any): AuthUser => ({
         id: raw.id,
         email: raw.email,
         name: raw.name,
@@ -84,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         username: raw.email?.split('@')[0],
         imageUrl: raw.avatarUrl,
         primaryEmailAddress: { emailAddress: raw.email },
-    });
+    }), []);
 
     /**
      * Schedule access token refresh (5 minutes before expiry)
@@ -120,6 +124,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
      */
     useEffect(() => {
         const restoreSession = async () => {
+            if (isDemoMode()) {
+                const demoStore = getDemoStore();
+                accessToken = 'demo-access-token';
+                setUser(formatUser(demoStore.user));
+                setIsDemo(true);
+                setIsLoaded(true);
+                return;
+            }
+
             try {
                 const res = await fetch(`${API_BASE}/auth/refresh`, {
                     method: 'POST',
@@ -154,7 +167,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => {
             if (refreshTimer.current) clearTimeout(refreshTimer.current);
         };
-    }, [scheduleRefresh]);
+    }, [scheduleRefresh, formatUser]);
+
+    /**
+     * Enter instant client-only demo mode (no backend required)
+     */
+    const loginAsDemo = useCallback(() => {
+        const store = enterDemoMode();
+        accessToken = 'demo-access-token';
+        setUser(formatUser(store.user));
+        setIsDemo(true);
+        setIsLoaded(true);
+    }, [formatUser]);
 
     /**
      * Get current access token (for API requests)
@@ -312,6 +336,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
      * Logout — revoke refresh token + clear state
      */
     const logout = useCallback(async () => {
+        if (isDemoMode()) {
+            exitDemoMode();
+            accessToken = null;
+            setUser(null);
+            setIsDemo(false);
+            return;
+        }
+
         try {
             await fetch(`${API_BASE}/auth/logout`, {
                 method: 'POST',
@@ -334,7 +366,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isSignedIn: !!user,
         isLoaded,
+        isDemo,
         login,
+        loginAsDemo,
         register,
         verifyEmail,
         resendOtp,

@@ -9,7 +9,8 @@ import { forwardRef } from "react";
 import { useUIStore } from "@/store";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Lightbulb, Sparkles } from "lucide-react";
+import { Lightbulb, Sparkles, Play } from "lucide-react";
+import toast from "react-hot-toast";
 import { VelocityScroll } from "@/components/ui/VelocityScroll";
 import {
   Zap,
@@ -53,7 +54,7 @@ const workflowPaths = [
 
 export const HeroSection = forwardRef<HTMLElement>((_, ref) => {
   const { setAuthModalOpen, setAuthModalView } = useUIStore();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, loginAsDemo } = useAuth();
   const navigate = useNavigate();
 
   const handleHaveIdea = () => {
@@ -72,6 +73,12 @@ export const HeroSection = forwardRef<HTMLElement>((_, ref) => {
       setAuthModalView("signin");
       setAuthModalOpen(true);
     }
+  };
+
+  const handleStartDemo = () => {
+    loginAsDemo();
+    toast.success("Demo mode loaded! Explore all Pitchrr modules.");
+    navigate("/dashboard");
   };
 
   return (
@@ -186,20 +193,38 @@ export const HeroSection = forwardRef<HTMLElement>((_, ref) => {
               branding, and create investor-ready pitch decks — all powered by AI.
             </p>
 
-            <div className="hero-cta gsap-fade flex flex-col sm:flex-row items-center justify-center lg:justify-start lg:items-start gap-4 mt-10">
+            <div className="hero-cta gsap-fade flex flex-col sm:flex-row flex-wrap items-center justify-center lg:justify-start lg:items-start gap-3.5 mt-10">
               <button
                 onClick={handleHaveIdea}
-                className="btn-gradient magnetic-btn px-8 py-4 text-[15px] rounded-[var(--radius-lg)] inline-flex items-center gap-2"
+                className="btn-gradient magnetic-btn px-7 py-4 text-[15px] rounded-[var(--radius-lg)] inline-flex items-center gap-2"
               >
                 <Lightbulb className="w-5 h-5" />
                 Have an Idea
               </button>
               <button
                 onClick={handleDontHaveIdea}
-                className="btn-outline magnetic-btn px-8 py-4 text-[15px] rounded-[var(--radius-lg)] inline-flex items-center gap-2"
+                className="btn-outline magnetic-btn px-7 py-4 text-[15px] rounded-[var(--radius-lg)] inline-flex items-center gap-2"
               >
                 <Sparkles className="w-5 h-5" />
                 Don't Have an Idea
+              </button>
+              <button
+                onClick={handleStartDemo}
+                className="magnetic-btn px-7 py-4 text-[15px] font-semibold rounded-[var(--radius-lg)] inline-flex items-center gap-2 cursor-pointer transition-all"
+                style={{
+                  background: "rgba(16, 185, 129, 0.1)",
+                  color: "#059669",
+                  border: "1.5px solid rgba(16, 185, 129, 0.35)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(16, 185, 129, 0.16)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(16, 185, 129, 0.1)";
+                }}
+              >
+                <Play className="w-4 h-4 fill-current" />
+                Try Live Demo
               </button>
             </div>
           </div>

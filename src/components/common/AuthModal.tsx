@@ -14,7 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Modal, Button, Input } from '@/components/ui';
 import { useUIStore } from '@/store';
-import { ArrowRight, Eye, EyeOff, Mail, Lock, User, Hash } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, Mail, Lock, User, Hash, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
@@ -52,7 +52,7 @@ const fieldVariants = {
 export function AuthModal() {
     const navigate = useNavigate();
     const { isAuthModalOpen, setAuthModalOpen, authModalView, setAuthModalView } = useUIStore();
-    const { login, register, verifyEmail, resendOtp, forgotPassword, resetPassword } = useAuth();
+    const { login, loginAsDemo, register, verifyEmail, resendOtp, forgotPassword, resetPassword } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
 
     // Form states
@@ -74,6 +74,13 @@ export function AuthModal() {
     const handleClose = () => {
         setAuthModalOpen(false);
         setTimeout(resetForm, 300);
+    };
+
+    const handleDemoLogin = () => {
+        loginAsDemo();
+        toast.success('Demo mode loaded! Welcome to Pitchrr.');
+        handleClose();
+        navigate('/dashboard');
     };
 
     const view = authModalView;
@@ -453,7 +460,7 @@ export function AuthModal() {
                             </motion.div>
                         )}
 
-                        <motion.div variants={fieldVariants} style={{ paddingTop: 6 }}>
+                        <motion.div variants={fieldVariants} style={{ paddingTop: 6 }} className="space-y-2.5">
                             <Button
                                 type="submit"
                                 className="w-full h-12 group"
@@ -474,6 +481,28 @@ export function AuthModal() {
                                 {view === 'forgot-password' && 'Send Reset Code'}
                                 {view === 'reset-password-code' && 'Reset Password'}
                             </Button>
+
+                            {(view === 'signin' || view === 'signup') && (
+                                <button
+                                    type="button"
+                                    onClick={handleDemoLogin}
+                                    className="w-full h-11 rounded-[12px] text-[13px] font-semibold inline-flex items-center justify-center gap-2 transition-all cursor-pointer"
+                                    style={{
+                                        background: 'rgba(16, 185, 129, 0.08)',
+                                        color: '#059669',
+                                        border: '1.5px solid rgba(16, 185, 129, 0.28)',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = 'rgba(16, 185, 129, 0.14)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)';
+                                    }}
+                                >
+                                    <Play className="w-3.5 h-3.5 fill-current" />
+                                    Try Instant Demo (No Sign-Up Needed)
+                                </button>
+                            )}
                         </motion.div>
                     </motion.form>
                 </AnimatePresence>

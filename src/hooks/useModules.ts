@@ -19,6 +19,7 @@ import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
 import { trackModuleGenerated, trackCreditUsed, trackPitchDeckCreated } from '@/utils/analytics';
 import { creditKeys } from './useCredits';
+import { isDemoMode } from '@/demo/demoStore';
 
 // =============================================================================
 // TYPES
@@ -214,6 +215,17 @@ export function useGenerateModule(ideaId: string) {
             queryClient.invalidateQueries({
                 queryKey: moduleKeys.single(ideaId, moduleType),
             });
+
+            // In Demo Mode, skip backend SSE and refresh after simulated generation completes
+            if (isDemoMode()) {
+                setTimeout(() => {
+                    queryClient.invalidateQueries({ queryKey: moduleKeys.single(ideaId, moduleType) });
+                    queryClient.invalidateQueries({ queryKey: moduleKeys.allForIdea(ideaId) });
+                    queryClient.invalidateQueries({ queryKey: creditKeys.stats() });
+                    queryClient.invalidateQueries({ queryKey: ['deck-editor'] });
+                }, 1050);
+                return;
+            }
 
             // Open SSE connection for real-time push notification
             // Falls back to polling (via useModuleData refetchInterval) if SSE fails

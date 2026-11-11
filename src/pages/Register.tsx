@@ -4,9 +4,21 @@
 
 import { Button } from "@/components/ui";
 import { useUIStore } from "@/store";
+import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { Play } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function Register() {
   const { setAuthModalOpen, setAuthModalView } = useUIStore();
+  const { loginAsDemo } = useAuth();
+  const navigate = useNavigate();
+
+  const handleDemo = () => {
+    loginAsDemo();
+    toast.success("Demo mode loaded!");
+    navigate("/dashboard");
+  };
 
   // Redirect to modal on mount or just show a button to open it
   return (
@@ -19,7 +31,7 @@ export default function Register() {
 
             <Button
               size="lg"
-              className="w-full mb-4"
+              className="w-full mb-3"
               onClick={() => {
                 setAuthModalView('signup');
                 setAuthModalOpen(true);
@@ -27,6 +39,20 @@ export default function Register() {
             >
               Sign Up with Pitchrr
             </Button>
+
+            <button
+              type="button"
+              onClick={handleDemo}
+              className="w-full h-11 mb-4 rounded-xl text-sm font-semibold inline-flex items-center justify-center gap-2 cursor-pointer transition-colors"
+              style={{
+                background: "rgba(16, 185, 129, 0.1)",
+                color: "#059669",
+                border: "1px solid rgba(16, 185, 129, 0.3)",
+              }}
+            >
+              <Play className="w-4 h-4 fill-current" />
+              Try Instant Demo (No Sign-Up)
+            </button>
 
             <p className="text-sm text-gray-500">
               Already have an account?{" "}

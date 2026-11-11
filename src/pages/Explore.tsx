@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Sparkles, PenLine, Bookmark, Users } from 'lucide-react';
+import { Loader2, Sparkles, PenLine, Bookmark, Users, Play } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useFeed, useMyBookmarks, useMyFollowing } from '@/hooks/useCommunity';
@@ -21,7 +22,7 @@ import '@/styles/community.css';
 type ViewMode = 'feed' | 'saved' | 'following';
 
 export default function ExplorePage() {
-  const { user } = useAuth();
+  const { user, loginAsDemo } = useAuth();
   const navigate = useNavigate();
   const { postId: sharedPostId } = useParams<{ postId?: string }>();
   const [searchParams] = useSearchParams();
@@ -34,7 +35,7 @@ export default function ExplorePage() {
   const [hasScrolled, setHasScrolled] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('feed');
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useFeed(tab);
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError } = useFeed(tab);
   const { data: savedData, isLoading: savedLoading } = useMyBookmarks();
   const { data: followingData } = useMyFollowing(user?.id);
 
@@ -189,8 +190,22 @@ export default function ExplorePage() {
               {emptyConfig[viewMode].title}
             </h3>
             <p className="text-sm mb-6" style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-body)' }}>
-              {emptyConfig[viewMode].subtitle}
+              {isError ? 'Backend is offline. Load the interactive demo to explore sample founder posts.' : emptyConfig[viewMode].subtitle}
             </p>
+            {isError && !user && (
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => {
+                  loginAsDemo();
+                  toast.success('Demo mode loaded!');
+                }}
+                className="btn-gradient inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm cursor-pointer"
+              >
+                <Play className="w-4 h-4 fill-current" />
+                Load Demo Community
+              </motion.button>
+            )}
             {isFeedView && user && (
               <motion.button
                 whileHover={{ scale: 1.03 }}

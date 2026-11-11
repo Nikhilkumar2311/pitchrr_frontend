@@ -24,6 +24,7 @@ import {
 import toast from 'react-hot-toast';
 import api from '@/services/api';
 import { SEO } from '@/components/common';
+import { isDemoMode } from '@/demo/demoStore';
 
 // Pack icons mapping
 const PACK_ICONS = {
@@ -57,6 +58,27 @@ export default function CreditsStore() {
 
     const handlePurchase = async (packId: string) => {
         setSelectedPack(packId);
+
+        if (isDemoMode()) {
+            try {
+                const pack = packs?.find(p => p.id === packId);
+                const { data } = await api.post('/credits/add-test', {
+                    credits: pack?.credits || 50,
+                    packName: pack?.name || 'Demo Pack',
+                });
+                toast.success(`Demo Mode: ${data.creditsAdded} credits added! Balance: ${data.newBalance}`);
+                queryClient.setQueryData(['credits', 'stats'], (old: any) => ({
+                    ...old,
+                    balance: data.newBalance,
+                }));
+                queryClient.invalidateQueries({ queryKey: ['credits', 'stats'] });
+            } catch {
+                toast.error('Failed to add demo credits');
+            } finally {
+                setSelectedPack(null);
+            }
+            return;
+        }
 
         try {
             // Create order
